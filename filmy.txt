@@ -398,44 +398,32 @@ const UI = {
       const canWatch = !!me && (unlocked || (m.points_required||0)===0);
 
       app.innerHTML = `
-        <div style="position:relative; width:100%; height:400px; border-radius:14px; overflow:hidden; margin-bottom:24px;">
-          <img src="${m.thumb}" style="width:100%; height:100%; object-fit:cover; filter:brightness(0.4);" alt="${escapeHtml(m.title)}">
-          <div style="position:absolute; bottom:0; left:0; right:0; padding:32px; background:linear-gradient(to top, rgba(11,13,16,0.95), transparent);">
-            <h1 style="margin:0; font-size:2.5rem;">${escapeHtml(m.title)}</h1>
-            <div class="flex" style="gap:16px; margin-top:12px; font-size:14px; color:var(--muted);">
-              <span>📅 ${m.year||"?"}</span>
-              <span>⏱️ ${m.duration||"?"} min</span>
-              ${avg ? `<span>⭐ ${avg}/10</span>` : ""}
-            </div>
+        <div class="flex" style="justify-content:space-between;">
+          <div>
+            <h1>${escapeHtml(m.title)}</h1>
+            <div class="small">Rok: ${m.year||"?"} • Długość: ${m.duration||"?"} min</div>
+            ${m.points_required ? `
+    <div class="mt-2 alert">
+    Dostęp za: <b>${m.points_required}</b> pkt
+    ${me && !(await isUnlocked(me.id, m.id)) ? `
+      <button class="btn mt-2" onclick="UI.buyMovie(${m.id}, ${m.points_required})">
+        Kup dostęp
+      </button>
+    ` : ""}
+  </div>` : ""}
+
+          </div>
+          <div class="flex">
+            ${me ? `<button class="btn secondary" onclick="UI.onToggleWishlist(${m.id})">Chcę obejrzeć</button>` : ""}
           </div>
         </div>
+        <img class="mt-4" src="${m.thumb}" style="width:100%;max-height:360px;object-fit:cover;border-radius:14px"/>
+        <div class="mt-4"><p>${escapeHtml(m.description||"")}</p></div>
 
-        <div class="flex" style="justify-content:space-between; align-items:flex-start; gap:24px;">
-          <div style="flex:1;">
-            <h3>Opis</h3>
-            <p style="line-height:1.6; color:var(--muted);">${escapeHtml(m.description||"Brak opisu.")}</p>
-          </div>
-
-          <div style="min-width:280px;">
-            ${me ? (
-              canWatch ? 
-                `<a class="btn" href="#" onclick="UI.show('watch',{id:${m.id}})" style="width:100%; display:block; text-align:center; font-size:16px; padding:14px;">▶️ Oglądaj teraz</a>` 
-              : 
-                `<div class="card p">
-                  <h4 style="margin:0 0 12px 0;">Wymagany dostęp</h4>
-                  <div style="font-size:24px; font-weight:bold; color:var(--brand); margin-bottom:16px;">
-                    ${m.points_required} pkt
-                  </div>
-                  <div class="small" style="margin-bottom:12px;">Twoje punkty: <strong id="myPoints">…</strong></div>
-                  <button class="btn" onclick="UI.buyMovie(${m.id}, ${m.points_required})" style="width:100%;">
-                    Kup dostęp
-                  </button>
-                </div>`
-            ) : 
-              `<a class="btn" href="index.html" style="width:100%; display:block; text-align:center;">Zaloguj się</a>`}
-
-            ${me ? `<button class="btn secondary mt-2" onclick="UI.onToggleWishlist(${m.id})" style="width:100%;">💾 Chcę obejrzeć</button>` : ""}
-          </div>
+        <div class="mt-4">
+          ${me ? (canWatch ? `<a class="btn" href="#" onclick="UI.show('watch',{id:${m.id}})">Oglądaj</a>` :
+            `<button class="btn" onclick="UI.unlock(${m.id})">Odblokuj za punkty</button> <span class="small">Masz: <span id="myPoints">…</span> pkt</span>`) :
+            `<a class="btn" href="#" onclick="UI.show('login')">Zaloguj, aby oglądać</a>`}
         </div>
 
         <hr class="mt-8">
@@ -471,7 +459,8 @@ const UI = {
         </section>
       `;
 
-      if(me && m.points_required && !canWatch){
+      // jeśli trzeba, doładuj punkty
+      if(me && m.points_required){
         const pts = await getPoints(me.id);
         const el = document.getElementById("myPoints"); if(el) el.textContent = pts;
       }
@@ -703,8 +692,7 @@ const UI = {
     await addComment(movieId, me.id, text.slice(0,2000));
     UI.show('movie',{id:movieId});
   },
-
-  async buyMovie(movieId, cost){
+    async buyMovie(movieId, cost){
     const me = await Auth.currentProfile();
     if(!me) return UI.show("login");
 
@@ -722,6 +710,7 @@ const UI = {
     toast("✔️ Film odblokowany!");
     UI.show("movie", { id: movieId }); // odśwież widok
   },
+
 
   async saveBio(username){
     const me = await Auth.currentProfile(); if(!me) return;

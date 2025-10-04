@@ -16,9 +16,11 @@
     .menu a,.menu button{padding:8px 10px;color:var(--muted);background:none;border:none;cursor:pointer}
     .btn{background:var(--brand);color:#fff;padding:10px 14px;border-radius:12px;border:none;cursor:pointer}
     .btn.secondary{background:#2a3446}
+    .btn.success{background:#28a745}
     .badge{font-size:12px;color:#fff;background:#2a3446;padding:2px 8px;border-radius:999px}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform 0.2s}
+    .card:hover{transform:translateY(-4px)}
     .card.p{padding:12px;height:94px}
     .card img{width:100%;height:200px;object-fit:cover;display:block}
     .small{font-size:12px;color:var(--muted)}
@@ -29,9 +31,12 @@
     textarea,input,select{width:100%;padding:10px;background:#0e1218;border:1px solid var(--border);color:#fff;border-radius:10px}
     footer{color:var(--muted);text-align:center;padding:30px 0}
     .hidden{display:none}
-    /* video */
     .video-container{position:relative;width:100%;padding-bottom:56.25%;height:0;overflow:hidden;background:black;border-radius:22px}
     .video-container iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+    .movie-detail-hero{position:relative;width:100%;height:400px;background-size:cover;background-position:center;border-radius:14px;overflow:hidden}
+    .movie-detail-overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top, rgba(11,13,16,1) 0%, rgba(11,13,16,0) 100%);padding:24px}
+    .movie-detail-title{font-size:2.5rem;font-weight:800;margin:0}
+    .movie-detail-meta{display:flex;gap:16px;margin-top:8px;font-size:14px;color:var(--muted)}
   </style>
 </head>
 <body>
@@ -62,26 +67,15 @@
 
 <footer>© <script>document.write(new Date().getFullYear())</script> StreamingHub • free video</footer>
 
-<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* =========================
-   KONFIG: PODMIEŃ NA SWOJE
-   ========================= */
 const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* =========================
-   UTILS
-   ========================= */
-const delay = (ms)=>new Promise(r=>setTimeout(r,ms));
 function escapeHtml(str){ return (str||"").replace(/[&<>"']/g, s=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[s])); }
 function toast(msg){ const d=document.createElement("div"); d.className="alert"; d.textContent=msg; d.style.position="fixed"; d.style.right="16px"; d.style.bottom="16px"; d.style.zIndex=9999; document.body.appendChild(d); setTimeout(()=>d.remove(),2200); }
 
-/* =========================
-   AUTH + PROFILES
-   ========================= */
 const Auth = {
   async currentUser(){ const { data:{ user } } = await db.auth.getUser(); return user||null; },
   async currentProfile(){
@@ -94,7 +88,6 @@ const Auth = {
     const { data, error } = await db.auth.signUp({ email, password });
     if(error) return alert("❌ " + error.message);
     const user = data.user;
-    // profil może już być tworzony triggerem; mimo to upsert bezpieczny
     const { error: pErr } = await db.from("profiles").upsert({
       id: user.id, username, points: 0, is_admin: false
     });
@@ -112,20 +105,14 @@ const Auth = {
   async logout(){ await db.auth.signOut(); await UI.updateHeader(); toast("Wylogowano"); UI.show("home"); }
 };
 
-// reaguj na zmianę sesji
 db.auth.onAuthStateChange(async ()=>{ UI.updateHeader(); });
 
-/* =========================
-   DATA ACCESS (Supabase)
-   ========================= */
-// Movies
 async function getMovies(filters={}){
   let q = db.from("movies").select("*");
   if(filters.q) q = q.ilike("title", `%${filters.q}%`);
   if(filters.category_id) q = q.eq("category_id", filters.category_id);
   if(filters.year) q = q.eq("year", filters.year);
   if(filters.min_duration) q = q.gte("duration", filters.min_duration);
-  // sort
   if(filters.sort === "new") q = q.order("created_at", { ascending: false });
   else q = q.order("created_at", { ascending: false });
   const { data, error } = await q;
@@ -139,7 +126,6 @@ async function getMovie(id){
 async function addMovie(payload){ return db.from("movies").insert(payload); }
 async function deleteMovie(id){ return db.from("movies").delete().eq("id", id); }
 
-// Categories
 async function getCategories(){
   const { data, error } = await db.from("categories").select("*").order("name");
   if(error) throw error; return data||[];
@@ -147,7 +133,6 @@ async function getCategories(){
 async function addCategory(name){ return db.from("categories").insert({ name }); }
 async function delCategory(id){ return db.from("categories").delete().eq("id", id); }
 
-// Ratings
 async function getRatingsFor(movieId){
   const { data, error } = await db.from("ratings").select("score").eq("movie_id", movieId);
   if(error) throw error; return data||[];
@@ -160,9 +145,7 @@ async function getUserRating(movieId, userId){
   if(error) throw error; return data||null;
 }
 
-// Comments
 async function getComments(movieId){
-  // pobierz komentarze + nazwę autora z profiles
   const { data, error } = await db
     .from("comments")
     .select("id,text,created_at,user_id,profiles(username)")
@@ -174,7 +157,6 @@ async function addComment(movieId, userId, text){
   return db.from("comments").insert({ movie_id: movieId, user_id: userId, text });
 }
 
-// Wishlist
 async function getWishlist(userId){
   const { data, error } = await db.from("wishlist").select("movie_id").eq("user_id", userId);
   if(error) throw error; return new Set((data||[]).map(x=>x.movie_id));
@@ -189,7 +171,6 @@ async function toggleWishlist(userId, movieId){
   }
 }
 
-// Watch history
 async function addWatch(userId, movieId){
   return db.from("watch_history").insert({ user_id: userId, movie_id: movieId, watched_at: new Date().toISOString() });
 }
@@ -203,12 +184,9 @@ async function getWatchHistory(userId, limit=100){
   if(error) throw error; return data||[];
 }
 
-// Points & unlocks
 async function addPoints(userId, change, reason){
-  // 1) log
   const { error: logErr } = await db.from("points_log").insert({ user_id:userId, change, reason });
   if(logErr) throw logErr;
-  // 2) update profiles.points (race-safe-ish: re-read then set)
   const { data: prof } = await db.from("profiles").select("points").eq("id", userId).single();
   const next = (prof?.points||0) + change;
   const { error: upErr } = await db.from("profiles").update({ points: next }).eq("id", userId);
@@ -229,7 +207,6 @@ async function isUnlocked(userId, movieId){
   return !!data;
 }
 
-// Codes
 async function redeemCode(userId, codeStr){
   const code = (codeStr||"").trim();
   if(!code) return { ok:false, msg:"Podaj kod" };
@@ -242,24 +219,20 @@ async function redeemCode(userId, codeStr){
   if(data.type === "points"){
     await addPoints(userId, data.amount, `Kod: ${data.code}`);
   } else if(data.type === "premium"){
-    // wymaga kolumny premium_until w profiles
     const { data: prof } = await db.from("profiles").select("premium_until").eq("id", userId).maybeSingle();
     if(!prof || typeof prof.premium_until === "undefined"){
       return { ok:false, msg:"Brak pola premium w profiles (premium_until)" };
     }
     const days = Number(data.days||data.amount||7);
-    const base = prof.premium_until ? new Date(prof.premium_until) : new Date();
     const start = (prof.premium_until && new Date(prof.premium_until) > new Date()) ? new Date(prof.premium_until) : new Date();
     const until = new Date(start.getTime() + days*24*60*60*1000);
     const { error: upErr } = await db.from("profiles").update({ premium_until: until.toISOString() }).eq("id", userId);
     if(upErr) return { ok:false, msg: upErr.message };
   }
-  // zmniejsz limit
   await db.from("codes").update({ limit_left: (data.limit_left||0) - 1 }).eq("id", data.id);
   return { ok:true, msg:"Kod zrealizowany ✔️" };
 }
 
-// Leaderboard (last N days)
 async function leaderboard(days){
   const since = new Date(Date.now() - days*24*60*60*1000).toISOString();
   const { data, error } = await db.from("points_log").select("user_id, change, created_at").gte("created_at", since);
@@ -269,7 +242,6 @@ async function leaderboard(days){
   const entries = [...map.entries()].map(([user_id, gained])=>({ user_id, gained }));
   entries.sort((a,b)=>b.gained-a.gained);
   const top = entries.slice(0,100);
-  // dołącz nicki
   if(top.length){
     const ids = top.map(t=>t.user_id);
     const { data: profs } = await db.from("profiles").select("id,username").in("id", ids);
@@ -279,9 +251,6 @@ async function leaderboard(days){
   return top.map((t,i)=>({ rank:i+1, user:t.username, gained:t.gained }));
 }
 
-/* =========================
-   UI
-   ========================= */
 const UI = {
   el: ()=>document.getElementById("app"),
   async updateHeader(){
@@ -289,30 +258,16 @@ const UI = {
     document.getElementById("adminLink").classList.toggle("hidden", !(u&&u.is_admin));
     document.getElementById("logoutForm").classList.toggle("hidden", !u);
     document.getElementById("authLinks").classList.toggle("hidden", !!u);
-      // podmień przycisk "Filmy" w zależności od logowania
-  const filmLink = document.getElementById("filmLink");
-  if (u) {
-    filmLink.setAttribute("href", "filmy.html");
-    filmLink.removeAttribute("onclick");
-  } else {
-    filmLink.setAttribute("href", "#");
-    filmLink.setAttribute("onclick", "UI.show('home')");
-  }
-
   },
   async show(view, params={}){
     const app = UI.el();
     const me = await Auth.currentProfile();
 
-    // HOME
     if(view==="home"){
       const cats = await getCategories();
       const movies = await getMovies({ sort:"new" });
-
-      // policz ratingi zbiorczo
       const ratingsMap = await UI._avgRatingsMap(movies.map(m=>m.id));
 
-      // Historia dla zalogowanych
       let historyHTML = "";
       if(me){
         const hist = await getWatchHistory(me.id, 12);
@@ -345,7 +300,6 @@ const UI = {
       `;
     }
 
-    // MOVIE
     else if(view==="movie"){
       const id = Number(params.id);
       let m; try { m = await getMovie(id); } catch { app.innerHTML=`<div class="alert">Nie znaleziono</div>`; return; }
@@ -354,25 +308,37 @@ const UI = {
       const youRated = me ? await getUserRating(id, me.id) : null;
       const unlocked = me ? await isUnlocked(me.id, id) : false;
       const canWatch = !!me && (unlocked || (m.points_required||0)===0);
+      const userPoints = me ? await getPoints(me.id) : 0;
 
       app.innerHTML = `
-        <div class="flex" style="justify-content:space-between;">
-          <div>
-            <h1>${escapeHtml(m.title)}</h1>
-            <div class="small">Rok: ${m.year||"?"} • Długość: ${m.duration||"?"} min</div>
-            ${m.points_required ? `<div class="mt-2 alert">Wymagane punkty do odblokowania: <b>${m.points_required}</b></div>` : ""}
-          </div>
-          <div class="flex">
-            ${me ? `<button class="btn secondary" onclick="UI.onToggleWishlist(${m.id})">Chcę obejrzeć</button>` : ""}
+        <div class="movie-detail-hero" style="background-image:url('${m.thumb}')">
+          <div class="movie-detail-overlay">
+            <h1 class="movie-detail-title">${escapeHtml(m.title)}</h1>
+            <div class="movie-detail-meta">
+              <span>⭐ ${avg||"-"}/10</span>
+              <span>📅 ${m.year||"?"}</span>
+              <span>⏱️ ${m.duration||"?"} min</span>
+            </div>
           </div>
         </div>
-        <img class="mt-4" src="${m.thumb}" style="width:100%;max-height:360px;object-fit:cover;border-radius:14px"/>
-        <div class="mt-4"><p>${escapeHtml(m.description||"")}</p></div>
 
         <div class="mt-4">
-          ${me ? (canWatch ? `<a class="btn" href="#" onclick="UI.show('watch',{id:${m.id}})">Oglądaj</a>` :
-            `<button class="btn" onclick="UI.unlock(${m.id})">Odblokuj za punkty</button> <span class="small">Masz: <span id="myPoints">…</span> pkt</span>`) :
-            `<a class="btn" href="#" onclick="UI.show('login')">Zaloguj, aby oglądać</a>`}
+          <p style="font-size:1.1rem;line-height:1.6">${escapeHtml(m.description||"Brak opisu")}</p>
+        </div>
+
+        <div class="mt-4 flex" style="gap:16px;align-items:center">
+          ${me ? (
+            canWatch ? 
+              `<button class="btn success" onclick="UI.show('watch',{id:${m.id}})">▶️ Oglądaj teraz</button>` :
+              (m.points_required > 0 ? 
+                `<button class="btn ${userPoints >= m.points_required ? 'success' : 'secondary'}" onclick="UI.buyMovie(${m.id}, ${m.points_required})">
+                  🎬 Kup dostęp za ${m.points_required} pkt
+                </button>
+                <span class="small">Twoje punkty: <strong>${userPoints}</strong></span>` :
+                `<button class="btn success" onclick="UI.show('watch',{id:${m.id}})">▶️ Oglądaj za darmo</button>`
+              )
+          ) : `<a class="btn" href="#" onclick="UI.show('login')">Zaloguj się, aby oglądać</a>`}
+          ${me ? `<button class="btn secondary" onclick="UI.onToggleWishlist(${m.id})">💾 Chcę obejrzeć</button>` : ""}
         </div>
 
         <hr class="mt-8">
@@ -407,15 +373,8 @@ const UI = {
           </div>
         </section>
       `;
-
-      // jeśli trzeba, doładuj punkty
-      if(me && m.points_required){
-        const pts = await getPoints(me.id);
-        const el = document.getElementById("myPoints"); if(el) el.textContent = pts;
-      }
     }
 
-    // WATCH
     else if(view==="watch"){
       if(!me) return UI.show("login");
       const id = Number(params.id);
@@ -433,7 +392,6 @@ const UI = {
       `;
     }
 
-    // LOGIN / REGISTER
     else if(view==="login"){
       app.innerHTML = `
         <h1>Logowanie</h1>
@@ -457,7 +415,6 @@ const UI = {
       `;
     }
 
-    // PROFILE
     else if(view==="me"){
       if(!me) return UI.show("login");
       const hist = await getWatchHistory(me.id, 100);
@@ -499,13 +456,12 @@ const UI = {
           <div class="grid">${hist.map(h=> UI.card(h.movies)).join("") || '<div class="small">Brak historii.</div>'}</div>
         </div>
         <div class="mt-4">
-          <h3>Lista „Chcę obejrzeć”</h3>
+          <h3>Lista „Chcę obejrzeć"</h3>
           <div class="grid">${wishMovies.map(m=> UI.card(m)).join("") || '<div class="small">Pusto.</div>'}</div>
         </div>
       `;
     }
 
-    // TOP
     else if(view==="top"){
       const [week, month] = await Promise.all([leaderboard(7), leaderboard(30)]);
       app.innerHTML = `
@@ -523,7 +479,6 @@ const UI = {
       `;
     }
 
-    // ADMIN
     else if(view==="admin"){
       if(!(me && me.is_admin)){ app.innerHTML = "<div class='alert'>Brak dostępu.</div>"; return; }
       const [cats, movies] = await Promise.all([getCategories(), getMovies()]);
@@ -627,11 +582,11 @@ const UI = {
 
   card(m, avg){
     if(!m) return "";
-    return `<div class="card">
-      <a href="#" onclick="UI.show('movie',{id:${m.id}})"><img src="${m.thumb}" alt="${escapeHtml(m.title)}"></a>
+    return `<div class="card" onclick="UI.show('movie',{id:${m.id}})">
+      <img src="${m.thumb}" alt="${escapeHtml(m.title)}">
       <div class="card p">
         <div class="flex" style="justify-content:space-between;">
-          <strong><a href="#" onclick="UI.show('movie',{id:${m.id}})">${escapeHtml(m.title)}</a></strong>
+          <strong>${escapeHtml(m.title)}</strong>
           <span class="badge">★ ${avg?avg.toFixed(1):"-"}</span>
         </div>
         <div class="small mt-2">czas: ${m.duration||"?"} min • rok: ${m.year||"?"}</div>
@@ -656,15 +611,20 @@ const UI = {
     toast("Zaktualizowano listę.");
   },
 
-  async unlock(movieId){
-    const me = await Auth.currentProfile(); if(!me) return UI.show("login");
-    const m = await getMovie(movieId);
-    if((m.points_required||0)===0){ await ensureUnlocked(me.id, movieId); return UI.show('watch',{id:movieId}); }
+  async buyMovie(movieId, cost){
+    const me = await Auth.currentProfile();
+    if(!me) return UI.show("login");
+
     const have = await getPoints(me.id);
-    if(have < (m.points_required||0)) return toast("Za mało punktów");
-    await addPoints(me.id, -(m.points_required||0), `Odblokowanie: ${m.title}`);
+    if(have < cost){
+      return toast("❌ Masz za mało punktów");
+    }
+
+    await addPoints(me.id, -cost, `Zakup filmu #${movieId}`);
     await ensureUnlocked(me.id, movieId);
-    toast("Odblokowano ✔️"); UI.show('watch',{id:movieId});
+
+    toast("✔️ Film odblokowany na zawsze!");
+    UI.show("movie", { id: movieId });
   },
 
   async rate(movieId, score){
@@ -740,10 +700,8 @@ const UI = {
   }
 };
 
-// Start
 UI.updateHeader();
 UI.show("home");
 </script>
 </body>
 </html>
-
