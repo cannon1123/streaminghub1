@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StreamingHub • Seriale</title>
+  <style>
+    :root {
+      --bg: #0b0d10;
+      --surface: #151922;
+      --surface-light: #1c212d;
+      --text: #e3e7ee;
+      --muted: #a8bfe2;
+      --brand: #4f7cff;
+      --border: #232a37;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #0d1117;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+      gap: 16px;
+    }
+
+    .brand {
+      font-weight: 800;
+      color: var(--text);
+      font-size: 1.1rem;
+      white-space: nowrap;
+    }
+
+    .search {
+      flex: 1;
+      max-width: 400px;
+      background: var(--surface);
+      border: none;
+      border-radius: 12px;
+      padding: 8px 12px;
+      color: var(--text);
+    }
+
+    .menu {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .menu a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color .2s;
+    }
+
+    .menu a:hover, .menu a.active {
+      color: var(--text);
+    }
+
+    .btn {
+      background: var(--brand);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 9px 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .2s;
+    }
+
+    .btn:hover {
+      background: #3e68e5;
+    }
+
+    .btn.secondary {
+      background: var(--surface);
+    }
+
+    main {
+      flex: 1;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+
+    h2 {
+      font-size: 1.3rem;
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    select, input[type="number"], input[type="text"] {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      width: 100%;
+      font-size: 0.95rem;
+      transition: border .2s;
+    }
+
+    select:focus, input:focus {
+      border-color: var(--brand);
+      outline: none;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: transform .2s, border .2s;
+    }
+
+    .card:hover {
+      transform: scale(1.02);
+      border-color: var(--brand);
+    }
+
+    .card img {
+      width: 100%;
+      height: 240px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .card .info {
+      padding: 12px;
+    }
+
+    .card .info strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    footer {
+      color: var(--muted);
+      text-align: center;
+      padding: 28px 0;
+      font-size: 0.9rem;
+      margin-top: auto;
+    }
+
+    /* RESPONSYWNOŚĆ */
+    @media (max-width: 600px) {
+      .nav {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .menu {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+      }
+      .filters {
+        grid-template-columns: 1fr;
+      }
+      .search {
+        max-width: 100%;
+        order: 3;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <a class="brand" href="index.html">🎬 StreamingHub</a>
+      <input class="search" type="search" placeholder="Szukaj filmów...">
+      <nav class="menu" id="menu">
+        <a href="filmy.html">Filmy</a>
+        <a href="seriale.html" class="active">Seriale</a>
+        <a href="index.html#me">Moja biblioteka</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="app">
+    <p>Ładowanie...</p>
+  </main>
+
+  <footer>
+    © <script>document.write(new Date().getFullYear())</script> StreamingHub • free video
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+  const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const Auth = {
+    async logout() { await db.auth.signOut(); location.reload(); },
+    async user() { const { data } = await db.auth.getUser(); return data.user || null; }
+  };
+
+  async function getCategories() {
+    const { data } = await db.from("categories").select("*").order("name");
+    return data || [];
+  }
+
+  async function getSeries(filters = {}) {
+    let q = db.from("series").select("*, categories(name)").order("created_at", { ascending: false });
+    if (filters.category_id) q = q.eq("category_id", filters.category_id);
+    if (filters.year) q = q.eq("year", filters.year);
+    if (filters.search) q = q.ilike("title", `%${filters.search}%`);
+    return (await q).data || [];
+  }
+
+  const UI = {
+    el: () => document.getElementById("app"),
+
+    async init() {
+      const user = await Auth.user();
+      UI.updateMenu(user);
+
+      db.auth.onAuthStateChange((_, session) => {
+        UI.updateMenu(session?.user);
+        if (session?.user) UI.show("list");
+        else UI.show("login");
+      });
+
+      const { data: { session } } = await db.auth.getSession();
+      if (session?.user) UI.show("list");
+      else UI.show("login");
+    },
+
+    updateMenu(user) {
+      const menu = document.getElementById("menu");
+      const existingAuth = menu.querySelector(".auth-buttons");
+      if (existingAuth) existingAuth.remove();
+
+      const authSection = document.createElement("div");
+      authSection.className = "auth-buttons";
+
+      if (user) {
+        authSection.innerHTML = `
+          <button class="btn secondary" onclick="Auth.logout()">Wyloguj</button>
+        `;
+      } else {
+        authSection.innerHTML = `
+          <a href="index.html" class="btn secondary">Zaloguj się</a>
+          <a href="index.html" class="btn">Zarejestruj się</a>
+        `;
+      }
+      menu.appendChild(authSection);
+    },
+
+    async show(view) {
+      const app = UI.el();
+
+      if (view === "login") {
+        app.innerHTML = `
+          <h2>Musisz być zalogowany, aby oglądać seriale</h2>
+          <button class="btn" onclick="window.location='index.html'">Zaloguj się</button>
+        `;
+      }
+
+      if (view === "list") {
+        const cats = await getCategories();
+        const series = await getSeries();
+        app.innerHTML = `
+          <h2>Filtruj</h2>
+          <div class="filters">
+            <select id="cat"><option value="">Kategoria</option>${cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join("")}</select>
+            <input type="number" id="year" placeholder="Rok">
+            <input type="text" id="search" placeholder="Szukaj tytułu...">
+            <button class="btn" onclick="UI.apply()">Szukaj</button>
+          </div>
+          <div class="grid" id="list">${series.map(s=>UI.card(s)).join("")}</div>
+        `;
+      }
+    },
+
+    card(s) {
+      return `
+        <div class="card">
+          <a href="#" onclick="UI.show('detail',{id:${s.id}})">
+            <img src="${s.thumb}" alt="${s.title}">
+          </a>
+          <div class="info">
+            <strong>${s.title}</strong>
+            <span>${s.year || ""}</span>
+          </div>
+        </div>
+      `;
+    },
+
+    async apply() {
+      const filters = {
+        category_id: document.getElementById("cat").value || null,
+        year: document.getElementById("year").value || null,
+        search: document.getElementById("search").value || null
+      };
+      const s = await getSeries(filters);
+      document.getElementById("list").innerHTML = s.map(a => UI.card(a)).join("");
+    }
+  };
+
+  UI.init();
+  </script>
+</body>
+</html>
