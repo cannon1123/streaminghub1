@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StreamingHub • Seriale</title>
+  <style>
+    :root{--bg:#0b0d10;--card:#151922;--text:#e3e7ee;--muted:#a8bfe2;--brand:#4f7cff;--border:#232a37}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
+    a{color:var(--text);text-decoration:none}
+    .container{max-width:1100px;margin:0 auto;padding:16px}
+    header{position:sticky;top:0;background:rgba(11,13,16,.8);backdrop-filter:blur(6px);z-index:10}
+    .nav{display:flex;gap:12px;align-items:center;padding:12px 16px}
+    .brand{font-weight:800}
+    .nav input[type=search]{flex:1;background:#0e1218;border:1px solid var(--border);color:#fff;padding:10px 12px;border-radius:12px}
+    .menu a,.menu button{padding:8px 10px;color:var(--muted);background:none;border:none;cursor:pointer}
+    .btn{background:var(--brand);color:#fff;padding:10px 14px;border-radius:12px;border:none;cursor:pointer}
+    .btn.secondary{background:#2a3446}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+    .card.p{padding:12px;border:0}
+    .card img{width:100%;height:200px;object-fit:cover;display:block}
+    .small{font-size:12px;color:var(--muted)}
+    footer{color:var(--muted);text-align:center;padding:30px 0}
+    .video-container{position:relative;width:100%;padding-bottom:56.25%;height:0;overflow:hidden;background:black;border-radius:22px}
+    .video-container iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="nav container">
+    <a class="brand" href="index.html">🎬 StreamingHub</a>
+    <nav class="menu flex">
+      <a href="filmy.html">Filmy</a>
+      <a href="seriale.html">Seriale</a>
+      <a href="index.html#me">Moja biblioteka</a>
+      <form onsubmit="event.preventDefault(); Auth.logout(); window.location='index.html';">
+        <button class="btn secondary">Wyloguj</button>
+      </form>
+    </nav>
+  </div>
+</header>
+
+<main class="container" id="app"></main>
+
+<footer>© <script>document.write(new Date().getFullYear())</script> StreamingHub • free video</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Autoryzacja
+const Auth = {
+  async currentUser() {
+    const { data: { user } } = await db.auth.getUser();
+    return user || null;
+  },
+  async logout() {
+    await db.auth.signOut();
+    window.location = "index.html";
+  }
+};
+
+// Pobieranie danych
+async function getSeries() {
+  const { data, error } = await db.from("series").select("*").order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+async function getSeriesById(id) {
+  const { data, error } = await db.from("series").select("*").eq("id", id).single();
+  if (error) throw error;
+  return data;
+}
+async function getEpisodes(seriesId) {
+  const { data, error } = await db.from("episodes").select("*").eq("series_id", seriesId).order("season").order("episode");
+  if (error) throw error;
+  return data || [];
+}
+
+// UI
+const UI = {
+  el: ()=>document.getElementById("app"),
+
+  async init() {
+    const user = await Auth.currentUser();
+    if(!user) {
+      UI.el().innerHTML = `
+        <h2>Musisz być zalogowany, aby oglądać seriale</h2>
+        <button class="btn" onclick="window.location='index.html'">Zaloguj się</button>
+      `;
+      return;
+    }
+    UI.show("series");
+  },
+
+  async show(view, params={}) {
+    const app = UI.el();
+
+    if(view==="series") {
+      const series = await getSeries();
+      app.innerHTML = `
+        <h2>Seriale</h2>
+        <div class="grid">
+          ${series.map(s=>`
+            <div class="card">
+              <a href="#" onclick="UI.show('series_detail',{id:${s.id}})">
+                <img src="${s.thumb}" alt="${s.title}">
+              </a>
+              <div class="card p">
+                <strong>${s.title}</strong>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    else if(view==="series_detail") {
+      const s = await getSeriesById(params.id);
+      const episodes = await getEpisodes(params.id);
+
+      // grupuj po sezonie
+      const seasons = {};
+      for(const ep of episodes) {
+        if(!seasons[ep.season]) seasons[ep.season] = [];
+        seasons[ep.season].push(ep);
+      }
+
+      app.innerHTML = `
+        <a href="#" onclick="UI.show('series')" class="small">← Wróć</a>
+        <h1>${s.title}</h1>
+        <img src="${s.thumb}" style="width:100%;max-height:300px;object-fit:cover;border-radius:12px"/>
+        <p>${s.description || ""}</p>
+
+        ${Object.entries(seasons).map(([season, eps]) => `
+          <section class="mt-4">
+            <h3>Sezon ${season}</h3>
+            <div class="grid">
+              ${eps.map(e => `
+                <div class="card">
+                  <a href="#" onclick="UI.show('episode',{id:${e.id}})">
+                    <img src="${e.thumb}" alt="${e.title}">
+                  </a>
+                  <div class="card p">
+                    <strong>${e.title}</strong>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </section>
+        `).join('')}
+      `;
+    }
+
+    else if(view==="episode") {
+      const { data: ep, error } = await db.from("episodes").select("*").eq("id", params.id).single();
+      if(error || !ep) { app.innerHTML = `<div class="alert">Nie znaleziono odcinka</div>`; return; }
+
+      app.innerHTML = `
+        <a href="#" onclick="UI.show('series_detail',{id:${ep.series_id}})" class="small">← Wróć do serialu</a>
+        <h1>${ep.title}</h1>
+        <div class="video-container mt-4">
+          <iframe src="${ep.iframe}" allowfullscreen></iframe>
+        </div>
+        <p class="mt-4">${ep.description || ""}</p>
+      `;
+    }
+  }
+};
+
+UI.init();
+</script>
+</body>
+</html>
