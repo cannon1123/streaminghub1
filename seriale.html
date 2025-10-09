@@ -35,14 +35,16 @@
       <a href="filmy.html">Filmy</a>
       <a href="seriale.html">Seriale</a>
       <a href="index.html#me">Moja biblioteka</a>
-      <form onsubmit="event.preventDefault(); Auth.logout(); window.location='index.html';">
+      <form onsubmit="event.preventDefault(); Auth.logout();">
         <button class="btn secondary">Wyloguj</button>
       </form>
     </nav>
   </div>
 </header>
 
-<main class="container" id="app"></main>
+<main class="container" id="app">
+  <p>Ładowanie...</p>
+</main>
 
 <footer>© <script>document.write(new Date().getFullYear())</script> StreamingHub • free video</footer>
 
@@ -52,19 +54,18 @@ const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Autoryzacja
 const Auth = {
-  async currentUser() {
-    const { data: { user } } = await db.auth.getUser();
-    return user || null;
-  },
   async logout() {
     await db.auth.signOut();
-    window.location = "index.html";
+    location.reload();
+  },
+  async user() {
+    const { data } = await db.auth.getUser();
+    return data.user || null;
   }
 };
 
-// Pobieranie danych
+// API
 async function getSeries() {
   const { data, error } = await db.from("series").select("*").order("created_at", { ascending: false });
   if (error) throw error;
@@ -86,21 +87,32 @@ const UI = {
   el: ()=>document.getElementById("app"),
 
   async init() {
-    const user = await Auth.currentUser();
-    if(!user) {
-      UI.el().innerHTML = `
-        <h2>Musisz być zalogowany, aby oglądać seriale</h2>
-        <button class="btn" onclick="window.location='index.html'">Zaloguj się</button>
-      `;
-      return;
-    }
-    UI.show("series");
+    // nasłuch zmian logowania (ważne)
+    db.auth.onAuthStateChange(async (event, session) => {
+      if(session?.user) {
+        UI.show("series");
+      } else {
+        UI.show("login");
+      }
+    });
+
+    // sprawdź początkowo, czy jest sesja
+    const { data: { session } } = await db.auth.getSession();
+    if (session?.user) UI.show("series");
+    else UI.show("login");
   },
 
   async show(view, params={}) {
     const app = UI.el();
 
-    if(view==="series") {
+    if(view==="login") {
+      app.innerHTML = `
+        <h2>Musisz być zalogowany, aby oglądać seriale</h2>
+        <button class="btn" onclick="window.location='index.html'">Zaloguj się</button>
+      `;
+    }
+
+    else if(view==="series") {
       const series = await getSeries();
       app.innerHTML = `
         <h2>Seriale</h2>
@@ -110,9 +122,7 @@ const UI = {
               <a href="#" onclick="UI.show('series_detail',{id:${s.id}})">
                 <img src="${s.thumb}" alt="${s.title}">
               </a>
-              <div class="card p">
-                <strong>${s.title}</strong>
-              </div>
+              <div class="card p"><strong>${s.title}</strong></div>
             </div>
           `).join('')}
         </div>
@@ -123,7 +133,6 @@ const UI = {
       const s = await getSeriesById(params.id);
       const episodes = await getEpisodes(params.id);
 
-      // grupuj po sezonie
       const seasons = {};
       for(const ep of episodes) {
         if(!seasons[ep.season]) seasons[ep.season] = [];
@@ -145,9 +154,7 @@ const UI = {
                   <a href="#" onclick="UI.show('episode',{id:${e.id}})">
                     <img src="${e.thumb}" alt="${e.title}">
                   </a>
-                  <div class="card p">
-                    <strong>${e.title}</strong>
-                  </div>
+                  <div class="card p"><strong>${e.title}</strong></div>
                 </div>
               `).join('')}
             </div>
@@ -157,15 +164,13 @@ const UI = {
     }
 
     else if(view==="episode") {
-      const { data: ep, error } = await db.from("episodes").select("*").eq("id", params.id).single();
-      if(error || !ep) { app.innerHTML = `<div class="alert">Nie znaleziono odcinka</div>`; return; }
+      const { data: ep } = await db.from("episodes").select("*").eq("id", params.id).single();
+      if(!ep){ app.innerHTML=`<div class="alert">Nie znaleziono odcinka</div>`; return; }
 
       app.innerHTML = `
-        <a href="#" onclick="UI.show('series_detail',{id:${ep.series_id}})" class="small">← Wróć do serialu</a>
+        <a href="#" onclick="UI.show('series_detail',{id:${ep.series_id}})" class="small">← Powrót</a>
         <h1>${ep.title}</h1>
-        <div class="video-container mt-4">
-          <iframe src="${ep.iframe}" allowfullscreen></iframe>
-        </div>
+        <div class="video-container mt-4"><iframe src="${ep.iframe}" allowfullscreen></iframe></div>
         <p class="mt-4">${ep.description || ""}</p>
       `;
     }
