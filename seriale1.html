@@ -5,26 +5,72 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>StreamingHub • Seriale</title>
   <style>
-    :root{--bg:#0b0d10;--card:#151922;--text:#e3e7ee;--muted:#a8bfe2;--brand:#4f7cff;--border:#232a37}
-    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
-    a{color:var(--text);text-decoration:none}
-    .container{max-width:1200px;margin:0 auto;padding:16px}
-    header{position:sticky;top:0;background:rgba(11,13,16,.85);backdrop-filter:blur(6px);z-index:10}
-    .nav{display:flex;gap:12px;align-items:center;padding:12px 16px}
-    .brand{font-weight:800}
-    .nav input[type=search]{flex:1;background:#0e1218;border:1px solid var(--border);color:#fff;padding:10px 12px;border-radius:12px}
-    .menu a,.menu button{padding:8px 10px;color:var(--muted);background:none;border:none;cursor:pointer}
-    .btn{background:var(--brand);color:#fff;padding:10px 14px;border-radius:12px;border:none;cursor:pointer}
-    .btn.secondary{background:#2a3446}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:20px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-    .card.p{padding:12px;border:0}
-    .card img{width:100%;height:200px;object-fit:cover;display:block}
-    footer{color:var(--muted);text-align:center;padding:30px 0}
-    .video-container{position:relative;width:100%;padding-bottom:56.25%;height:0;overflow:hidden;background:black;border-radius:22px}
-    .video-container iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
-    .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:10px}
-    select,input[type="number"],input[type="text"]{background:#0e1218;border:1px solid var(--border);color:#fff;padding:10px 12px;border-radius:12px;width:100%}
+    :root {
+      --bg: #0b0d10;
+      --card: #151922;
+      --text: #e3e7ee;
+      --muted: #a8bfe2;
+      --brand: #4f7cff;
+      --border: #232a37;
+    }
+    * { box-sizing: border-box }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto;
+    }
+    a { color: var(--text); text-decoration: none }
+    .container { max-width: 1200px; margin: 0 auto; padding: 16px }
+    header { position: sticky; top: 0; background: rgba(11,13,16,.85); backdrop-filter: blur(6px); z-index: 10 }
+    .nav { display: flex; gap: 12px; align-items: center; padding: 12px 16px }
+    .brand { font-weight: 800 }
+    .nav input[type=search] {
+      flex: 1; background: #0e1218; border: 1px solid var(--border);
+      color: #fff; padding: 10px 12px; border-radius: 12px;
+    }
+    .menu a, .menu button {
+      padding: 8px 10px; color: var(--muted); background: none;
+      border: none; cursor: pointer;
+    }
+    .btn {
+      background: var(--brand); color: #fff;
+      padding: 10px 14px; border-radius: 12px;
+      border: none; cursor: pointer;
+    }
+    .btn.secondary { background: #2a3446 }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px; margin-top: 20px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: .2s;
+    }
+    .card:hover { transform: scale(1.02) }
+    .card.p { padding: 12px; border: 0 }
+    .card img { width: 100%; height: 200px; object-fit: cover; display: block }
+    footer { color: var(--muted); text-align: center; padding: 30px 0 }
+    .video-container {
+      position: relative; width: 100%; padding-bottom: 56.25%;
+      height: 0; overflow: hidden; background: black; border-radius: 22px;
+    }
+    .video-container iframe {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;
+    }
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px; margin-top: 10px;
+    }
+    select, input[type="number"], input[type="text"] {
+      background: #0e1218; border: 1px solid var(--border);
+      color: #fff; padding: 10px 12px; border-radius: 12px; width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -36,7 +82,9 @@
       <a href="filmy.html">Filmy</a>
       <a href="seriale.html" style="color:#fff;">Seriale</a>
       <a href="index.html#me">Moja biblioteka</a>
-      <form onsubmit="event.preventDefault(); Auth.logout();"><button class="btn secondary">Wyloguj</button></form>
+      <form onsubmit="event.preventDefault(); Auth.logout();">
+        <button class="btn secondary">Wyloguj</button>
+      </form>
     </nav>
   </div>
 </header>
@@ -51,39 +99,58 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const Auth = {
-  async logout(){await db.auth.signOut();location.reload();},
-  async user(){const {data}=await db.auth.getUser();return data.user||null;}
+  async logout() { await db.auth.signOut(); location.reload(); },
+  async user() { const { data } = await db.auth.getUser(); return data.user || null; }
 };
 
-async function getCategories(){const {data}=await db.from("categories").select("*").order("name");return data||[];}
-async function getSeries(filters={}){
-  let q=db.from("series").select("*, categories(name)").order("created_at",{ascending:false});
-  if(filters.category_id)q=q.eq("category_id",filters.category_id);
-  if(filters.year)q=q.eq("year",filters.year);
-  if(filters.search)q=q.ilike("title",`%${filters.search}%`);
-  return (await q).data||[];
+async function getCategories() {
+  const { data } = await db.from("categories").select("*").order("name");
+  return data || [];
 }
-async function getSeriesById(id){const {data}=await db.from("series").select("*").eq("id",id).single();return data;}
-async function getEpisodes(seriesId){const {data}=await db.from("episodes").select("*").eq("series_id",seriesId).order("season").order("episode");return data||[];}
+async function getSeries(filters = {}) {
+  let q = db.from("series").select("*, categories(name)").order("created_at", { ascending: false });
+  if (filters.category_id) q = q.eq("category_id", filters.category_id);
+  if (filters.year) q = q.eq("year", filters.year);
+  if (filters.search) q = q.ilike("title", `%${filters.search}%`);
+  return (await q).data || [];
+}
+async function getSeriesById(id) {
+  const { data } = await db.from("series").select("*").eq("id", id).single();
+  return data;
+}
+async function getEpisodes(seriesId) {
+  const { data } = await db.from("episodes").select("*").eq("series_id", seriesId).order("season").order("episode");
+  return data || [];
+}
 
-const UI={
-  el:()=>document.getElementById("app"),
-  async init(){
-    db.auth.onAuthStateChange((_,session)=>{if(session?.user)UI.show("list");else UI.show("login");});
-    const {data:{session}}=await db.auth.getSession();
-    if(session?.user)UI.show("list");else UI.show("login");
+const UI = {
+  el: () => document.getElementById("app"),
+
+  async init() {
+    db.auth.onAuthStateChange((_, session) => {
+      if (session?.user) UI.show("list");
+      else UI.show("login");
+    });
+
+    const { data: { session } } = await db.auth.getSession();
+    if (session?.user) UI.show("list");
+    else UI.show("login");
   },
-  async show(view,params={}){
-    const app=UI.el();
 
-    if(view==="login"){
-      app.innerHTML=`<h2>Musisz być zalogowany, aby oglądać seriale</h2><button class="btn" onclick="window.location='index.html'">Zaloguj się</button>`;
+  async show(view, params = {}) {
+    const app = UI.el();
+
+    if (view === "login") {
+      app.innerHTML = `
+        <h2>Musisz być zalogowany, aby oglądać seriale</h2>
+        <button class="btn" onclick="window.location='index.html'">Zaloguj się</button>
+      `;
     }
 
-    if(view==="list"){
-      const cats=await getCategories();
-      const series=await getSeries();
-      app.innerHTML=`
+    if (view === "list") {
+      const cats = await getCategories();
+      const series = await getSeries();
+      app.innerHTML = `
         <h2>Filtruj</h2>
         <div class="filters">
           <select id="cat"><option value="">Kategoria</option>${cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join("")}</select>
@@ -96,41 +163,70 @@ const UI={
       `;
     }
 
-    if(view==="detail"){
-      const s=await getSeriesById(params.id);
-      const eps=await getEpisodes(params.id);
-      const seasons={};
-      for(const e of eps){if(!seasons[e.season])seasons[e.season]=[];seasons[e.season].push(e);}
-      app.innerHTML=`
+    if (view === "detail") {
+      const s = await getSeriesById(params.id);
+      const eps = await getEpisodes(params.id);
+      const seasons = {};
+      for (const e of eps) {
+        if (!seasons[e.season]) seasons[e.season] = [];
+        seasons[e.season].push(e);
+      }
+      app.innerHTML = `
         <a href="#" onclick="UI.show('list')" class="small">← Wróć</a>
         <h1>${s.title}</h1>
         <img src="${s.thumb}" style="width:100%;max-height:300px;object-fit:cover;border-radius:12px"/>
-        <p>${s.description||""}</p>
-        ${Object.entries(seasons).map(([season,eps])=>`
+        <p>${s.description || ""}</p>
+        ${Object.entries(seasons).map(([season, eps]) => `
           <h3>Sezon ${season}</h3>
-          <div class="grid">${eps.map(e=>UI.epCard(e)).join("")}</div>
+          <div class="grid">${eps.map(e => UI.epCard(e)).join("")}</div>
         `).join("")}
       `;
     }
 
-    if(view==="episode"){
-      const {data:e}=await db.from("episodes").select("*").eq("id",params.id).single();
-      app.innerHTML=`
+    if (view === "episode") {
+      const { data: e } = await db.from("episodes").select("*").eq("id", params.id).single();
+      app.innerHTML = `
         <a href="#" onclick="UI.show('detail',{id:${e.series_id}})" class="small">← Wróć</a>
         <h1>${e.title}</h1>
         <div class="video-container"><iframe src="${e.iframe}" allowfullscreen></iframe></div>
-        <p>${e.description||""}</p>
+        <p>${e.description || ""}</p>
       `;
     }
   },
-  card(s){return`<div class="card"><a href="#" onclick="UI.show('detail',{id:${s.id}})"><img src="${s.thumb}" alt="${s.title}"></a><div class="card p"><strong>${s.title}</strong><div class="small">${s.year||""}</div></div></div>`;},
-  epCard(e){return`<div class="card"><a href="#" onclick="UI.show('episode',{id:${e.id}})"><img src="${e.thumb}" alt="${e.title}"></a><div class="card p"><strong>${e.title}</strong></div></div>`;},
-  async apply(){
-    const filters={category_id:cat.value||null,year:year.value||null,search:search.value||null};
-    const s=await getSeries(filters);
-    document.getElementById("list").innerHTML=s.map(a=>UI.card(a)).join("");
+
+  card(s) {
+    return `
+      <div class="card">
+        <a href="#" onclick="UI.show('detail',{id:${s.id}})">
+          <img src="${s.thumb}" alt="${s.title}">
+        </a>
+        <div class="card p"><strong>${s.title}</strong><div class="small">${s.year || ""}</div></div>
+      </div>
+    `;
+  },
+
+  epCard(e) {
+    return `
+      <div class="card">
+        <a href="#" onclick="UI.show('episode',{id:${e.id}})">
+          <img src="${e.thumb}" alt="${e.title}">
+        </a>
+        <div class="card p"><strong>${e.title}</strong></div>
+      </div>
+    `;
+  },
+
+  async apply() {
+    const filters = {
+      category_id: document.getElementById("cat").value || null,
+      year: document.getElementById("year").value || null,
+      search: document.getElementById("search").value || null
+    };
+    const s = await getSeries(filters);
+    document.getElementById("list").innerHTML = s.map(a => UI.card(a)).join("");
   }
 };
+
 UI.init();
 </script>
 </body>
