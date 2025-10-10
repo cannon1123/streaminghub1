@@ -350,30 +350,22 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // --- Supabase (używa Twojego URL i KEY podanego w oryginale) ---
+  // Supabase (oryginalne dane)
   const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // --- helpers ---
-  function debounce(fn, wait = 350) {
-    let t;
-    return (...args) => {
-      clearTimeout(t);
-      t = setTimeout(() => fn(...args), wait);
-    };
-  }
-
+  // Pobieranie kategorii
   async function getCategories() {
     const { data, error } = await db.from("categories").select("*").order("name");
     if (error) { console.error("getCategories error:", error); return []; }
     return data || [];
   }
 
+  // Pobieranie serii z filtrami (numeric-safe)
   async function getSeries(filters = {}) {
     let q = db.from("series").select("*");
 
-    // numeric-safe filtering
     if (filters.category_id) {
       const cid = Number(filters.category_id);
       if (!Number.isNaN(cid)) q = q.eq("category_id", cid);
@@ -392,11 +384,9 @@
     }
 
     if (filters.search) {
-      // ilike for case-insensitive partial match
       q = q.ilike("title", `%${filters.search}%`);
     }
 
-    // sorting (only one order call)
     if (filters.sort === "oldest") {
       q = q.order("year", { ascending: true });
     } else if (filters.sort === "az") {
@@ -404,7 +394,7 @@
     } else if (filters.sort === "za") {
       q = q.order("title", { ascending: false });
     } else {
-      q = q.order("created_at", { ascending: false }); // default newest
+      q = q.order("created_at", { ascending: false });
     }
 
     const { data, error } = await q;
@@ -412,17 +402,15 @@
     return data || [];
   }
 
-  // --- UI ---
+  // UI
   const UI = {
-    el: () => document.getElementById("app"),
-
     async init() {
       // auth UI
       const { data: { session } } = await db.auth.getSession();
       this.updateAuthUI(session?.user);
       db.auth.onAuthStateChange((_, s) => this.updateAuthUI(s?.user));
 
-      // global search enter
+      // global search: Enter ustawia pole i uruchamia search (w headerze)
       document.getElementById("globalSearch").addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
           document.getElementById("search").value = e.target.value;
@@ -430,21 +418,10 @@
         }
       });
 
-      // initial render & listeners
+      // initial render
       await this.refreshAll();
 
-      // attach change listeners to auto-apply filters
-      const elCat = document.getElementById("cat");
-      const elYear = document.getElementById("year");
-      const elMin = document.getElementById("minLength");
-      const elSort = document.getElementById("sort");
-      const elSearch = document.getElementById("search");
-
-      if (elCat) elCat.addEventListener("change", () => UI.apply());
-      if (elYear) elYear.addEventListener("change", () => UI.apply());
-      if (elMin) elMin.addEventListener("change", () => UI.apply());
-      if (elSort) elSort.addEventListener("change", () => UI.apply());
-      if (elSearch) elSearch.addEventListener("input", debounce(() => UI.apply(), 350));
+      // WAŻNE: nie dodajemy change/input listenerów do pól filtrów — filtrowanie tylko po kliknięciu "Szukaj"
     },
 
     updateAuthUI(user) {
@@ -462,7 +439,7 @@
 
     async refreshAll() {
       const cats = await getCategories();
-      const allSeries = await getSeries({ sort: "newest" }); // full list (newest)
+      const allSeries = await getSeries({ sort: "newest" });
       this.populateCategorySelect(cats);
       this.renderCategoryRow(cats, allSeries);
       this.renderList(allSeries);
@@ -479,13 +456,17 @@
       if (!row) return;
       row.innerHTML = "";
 
-      // "All" quick card
+      // "Wszystkie" karta: ustawia puste filtry (nie uruchamia search automatycznie)
       const allCard = document.createElement("div");
       allCard.className = "cat-card";
       allCard.style.minWidth = "120px";
       allCard.innerHTML = `<div style="width:56px;height:56px;border-radius:8px;background:linear-gradient(90deg,rgba(79,124,255,0.95),rgba(79,124,255,0.25));"></div>
         <div class="cat-info"><div class="cat-name">Wszystkie</div><div class="cat-sub">pokaż wszystko</div></div>`;
-      allCard.onclick = () => { this.clearFilters(); this.apply(); window.scrollTo({ top: document.querySelector('.filters').offsetTop - 20, behavior: 'smooth' }); };
+      allCard.onclick = () => {
+        this.clearFilters();
+        // przewiń do panelu filtrów, ale NIE wywołuj apply automatycznie
+        window.scrollTo({ top: document.querySelector('.filters').offsetTop - 20, behavior: 'smooth' });
+      };
       row.appendChild(allCard);
 
       cats.forEach(cat => {
@@ -501,8 +482,9 @@
           </div>
         `;
         div.onclick = () => {
-          document.getElementById("cat").value = cat.id;
-          this.apply();
+          // tylko ustawiamy wartość selecta i przewijamy; nie wywołujemy apply automatycznie
+          const sel = document.getElementById("cat");
+          if (sel) sel.value = cat.id;
           window.scrollTo({ top: document.querySelector('.filters').offsetTop - 20, behavior: 'smooth' });
         };
         row.appendChild(div);
@@ -556,13 +538,11 @@
     }
   };
 
-  // --- Simple Auth helpers (used by UI.updateAuthUI) ---
   const Auth = {
     async logout() { await db.auth.signOut(); location.reload(); },
     async user() { const { data } = await db.auth.getUser(); return data.user || null; }
   };
 
-  // --- Init ---
   UI.init();
 </script>
 </body>
