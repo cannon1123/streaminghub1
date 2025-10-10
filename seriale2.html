@@ -7,8 +7,7 @@
   <style>
     :root {
       --bg: #0b0d10;
-      --surface: #151922;
-      --surface-light: #1c212d;
+      --card: #151922;
       --text: #e3e7ee;
       --muted: #a8bfe2;
       --brand: #4f7cff;
@@ -21,318 +20,260 @@
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto;
     }
 
+    a { color: var(--text); text-decoration: none; }
+
     header {
-      background: #0d1117;
       position: sticky;
       top: 0;
+      background: rgba(11, 13, 16, 0.85);
+      backdrop-filter: blur(6px);
       z-index: 10;
+      border-bottom: none;
     }
 
     .nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 20px;
       max-width: 1200px;
       margin: 0 auto;
-      gap: 16px;
+      padding: 12px 16px;
+      gap: 12px;
     }
 
     .brand {
-      font-weight: 800;
-      color: var(--text);
-      font-size: 1.1rem;
-      white-space: nowrap;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    .search {
+    input[type="search"] {
       flex: 1;
-      max-width: 400px;
-      background: var(--surface);
-      border: none;
+      background: #0e1218;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 10px 12px;
       border-radius: 12px;
-      padding: 8px 12px;
-      color: var(--text);
+      max-width: 300px;
     }
 
     .menu {
       display: flex;
-      gap: 14px;
       align-items: center;
+      gap: 16px;
     }
 
     .menu a {
       color: var(--muted);
-      text-decoration: none;
-      transition: color .2s;
+      font-size: 0.95rem;
+      transition: color 0.2s;
     }
 
-    .menu a:hover, .menu a.active {
-      color: var(--text);
-    }
+    .menu a:hover { color: #fff; }
 
     .btn {
       background: var(--brand);
       color: #fff;
-      border: none;
+      padding: 8px 14px;
       border-radius: 12px;
-      padding: 9px 14px;
-      font-weight: 500;
+      border: none;
       cursor: pointer;
-      transition: background .2s;
+      font-size: 0.9rem;
+      transition: background 0.2s;
     }
 
-    .btn:hover {
-      background: #3e68e5;
-    }
+    .btn:hover { background: #668cff; }
 
     .btn.secondary {
-      background: var(--surface);
+      background: #2a3446;
     }
 
-    main {
-      flex: 1;
-      width: 100%;
+    .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 32px 20px;
-    }
-
-    h2 {
-      font-size: 1.3rem;
-      margin-bottom: 16px;
-      font-weight: 600;
+      padding: 16px;
     }
 
     .filters {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 14px;
-      margin-bottom: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
     }
 
     select, input[type="number"], input[type="text"] {
-      background: var(--surface);
+      background: #0e1218;
       border: 1px solid var(--border);
-      color: var(--text);
+      color: #fff;
       padding: 10px 12px;
       border-radius: 12px;
       width: 100%;
-      font-size: 0.95rem;
-      transition: border .2s;
-    }
-
-    select:focus, input:focus {
-      border-color: var(--brand);
-      outline: none;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 16px;
-    }
-
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      overflow: hidden;
-      transition: transform .2s, border .2s;
-    }
-
-    .card:hover {
-      transform: scale(1.02);
-      border-color: var(--brand);
-    }
-
-    .card img {
-      width: 100%;
-      height: 240px;
-      object-fit: cover;
-      display: block;
-    }
-
-    .card .info {
-      padding: 12px;
-    }
-
-    .card .info strong {
-      display: block;
-      margin-bottom: 4px;
     }
 
     footer {
       color: var(--muted);
       text-align: center;
-      padding: 28px 0;
+      padding: 30px 0;
       font-size: 0.9rem;
-      margin-top: auto;
     }
 
-    /* RESPONSYWNOŚĆ */
-    @media (max-width: 600px) {
+    @media (max-width: 700px) {
       .nav {
-        flex-wrap: wrap;
-        justify-content: center;
+        flex-direction: column;
+        align-items: flex-start;
       }
-      .menu {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 10px;
-      }
-      .filters {
-        grid-template-columns: 1fr;
-      }
-      .search {
-        max-width: 100%;
-        order: 3;
+      input[type="search"] {
+        width: 100%;
+        max-width: none;
       }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="nav">
-      <a class="brand" href="index.html">🎬 StreamingHub</a>
-      <input class="search" type="search" placeholder="Szukaj filmów...">
-      <nav class="menu" id="menu">
-        <a href="filmy.html">Filmy</a>
-        <a href="seriale.html" class="active">Seriale</a>
-        <a href="index.html#me">Moja biblioteka</a>
-      </nav>
-    </div>
-  </header>
 
-  <main id="app">
-    <p>Ładowanie...</p>
-  </main>
+<header>
+  <div class="nav">
+    <a class="brand" href="index.html">🎬 <span>StreamingHub</span></a>
+    <input type="search" placeholder="Szukaj seriali..." />
+    <nav class="menu" id="menu">
+      <a href="filmy.html">Filmy</a>
+      <a href="seriale.html" style="color:#fff;">Seriale</a>
+      <a href="index.html#me">Moja biblioteka</a>
+      <div id="authBtns">
+        <a href="index.html" class="btn secondary">Zaloguj się</a>
+        <a href="register.html" class="btn">Zarejestruj</a>
+      </div>
+    </nav>
+  </div>
+</header>
 
-  <footer>
-    © <script>document.write(new Date().getFullYear())</script> StreamingHub • free video
-  </footer>
+<main class="container" id="app"><p>Ładowanie...</p></main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-  const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
-  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<footer>
+  © <script>document.write(new Date().getFullYear())</script> StreamingHub • free video
+</footer>
 
-  const Auth = {
-    async logout() { await db.auth.signOut(); location.reload(); },
-    async user() { const { data } = await db.auth.getUser(); return data.user || null; }
-  };
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  async function getCategories() {
-    const { data } = await db.from("categories").select("*").order("name");
-    return data || [];
-  }
+const Auth = {
+  async logout() { await db.auth.signOut(); location.reload(); },
+  async user() { const { data } = await db.auth.getUser(); return data.user || null; }
+};
 
-  async function getSeries(filters = {}) {
-    let q = db.from("series").select("*, categories(name)").order("created_at", { ascending: false });
-    if (filters.category_id) q = q.eq("category_id", filters.category_id);
-    if (filters.year) q = q.eq("year", filters.year);
-    if (filters.search) q = q.ilike("title", `%${filters.search}%`);
-    return (await q).data || [];
-  }
+async function getCategories() {
+  const { data } = await db.from("categories").select("*").order("name");
+  return data || [];
+}
 
-  const UI = {
-    el: () => document.getElementById("app"),
+async function getSeries(filters = {}) {
+  let q = db.from("series").select("*").order("created_at", { ascending: false });
+  if (filters.category_id) q = q.eq("category_id", filters.category_id);
+  if (filters.year) q = q.eq("year", filters.year);
+  if (filters.minLength) q = q.gte("duration", filters.minLength);
+  if (filters.search) q = q.ilike("title", `%${filters.search}%`);
+  if (filters.sort === "oldest") q = q.order("year", { ascending: true });
+  else if (filters.sort === "az") q = q.order("title", { ascending: true });
+  else if (filters.sort === "za") q = q.order("title", { ascending: false });
+  return (await q).data || [];
+}
 
-    async init() {
-      const user = await Auth.user();
-      UI.updateMenu(user);
+const UI = {
+  el: () => document.getElementById("app"),
 
-      db.auth.onAuthStateChange((_, session) => {
-        UI.updateMenu(session?.user);
-        if (session?.user) UI.show("list");
-        else UI.show("login");
-      });
+  async init() {
+    const { data: { session } } = await db.auth.getSession();
+    UI.updateAuthUI(session?.user);
+    db.auth.onAuthStateChange((_, session) => UI.updateAuthUI(session?.user));
 
-      const { data: { session } } = await db.auth.getSession();
-      if (session?.user) UI.show("list");
-      else UI.show("login");
-    },
+    if (session?.user) UI.show("list");
+    else UI.show("login");
+  },
 
-    updateMenu(user) {
-      const menu = document.getElementById("menu");
-      const existingAuth = menu.querySelector(".auth-buttons");
-      if (existingAuth) existingAuth.remove();
+  updateAuthUI(user) {
+    const authBtns = document.getElementById("authBtns");
+    if (!authBtns) return;
+    if (user) {
+      authBtns.innerHTML = `<button class="btn secondary" onclick="Auth.logout()">Wyloguj</button>`;
+    } else {
+      authBtns.innerHTML = `
+        <a href="index.html" class="btn secondary">Zaloguj się</a>
+        <a href="register.html" class="btn">Zarejestruj</a>
+      `;
+    }
+  },
 
-      const authSection = document.createElement("div");
-      authSection.className = "auth-buttons";
+  async show(view) {
+    const app = UI.el();
 
-      if (user) {
-        authSection.innerHTML = `
-          <button class="btn secondary" onclick="Auth.logout()">Wyloguj</button>
-        `;
-      } else {
-        authSection.innerHTML = `
-          <a href="index.html" class="btn secondary">Zaloguj się</a>
-          <a href="index.html" class="btn">Zarejestruj się</a>
-        `;
-      }
-      menu.appendChild(authSection);
-    },
+    if (view === "login") {
+      app.innerHTML = `
+        <h2>Musisz być zalogowany, aby oglądać seriale</h2>
+        <button class="btn" onclick="window.location='index.html'">Zaloguj się</button>
+      `;
+    }
 
-    async show(view) {
-      const app = UI.el();
+    if (view === "list") {
+      const cats = await getCategories();
+      const series = await getSeries();
+      app.innerHTML = `
+        <h2>Filtruj</h2>
+        <div class="filters">
+          <select id="cat">
+            <option value="">Kategoria</option>
+            ${cats.map(c => `<option value="${c.id}">${c.name}</option>`).join("")}
+          </select>
 
-      if (view === "login") {
-        app.innerHTML = `
-          <h2>Musisz być zalogowany, aby oglądać seriale</h2>
-          <button class="btn" onclick="window.location='index.html'">Zaloguj się</button>
-        `;
-      }
+          <input type="number" id="year" placeholder="Rok">
+          <input type="number" id="minLength" placeholder="Min. długość (min)">
+          <select id="sort">
+            <option value="newest">Najnowsze</option>
+            <option value="oldest">Najstarsze</option>
+            <option value="az">A–Z</option>
+            <option value="za">Z–A</option>
+          </select>
 
-      if (view === "list") {
-        const cats = await getCategories();
-        const series = await getSeries();
-        app.innerHTML = `
-          <h2>Filtruj</h2>
-          <div class="filters">
-            <select id="cat"><option value="">Kategoria</option>${cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join("")}</select>
-            <input type="number" id="year" placeholder="Rok">
-            <input type="text" id="search" placeholder="Szukaj tytułu...">
-            <button class="btn" onclick="UI.apply()">Szukaj</button>
-          </div>
-          <div class="grid" id="list">${series.map(s=>UI.card(s)).join("")}</div>
-        `;
-      }
-    },
+          <input type="text" id="search" placeholder="Szukaj tytułu...">
+          <button class="btn" onclick="UI.apply()">Szukaj</button>
+        </div>
 
-    card(s) {
-      return `
-        <div class="card">
-          <a href="#" onclick="UI.show('detail',{id:${s.id}})">
-            <img src="${s.thumb}" alt="${s.title}">
-          </a>
-          <div class="info">
-            <strong>${s.title}</strong>
-            <span>${s.year || ""}</span>
-          </div>
+        <div class="grid mt-4" id="list">
+          ${series.map(s => UI.card(s)).join("")}
         </div>
       `;
-    },
-
-    async apply() {
-      const filters = {
-        category_id: document.getElementById("cat").value || null,
-        year: document.getElementById("year").value || null,
-        search: document.getElementById("search").value || null
-      };
-      const s = await getSeries(filters);
-      document.getElementById("list").innerHTML = s.map(a => UI.card(a)).join("");
     }
-  };
+  },
 
-  UI.init();
-  </script>
+  card(s) {
+    return `
+      <div class="card">
+        <img src="${s.thumb}" alt="${s.title}" style="width:100%;height:200px;object-fit:cover;border-radius:12px">
+        <div class="card p"><strong>${s.title}</strong><div class="small">${s.year || ""}</div></div>
+      </div>
+    `;
+  },
+
+  async apply() {
+    const filters = {
+      category_id: document.getElementById("cat").value || null,
+      year: document.getElementById("year").value || null,
+      minLength: document.getElementById("minLength").value || null,
+      sort: document.getElementById("sort").value || "newest",
+      search: document.getElementById("search").value || null
+    };
+    const s = await getSeries(filters);
+    document.getElementById("list").innerHTML = s.map(a => UI.card(a)).join("");
+  }
+};
+
+UI.init();
+</script>
 </body>
 </html>
