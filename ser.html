@@ -12,7 +12,6 @@
       --text: #e3e7ee;
       --brand: #4f7cff;
       --border: #232a37;
-      --accent-weak: rgba(79,124,255,0.12);
     }
 
     * { box-sizing: border-box; }
@@ -21,9 +20,7 @@
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto;
       line-height: 1.3;
     }
 
@@ -35,7 +32,6 @@
       background: rgba(11, 13, 16, 0.85);
       backdrop-filter: blur(6px);
       z-index: 10;
-      border-bottom: 1px solid rgba(255,255,255,0.02);
     }
 
     .nav {
@@ -54,7 +50,6 @@
       align-items: center;
       gap: 8px;
       color: var(--text);
-      font-size: 1.1rem;
     }
 
     input[type="search"] {
@@ -89,14 +84,12 @@
       border: none;
       cursor: pointer;
       font-size: 0.9rem;
-      transition: background 0.18s, transform 0.06s;
+      transition: background 0.2s;
     }
 
-    .btn:hover { background: #668cff; transform: translateY(-1px); }
+    .btn:hover { background: #668cff; }
 
-    .btn.secondary {
-      background: #2a3446;
-    }
+    .btn.secondary { background: #2a3446; }
 
     .container {
       max-width: 1200px;
@@ -104,54 +97,12 @@
       padding: 16px;
     }
 
-    h1, h2 {
-      margin: 0 0 10px 0;
-    }
-
-    /* Category chips / previews */
-    .cat-row {
-      display: flex;
-      gap: 12px;
-      overflow-x: auto;
-      padding-bottom: 10px;
-      margin-bottom: 16px;
-    }
-    .cat-card {
-      min-width: 140px;
-      max-width: 160px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border-radius: 12px;
-      padding: 8px;
-      border: 1px solid rgba(255,255,255,0.02);
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      cursor: pointer;
-      transition: transform .12s, box-shadow .12s, border-color .12s;
-    }
-    .cat-card:hover { transform: translateY(-6px); box-shadow: 0 8px 30px rgba(0,0,0,0.6); border-color: rgba(79,124,255,0.28); }
-    .cat-thumb {
-      width: 56px;
-      height: 56px;
-      border-radius: 8px;
-      background: #0d0f12;
-      object-fit: cover;
-      flex-shrink: 0;
-    }
-    .cat-info { font-size: 0.88rem; color: var(--text); }
-    .cat-name { font-weight: 700; }
-    .cat-sub { font-size: 0.78rem; color: var(--muted); }
-
-    /* Filters panel */
+    /* FILTRY */
     .filters {
       display: flex;
       flex-wrap: wrap;
-      gap: 14px;
-      background: var(--card);
-      padding: 14px 18px;
-      border-radius: 14px;
-      box-shadow: 0 0 18px rgba(0,0,0,0.35);
-      align-items: flex-end;
+      gap: 12px;
+      margin-top: 12px;
     }
 
     .filters .field {
@@ -164,7 +115,6 @@
       font-size: 0.82rem;
       color: var(--muted);
       margin-bottom: 6px;
-      display: block;
     }
 
     select, input[type="number"], input[type="text"] {
@@ -174,72 +124,66 @@
       padding: 10px 12px;
       border-radius: 10px;
       width: 100%;
-      transition: border-color .14s, box-shadow .14s;
+      transition: border-color 0.2s;
     }
 
     select:focus, input:focus {
       outline: none;
       border-color: var(--brand);
-      box-shadow: 0 4px 18px var(--accent-weak);
-    }
-
-    .filters .big {
-      flex: 2 1 320px;
     }
 
     .filters .actions {
-      display:flex;
-      gap:8px;
-      align-items:center;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
     }
 
-    .filters .clear {
-      background: transparent;
-      color: var(--muted);
-      border: 1px solid rgba(255,255,255,0.03);
-      padding: 9px 12px;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-
-    /* Card grid */
+    /* GRID */
     .grid {
-      margin-top: 18px;
+      margin-top: 20px;
       display: grid;
       gap: 14px;
       grid-template-columns: repeat(5, 1fr);
     }
 
     .card {
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border: 1px solid rgba(255,255,255,0.02);
+      background: var(--card);
       border-radius: 12px;
       overflow: hidden;
-      transition: transform .12s, box-shadow .12s;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
-    .card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.6); border-color: rgba(79,124,255,0.18); }
+
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
 
     .card img {
-      width:100%;
-      height: 170px;
+      width: 100%;
+      height: 180px;
       object-fit: cover;
-      display:block;
-      background: #0c0d0f;
+      display: block;
     }
 
     .card .p {
       padding: 10px 12px;
     }
 
-    .card .title { font-weight: 700; font-size: 0.98rem; }
-    .card .meta { font-size: 0.82rem; color: var(--muted); margin-top: 6px; }
+    .card .title {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .card .meta {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
 
     .no-results {
-      padding: 30px;
       text-align: center;
       color: var(--muted);
-      background: rgba(255,255,255,0.01);
-      border-radius: 10px;
+      margin-top: 30px;
     }
 
     footer {
@@ -249,28 +193,16 @@
       font-size: 0.9rem;
     }
 
-    /* Responsive */
-    @media (max-width: 1200px) {
+    @media (max-width: 1100px) {
       .grid { grid-template-columns: repeat(4, 1fr); }
     }
-    @media (max-width: 980px) {
+    @media (max-width: 900px) {
       .grid { grid-template-columns: repeat(3, 1fr); }
-      .cat-card { min-width: 130px; max-width: 150px; }
     }
-    @media (max-width: 700px) {
-      .nav {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      input[type="search"] {
-        width: 100%;
-        max-width: none;
-      }
-      .filters { padding: 12px; gap:10px; }
+    @media (max-width: 600px) {
       .grid { grid-template-columns: repeat(2, 1fr); }
-      .cat-row { padding-bottom: 8px; }
     }
-    @media (max-width: 420px) {
+    @media (max-width: 400px) {
       .grid { grid-template-columns: repeat(1, 1fr); }
     }
   </style>
@@ -293,14 +225,10 @@
   </div>
 </header>
 
-<main class="container" id="app">
+<main class="container">
   <h2>Filtruj</h2>
 
-  <!-- category row (dynamic) -->
-  <div id="categoryRow" class="cat-row" aria-label="Kategorie"></div>
-
-  <!-- filters -->
-  <div class="filters" role="region" aria-label="Panel filtrów">
+  <div class="filters">
     <div class="field">
       <label for="cat">Kategoria</label>
       <select id="cat">
@@ -328,222 +256,91 @@
       </select>
     </div>
 
-    <div class="field big">
-      <label for="search">Szukaj (tytuł)</label>
-      <input type="text" id="search" placeholder="Tytuł...">
+    <div class="field">
+      <label for="search">Szukaj tytułu</label>
+      <input type="text" id="search" placeholder="np. The Boys">
     </div>
 
     <div class="actions">
       <button class="btn" onclick="UI.apply()">Szukaj</button>
-      <button class="clear" onclick="UI.clearFilters()">Wyczyść</button>
+      <button class="btn secondary" onclick="UI.clearFilters()">Wyczyść</button>
     </div>
   </div>
 
-  <div id="listContainer">
-    <div class="grid mt-4" id="list"></div>
-  </div>
+  <div class="grid" id="list"></div>
 </main>
 
 <footer>
-  © <script>document.write(new Date().getFullYear())</script> StreamingHub • free video
+  © <script>document.write(new Date().getFullYear())</script> StreamingHub
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // Supabase (oryginalne dane)
-  const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
-  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // Pobieranie kategorii
-  async function getCategories() {
-    const { data, error } = await db.from("categories").select("*").order("name");
-    if (error) { console.error("getCategories error:", error); return []; }
-    return data || [];
-  }
+async function getCategories() {
+  const { data } = await db.from("categories").select("*").order("name");
+  return data || [];
+}
 
-  // Pobieranie serii z filtrami (numeric-safe)
-  async function getSeries(filters = {}) {
-    let q = db.from("series").select("*");
+async function getSeries(filters = {}) {
+  let q = db.from("series").select("*").order("created_at", { ascending: false });
+  if (filters.category_id) q = q.eq("category_id", filters.category_id);
+  if (filters.year) q = q.eq("year", filters.year);
+  if (filters.minLength) q = q.gte("duration", filters.minLength);
+  if (filters.search) q = q.ilike("title", `%${filters.search}%`);
+  if (filters.sort === "oldest") q = q.order("year", { ascending: true });
+  else if (filters.sort === "az") q = q.order("title", { ascending: true });
+  else if (filters.sort === "za") q = q.order("title", { ascending: false });
+  return (await q).data || [];
+}
 
-    if (filters.category_id) {
-      const cid = Number(filters.category_id);
-      if (!Number.isNaN(cid)) q = q.eq("category_id", cid);
-      else q = q.eq("category_id", filters.category_id);
+const UI = {
+  async init() {
+    const cats = await getCategories();
+    document.getElementById("cat").innerHTML += cats.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+    const series = await getSeries();
+    this.render(series);
+  },
+
+  async apply() {
+    const filters = {
+      category_id: document.getElementById("cat").value || null,
+      year: document.getElementById("year").value || null,
+      minLength: document.getElementById("minLength").value || null,
+      sort: document.getElementById("sort").value || "newest",
+      search: document.getElementById("search").value || null
+    };
+    const s = await getSeries(filters);
+    this.render(s);
+  },
+
+  clearFilters() {
+    ["cat","year","minLength","search","sort"].forEach(id => document.getElementById(id).value = id === "sort" ? "newest" : "");
+    this.apply();
+  },
+
+  render(series) {
+    const list = document.getElementById("list");
+    if (!series.length) {
+      list.innerHTML = `<div class="no-results">Brak wyników</div>`;
+      return;
     }
-
-    if (filters.year) {
-      const y = Number(filters.year);
-      if (!Number.isNaN(y)) q = q.eq("year", y);
-      else q = q.eq("year", filters.year);
-    }
-
-    if (filters.minLength) {
-      const ml = Number(filters.minLength);
-      if (!Number.isNaN(ml)) q = q.gte("duration", ml);
-    }
-
-    if (filters.search) {
-      q = q.ilike("title", `%${filters.search}%`);
-    }
-
-    if (filters.sort === "oldest") {
-      q = q.order("year", { ascending: true });
-    } else if (filters.sort === "az") {
-      q = q.order("title", { ascending: true });
-    } else if (filters.sort === "za") {
-      q = q.order("title", { ascending: false });
-    } else {
-      q = q.order("created_at", { ascending: false });
-    }
-
-    const { data, error } = await q;
-    if (error) { console.error("getSeries error:", error); return []; }
-    return data || [];
-  }
-
-  // UI
-  const UI = {
-    async init() {
-      // auth UI
-      const { data: { session } } = await db.auth.getSession();
-      this.updateAuthUI(session?.user);
-      db.auth.onAuthStateChange((_, s) => this.updateAuthUI(s?.user));
-
-      // global search: Enter ustawia pole i uruchamia search (w headerze)
-      document.getElementById("globalSearch").addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-          document.getElementById("search").value = e.target.value;
-          UI.apply();
-        }
-      });
-
-      // initial render
-      await this.refreshAll();
-
-      // WAŻNE: nie dodajemy change/input listenerów do pól filtrów — filtrowanie tylko po kliknięciu "Szukaj"
-    },
-
-    updateAuthUI(user) {
-      const authBtns = document.getElementById("authBtns");
-      if (!authBtns) return;
-      if (user) {
-        authBtns.innerHTML = `<button class="btn secondary" onclick="Auth.logout()">Wyloguj</button>`;
-      } else {
-        authBtns.innerHTML = `
-          <a href="index.html" class="btn secondary">Zaloguj się</a>
-          <a href="register.html" class="btn">Zarejestruj</a>
-        `;
-      }
-    },
-
-    async refreshAll() {
-      const cats = await getCategories();
-      const allSeries = await getSeries({ sort: "newest" });
-      this.populateCategorySelect(cats);
-      this.renderCategoryRow(cats, allSeries);
-      this.renderList(allSeries);
-    },
-
-    populateCategorySelect(cats) {
-      const sel = document.getElementById("cat");
-      if (!sel) return;
-      sel.innerHTML = `<option value="">—</option>` + cats.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
-    },
-
-    renderCategoryRow(cats, allSeries) {
-      const row = document.getElementById("categoryRow");
-      if (!row) return;
-      row.innerHTML = "";
-
-      // "Wszystkie" karta: ustawia puste filtry (nie uruchamia search automatycznie)
-      const allCard = document.createElement("div");
-      allCard.className = "cat-card";
-      allCard.style.minWidth = "120px";
-      allCard.innerHTML = `<div style="width:56px;height:56px;border-radius:8px;background:linear-gradient(90deg,rgba(79,124,255,0.95),rgba(79,124,255,0.25));"></div>
-        <div class="cat-info"><div class="cat-name">Wszystkie</div><div class="cat-sub">pokaż wszystko</div></div>`;
-      allCard.onclick = () => {
-        this.clearFilters();
-        // przewiń do panelu filtrów, ale NIE wywołuj apply automatycznie
-        window.scrollTo({ top: document.querySelector('.filters').offsetTop - 20, behavior: 'smooth' });
-      };
-      row.appendChild(allCard);
-
-      cats.forEach(cat => {
-        const sample = allSeries.find(s => String(s.category_id) === String(cat.id));
-        const thumb = sample?.thumb || "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='170'%3E%3Crect width='100%25' height='100%25' fill='%23101114'/%3E%3Ctext x='50%25' y='50%25' fill='%23a1a1a1' font-size='16' text-anchor='middle' dominant-baseline='middle'%3EBrak miniatury%3C/text%3E%3C/svg%3E";
-        const div = document.createElement("div");
-        div.className = "cat-card";
-        div.innerHTML = `
-          <img class="cat-thumb" src="${thumb}" alt="${cat.name}">
-          <div class="cat-info">
-            <div class="cat-name">${cat.name}</div>
-            <div class="cat-sub">${sample ? (sample.year || '') : 'brak'}</div>
-          </div>
-        `;
-        div.onclick = () => {
-          // tylko ustawiamy wartość selecta i przewijamy; nie wywołujemy apply automatycznie
-          const sel = document.getElementById("cat");
-          if (sel) sel.value = cat.id;
-          window.scrollTo({ top: document.querySelector('.filters').offsetTop - 20, behavior: 'smooth' });
-        };
-        row.appendChild(div);
-      });
-    },
-
-    renderList(series) {
-      const list = document.getElementById("list");
-      if (!list) return;
-      if (!series || series.length === 0) {
-        list.innerHTML = `<div class="no-results">Brak wyników. Spróbuj zmienić filtry.</div>`;
-        return;
-      }
-      list.innerHTML = series.map(s => this.card(s)).join("");
-    },
-
-    card(s) {
-      const thumb = s.thumb || "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect width='100%25' height='100%25' fill='%23101114'/%3E%3Ctext x='50%25' y='50%25' fill='%23a1a1a1' font-size='20' text-anchor='middle' dominant-baseline='middle'%3ENo+Image%3C/text%3E%3C/svg%3E";
-      const year = s.year ? `<div class="meta">${s.year}</div>` : `<div class="meta">${s.created_at ? new Date(s.created_at).getFullYear() : ''}</div>`;
-      const title = s.title || 'Bez tytułu';
-      return `
-        <div class="card" onclick="window.location='movie.html?id=${s.id}'" role="button" title="${title}">
-          <img src="${thumb}" alt="${title}">
-          <div class="p">
-            <div class="title">${title}</div>
-            ${year}
-          </div>
+    list.innerHTML = series.map(s => `
+      <div class="card">
+        <img src="${s.thumb}" alt="${s.title}">
+        <div class="p">
+          <div class="title">${s.title}</div>
+          <div class="meta">${s.year || ""}</div>
         </div>
-      `;
-    },
+      </div>
+    `).join("");
+  }
+};
 
-    async apply() {
-      const filters = {
-        category_id: document.getElementById("cat").value || null,
-        year: document.getElementById("year").value || null,
-        minLength: document.getElementById("minLength").value || null,
-        sort: document.getElementById("sort").value || "newest",
-        search: document.getElementById("search").value?.trim() || null
-      };
-      const s = await getSeries(filters);
-      this.renderList(s);
-      document.getElementById("globalSearch").value = filters.search || "";
-    },
-
-    clearFilters() {
-      document.getElementById("cat").value = "";
-      document.getElementById("year").value = "";
-      document.getElementById("minLength").value = "";
-      document.getElementById("search").value = "";
-      document.getElementById("sort").value = "newest";
-    }
-  };
-
-  const Auth = {
-    async logout() { await db.auth.signOut(); location.reload(); },
-    async user() { const { data } = await db.auth.getUser(); return data.user || null; }
-  };
-
-  UI.init();
+UI.init();
 </script>
 </body>
 </html>
