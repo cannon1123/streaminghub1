@@ -195,7 +195,7 @@ async function register(){
     password: pass,
     options: {
       data: { username: name },
-      emailRedirectTo: "https://cannon1123.github.io/login.html"
+      emailRedirectTo: "https://cannon1123.github.io/streaminghub1/login.html"
     }
   });
   if(error){alert("Błąd: "+error.message);}
@@ -218,7 +218,7 @@ async function sendMagicLink(){
   if(!email) return;
   const { error } = await db.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: "https://cannon1123.github.io/login.html" }
+    options: { emailRedirectTo: "https://cannon1123.github.io/streaminghub1/login.html" }
   });
   if(error){alert("Błąd: "+error.message);}
   else alert("Magic link został wysłany! Sprawdź skrzynkę.");
