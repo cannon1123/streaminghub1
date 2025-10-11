@@ -53,9 +53,9 @@
     
     <nav class="menu flex">
       <a href="#" onclick="UI.show('home')">Filmy</a>
-      <a href="index.html#top">TOP</a>
-<a href="index.html#me">Moja biblioteka</a>
-<form onsubmit="event.preventDefault(); Auth.logout(); window.location='index.html';">
+      <a href="top.html">TOP</a>
+<a href="moja-biblioteka.html">Moja biblioteka</a>
+<form onsubmit="event.preventDefault(); Auth.logout(); window.location='login.html';">
   <button class="btn secondary">Wyloguj</button>
 </form>
 
@@ -778,7 +778,18 @@ const UI = {
     const { error } = await delCategory(id);
     if(error) alert("❌ " + error.message);
     UI.show('admin');
+  },
+  <script>
+async function redirectIfLoggedIn(target) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    window.location = target;
+  } else {
+    alert("Zaloguj się, aby uzyskać dostęp!");
   }
+}
+</script>
+
 };
 
 // Start
