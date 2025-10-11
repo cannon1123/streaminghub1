@@ -238,24 +238,14 @@ async function resetPassword(){
 }
 
 /* ---------- Zmiana hasła po kliknięciu w mail ---------- */
-if (type === "recovery") {
-  const access_token = urlParams.get("access_token");
-  const refresh_token = urlParams.get("refresh_token");
-
-  // ustaw sesję z tokenów w URL, bo Supabase sam jej nie widzi
-  if (access_token) {
-    const { error } = await db.auth.setSession({
-      access_token,
-      refresh_token
-    });
-    if (error) console.warn("Błąd przy ustawianiu sesji resetu:", error);
+(async () => {
+  const hash = window.location.hash;
+  if (hash.includes("type=recovery")) {
+    hideAll();
+    document.getElementById("formTitle").innerText = "Ustaw nowe hasło";
+    document.getElementById("newPassForm").style.display = "block";
   }
-
-  hideAll();
-  document.getElementById("formTitle").innerText = "Ustaw nowe hasło";
-  document.getElementById("newPassForm").style.display = "block";
-  return;
-}
+})();
 
 async function updatePassword(){
   const p1 = document.getElementById("newPass1").value;
