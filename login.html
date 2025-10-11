@@ -281,12 +281,34 @@ async function updatePassword(){
         return;
       }
 
-      // 🔹 Magic Link (logowanie bez hasła)
-      if (type === "magiclink" && session) {
-        alert("Zalogowano pomyślnie magicznym linkiem ✨");
-        location.href = "seriale.html";
-        return;
-      }
+// 🔹 Magic Link (logowanie bez hasła)
+if (type === "magiclink") {
+  const access_token = urlParams.get("access_token");
+  const refresh_token = urlParams.get("refresh_token");
+
+  if (!access_token) {
+    alert("Nie udało się odczytać tokenu logowania.");
+    return;
+  }
+
+  // ustaw sesję na podstawie tokenów
+  const { data, error } = await db.auth.setSession({
+    access_token,
+    refresh_token
+  });
+
+  if (error) {
+    console.error(error);
+    alert("Nie udało się zalogować magicznym linkiem 😢");
+    location.href = "login.html";
+    return;
+  }
+
+  alert("✅ Zalogowano pomyślnie magicznym linkiem!");
+  location.href = "seriale.html";
+  return;
+}
+
 
       // 🔹 Reset hasła (recovery)
       if (type === "recovery") {
