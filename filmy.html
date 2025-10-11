@@ -779,7 +779,6 @@ const UI = {
     if(error) alert("❌ " + error.message);
     UI.show('admin');
   },
-  <script>
 async function redirectIfLoggedIn(target) {
   const { data: { user } } = await supabase.auth.getUser();
   if (user) {
@@ -788,9 +787,8 @@ async function redirectIfLoggedIn(target) {
     alert("Zaloguj się, aby uzyskać dostęp!");
   }
 }
-</script>
 
-};
+}
 
 // Start
 UI.updateHeader();
