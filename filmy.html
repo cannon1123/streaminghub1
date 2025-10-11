@@ -51,16 +51,15 @@
       <input type="search" name="q" placeholder="Szukaj filmów…" />
     </form>
     
-<nav class="menu flex">
-  <a href="filmy.html">Filmy</a>
-  <a href="seriale.html">Seriale</a>
-  <a href="top.html">TOP</a>
-  <a href="moja-biblioteka.html">Moja biblioteka</a>
-  <form onsubmit="event.preventDefault(); Auth.logout(); window.location='index.html';">
-    <button class="btn secondary">Wyloguj</button>
-  </form>
-</nav>
+    <nav class="menu flex">
+      <a href="#" onclick="UI.show('home')">Filmy</a>
+      <a href="top.html">TOP</a>
+<a href="moja-biblioteka.html">Moja biblioteka</a>
+<form onsubmit="event.preventDefault(); Auth.logout(); window.location='login.html';">
+  <button class="btn secondary">Wyloguj</button>
+</form>
 
+    </nav>
 
   </div>
 </header>
