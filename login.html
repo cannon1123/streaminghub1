@@ -145,7 +145,7 @@
       <small class="link" onclick="showLogin()">Wróć do logowania</small>
     </div>
 
-    <!-- 🔹 Nowe hasło po kliknięciu w mail -->
+    <!-- 🔹 Nowe hasło -->
     <div id="newPassForm" style="display:none;">
       <label>Nowe hasło</label>
       <input type="password" id="newPass1" placeholder="••••••••" />
@@ -156,9 +156,7 @@
   </div>
 </main>
 
-
 <footer>© <script>document.write(new Date().getFullYear())</script> StreamingHub</footer>
-
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -231,22 +229,13 @@ async function resetPassword(){
   const email = document.getElementById("resetEmail").value.trim();
   if(!email){alert("Podaj adres e-mail!");return;}
   const { error } = await db.auth.resetPasswordForEmail(email, {
-    redirectTo: "https://cannon1123.github.io/streaminghub1/login.html"
+    redirectTo: "https://cannon1123.github.io/streaminghub1/login.html#type=recovery"
   });
   if(error){alert("Błąd: "+error.message);}
   else alert("Wysłano link do resetu hasła. Sprawdź pocztę!");
 }
 
-/* ---------- Zmiana hasła po kliknięciu w mail ---------- */
-(async () => {
-  const hash = window.location.hash;
-  if (hash.includes("type=recovery")) {
-    hideAll();
-    document.getElementById("formTitle").innerText = "Ustaw nowe hasło";
-    document.getElementById("newPassForm").style.display = "block";
-  }
-})();
-
+/* ---------- Zmiana hasła ---------- */
 async function updatePassword(){
   const p1 = document.getElementById("newPass1").value;
   const p2 = document.getElementById("newPass2").value;
@@ -257,11 +246,12 @@ async function updatePassword(){
     alert("Hasło zostało zmienione pomyślnie ✅");
     location.href = "login.html";
   }
-  /* ---------- Obsługa wszystkich linków z maila (signup, magic link, reset) ---------- */
+}
+
+/* ---------- Obsługa linków z maila (signup / magic link / recovery) ---------- */
 (async () => {
   const hash = window.location.hash;
 
-  // jeśli URL zawiera access_token, Supabase sam odczyta token z niego
   if (hash.includes("access_token")) {
     const urlParams = new URLSearchParams(hash.replace("#", ""));
     const type = urlParams.get("type");
@@ -270,7 +260,7 @@ async function updatePassword(){
       const { data: { session }, error } = await db.auth.getSession();
       if (error) throw error;
 
-      // 🔹 Po utworzeniu konta (signup)
+      // ✅ Potwierdzenie konta
       if (type === "signup") {
         document.body.innerHTML = `
           <main style="display:flex;justify-content:center;align-items:center;min-height:100vh;flex-direction:column;font-family:sans-serif;color:#e3e7ee;background:#0b0d10;">
@@ -281,36 +271,19 @@ async function updatePassword(){
         return;
       }
 
-// 🔹 Magic Link (logowanie bez hasła)
-if (type === "magiclink") {
-  const access_token = urlParams.get("access_token");
-  const refresh_token = urlParams.get("refresh_token");
+      // ✅ Magic Link
+      if (type === "magiclink") {
+        const access_token = urlParams.get("access_token");
+        const refresh_token = urlParams.get("refresh_token");
 
-  if (!access_token) {
-    alert("Nie udało się odczytać tokenu logowania.");
-    return;
-  }
+        const { data, error } = await db.auth.setSession({ access_token, refresh_token });
+        if (error) throw error;
+        alert("✅ Zalogowano pomyślnie magicznym linkiem!");
+        location.href = "seriale.html";
+        return;
+      }
 
-  // ustaw sesję na podstawie tokenów
-  const { data, error } = await db.auth.setSession({
-    access_token,
-    refresh_token
-  });
-
-  if (error) {
-    console.error(error);
-    alert("Nie udało się zalogować magicznym linkiem 😢");
-    location.href = "login.html";
-    return;
-  }
-
-  alert("✅ Zalogowano pomyślnie magicznym linkiem!");
-  location.href = "seriale.html";
-  return;
-}
-
-
-      // 🔹 Reset hasła (recovery)
+      // ✅ Reset hasła
       if (type === "recovery") {
         hideAll();
         document.getElementById("formTitle").innerText = "Ustaw nowe hasło";
@@ -325,8 +298,6 @@ if (type === "magiclink") {
     }
   }
 })();
-
-}
 
 generateCaptcha();
 </script>
