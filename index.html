@@ -48,7 +48,7 @@
       <input type="search" name="q" placeholder="Szukaj filmów…" />
     </form>
     <nav class="menu flex">
-      <a id="filmLink" href="#" onclick="UI.show('home')">Filmy</a>
+<a id="filmLink" href="#" onclick="goToFilmy()">Filmy</a>
       <a href="#" onclick="UI.show('top')">TOP</a>
       <a href="#" onclick="UI.show('me')">Moja biblioteka</a>
       <a id="adminLink" href="#" onclick="UI.show('admin')" class="hidden">Admin</a>
@@ -701,6 +701,7 @@ const UI = {
     if(error) alert("❌ " + error.message);
     UI.show('admin');
   }
+  <script>
 };
 
 UI.updateHeader();
