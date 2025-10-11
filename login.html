@@ -231,7 +231,7 @@ async function resetPassword(){
   const email = document.getElementById("resetEmail").value.trim();
   if(!email){alert("Podaj adres e-mail!");return;}
   const { error } = await db.auth.resetPasswordForEmail(email, {
-    redirectTo: "https://cannon1123.github.io/login.html"
+    redirectTo: "https://cannon1123.github.io/streaminghub1/login.html"
   });
   if(error){alert("Błąd: "+error.message);}
   else alert("Wysłano link do resetu hasła. Sprawdź pocztę!");
