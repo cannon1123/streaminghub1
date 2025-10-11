@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>StreamingHub • Seriale</title>
+  <title>StreamingHub • Odcinki</title>
   <style>
     :root {
       --bg: #0b0d10;
@@ -12,22 +12,15 @@
       --text: #e3e7ee;
       --brand: #4f7cff;
       --border: #232a37;
-      --accent-weak: rgba(79,124,255,0.12);
     }
-
-    * { box-sizing: border-box; }
 
     body {
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-      line-height: 1.3;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto;
+      line-height: 1.4;
     }
-
-    a { color: var(--text); text-decoration: none; }
 
     header {
       position: sticky;
@@ -35,7 +28,7 @@
       background: rgba(11, 13, 16, 0.85);
       backdrop-filter: blur(6px);
       z-index: 10;
-      border-bottom: 1px solid rgba(255,255,255,0.02);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
     }
 
     .nav {
@@ -48,478 +41,241 @@
       gap: 12px;
     }
 
-    .brand {
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--text);
-      font-size: 1.1rem;
-    }
-
-    input[type="search"] {
-      flex: 1;
-      background: #0e1218;
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 10px 12px;
-      border-radius: 12px;
-      max-width: 340px;
-    }
-
-    .menu {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .menu a {
-      color: var(--muted);
-      font-size: 0.95rem;
-      transition: color 0.2s;
-    }
-
-    .menu a:hover { color: #fff; }
-
+    .brand { font-weight: 700; color: var(--text); text-decoration: none; }
     .btn {
       background: var(--brand);
       color: #fff;
-      padding: 8px 14px;
-      border-radius: 12px;
       border: none;
+      padding: 8px 14px;
+      border-radius: 10px;
       cursor: pointer;
       font-size: 0.9rem;
-      transition: background 0.18s, transform 0.06s;
+      transition: background .2s;
     }
-
-    .btn:hover { background: #668cff; transform: translateY(-1px); }
-
-    .btn.secondary {
-      background: #2a3446;
-    }
+    .btn:hover { background: #678aff; }
+    .btn.secondary { background: #2a3446; }
 
     .container {
-      max-width: 1200px;
-      margin: 20px auto;
+      max-width: 1100px;
+      margin: 30px auto;
       padding: 16px;
     }
 
-    h1, h2 {
-      margin: 0 0 10px 0;
+    .back {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: color .2s;
+    }
+    .back:hover { color: var(--text); }
+
+    .title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 8px;
     }
 
-    /* Category chips / previews */
-    .cat-row {
-      display: flex;
-      gap: 12px;
-      overflow-x: auto;
-      padding-bottom: 10px;
-      margin-bottom: 16px;
+    .desc {
+      color: var(--muted);
+      font-size: 1rem;
+      margin-bottom: 20px;
     }
-    .cat-card {
-      min-width: 140px;
-      max-width: 160px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border-radius: 12px;
-      padding: 8px;
-      border: 1px solid rgba(255,255,255,0.02);
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      cursor: pointer;
-      transition: transform .12s, box-shadow .12s, border-color .12s;
-    }
-    .cat-card:hover { transform: translateY(-6px); box-shadow: 0 8px 30px rgba(0,0,0,0.6); border-color: rgba(79,124,255,0.28); }
-    .cat-thumb {
-      width: 56px;
-      height: 56px;
-      border-radius: 8px;
-      background: #0d0f12;
-      object-fit: cover;
-      flex-shrink: 0;
-    }
-    .cat-info { font-size: 0.88rem; color: var(--text); }
-    .cat-name { font-weight: 700; }
-    .cat-sub { font-size: 0.78rem; color: var(--muted); }
 
-    /* Filters panel */
-    .filters {
+    .seasons {
       display: flex;
       flex-wrap: wrap;
-      gap: 14px;
-      background: var(--card);
-      padding: 14px 18px;
-      border-radius: 14px;
-      box-shadow: 0 0 18px rgba(0,0,0,0.35);
-      align-items: flex-end;
+      gap: 10px;
+      margin: 20px 0;
     }
 
-    .filters .field {
-      flex: 1 1 180px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .filters label {
-      font-size: 0.82rem;
-      color: var(--muted);
-      margin-bottom: 6px;
-      display: block;
-    }
-
-    select, input[type="number"], input[type="text"] {
-      background: #0e1218;
+    .season-btn {
+      background: #11141b;
       border: 1px solid var(--border);
-      color: #fff;
-      padding: 10px 12px;
-      border-radius: 10px;
-      width: 100%;
-      transition: border-color .14s, box-shadow .14s;
-    }
-
-    select:focus, input:focus {
-      outline: none;
-      border-color: var(--brand);
-      box-shadow: 0 4px 18px var(--accent-weak);
-    }
-
-    .filters .big {
-      flex: 2 1 320px;
-    }
-
-    .filters .actions {
-      display:flex;
-      gap:8px;
-      align-items:center;
-    }
-
-    .filters .clear {
-      background: transparent;
-      color: var(--muted);
-      border: 1px solid rgba(255,255,255,0.03);
-      padding: 9px 12px;
+      color: var(--text);
+      padding: 10px 14px;
       border-radius: 10px;
       cursor: pointer;
+      transition: background .15s, border-color .15s;
     }
 
-    /* Card grid */
-    .grid {
-      margin-top: 18px;
-      display: grid;
-      gap: 14px;
-      grid-template-columns: repeat(5, 1fr);
+    .season-btn:hover,
+    .season-btn.active {
+      background: var(--brand);
+      border-color: var(--brand);
     }
 
-    .card {
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border: 1px solid rgba(255,255,255,0.02);
-      border-radius: 12px;
-      overflow: hidden;
-      transition: transform .12s, box-shadow .12s;
-    }
-    .card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.6); border-color: rgba(79,124,255,0.18); }
-
-    .card img {
-      width:100%;
-      height: 170px;
-      object-fit: cover;
-      display:block;
-      background: #0c0d0f;
+    .episodes {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
-    .card .p {
-      padding: 10px 12px;
-    }
-
-    .card .title { font-weight: 700; font-size: 0.98rem; }
-    .card .meta { font-size: 0.82rem; color: var(--muted); margin-top: 6px; }
-
-    .no-results {
-      padding: 30px;
-      text-align: center;
-      color: var(--muted);
-      background: rgba(255,255,255,0.01);
+    .episode {
+      background: var(--card);
       border-radius: 10px;
+      padding: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
     }
 
-    footer {
+    .episode:hover { background: #1c2332; }
+
+    .episode-title { font-weight: 700; font-size: 1rem; }
+    .episode-desc { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
+
+    iframe {
+      width: 100%;
+      height: 500px;
+      border: none;
+      border-radius: 12px;
+      margin-top: 20px;
+      background: #0e1218;
+    }
+
+    .player-section {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 12px;
+      margin-top: 25px;
+    }
+
+    .player-info {
+      margin-top: 10px;
+      font-size: 0.95rem;
       color: var(--muted);
-      text-align: center;
-      padding: 30px 0;
-      font-size: 0.9rem;
     }
 
-    /* Responsive */
-    @media (max-width: 1200px) {
-      .grid { grid-template-columns: repeat(4, 1fr); }
-    }
-    @media (max-width: 980px) {
-      .grid { grid-template-columns: repeat(3, 1fr); }
-      .cat-card { min-width: 130px; max-width: 150px; }
-    }
-    @media (max-width: 700px) {
-      .nav {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      input[type="search"] {
-        width: 100%;
-        max-width: none;
-      }
-      .filters { padding: 12px; gap:10px; }
-      .grid { grid-template-columns: repeat(2, 1fr); }
-      .cat-row { padding-bottom: 8px; }
-    }
-    @media (max-width: 420px) {
-      .grid { grid-template-columns: repeat(1, 1fr); }
-    }
+    .no-results { color: var(--muted); text-align: center; margin-top: 30px; }
   </style>
 </head>
 <body>
 
 <header>
   <div class="nav">
-    <a class="brand" href="index.html">🎬 <span>StreamingHub</span></a>
-    <input type="search" id="globalSearch" placeholder="Szukaj seriali..." />
-    <nav class="menu" id="menu">
-      <a href="filmy.html">Filmy</a>
-      <a href="seriale.html" style="color:#fff;">Seriale</a>
-      <a href="index.html#me">Moja biblioteka</a>
-      <div id="authBtns">
-        <a href="index.html" class="btn secondary">Zaloguj się</a>
-        <a href="register.html" class="btn">Zarejestruj</a>
-      </div>
-    </nav>
+    <a class="brand" href="index.html">🎬 StreamingHub</a>
+    <div id="authBtns"></div>
   </div>
 </header>
 
-<main class="container" id="app">
-  <h2>Filtruj</h2>
+<main class="container" id="app" style="display:none;">
+  <a href="seriale.html" class="back">← Powrót do listy</a>
+  <div id="seriesInfo"></div>
 
-  <!-- category row (dynamic) -->
-  <div id="categoryRow" class="cat-row" aria-label="Kategorie"></div>
+  <h3>Sezony</h3>
+  <div id="seasons" class="seasons"></div>
 
-  <!-- filters -->
-  <div class="filters" role="region" aria-label="Panel filtrów">
-    <div class="field">
-      <label for="cat">Kategoria</label>
-      <select id="cat">
-        <option value="">—</option>
-      </select>
-    </div>
+  <div id="episodes" class="episodes"></div>
 
-    <div class="field">
-      <label for="year">Rok</label>
-      <input type="number" id="year" placeholder="np. 2023">
-    </div>
-
-    <div class="field">
-      <label for="minLength">Min. długość (min)</label>
-      <input type="number" id="minLength" placeholder="np. 60">
-    </div>
-
-    <div class="field">
-      <label for="sort">Sortowanie</label>
-      <select id="sort">
-        <option value="newest">Najnowsze</option>
-        <option value="oldest">Najstarsze</option>
-        <option value="az">A–Z</option>
-        <option value="za">Z–A</option>
-      </select>
-    </div>
-
-    <div class="field big">
-      <label for="search">Szukaj (tytuł)</label>
-      <input type="text" id="search" placeholder="Tytuł...">
-    </div>
-
-    <div class="actions">
-      <button class="btn" onclick="UI.apply()">Szukaj</button>
-      <button class="clear" onclick="UI.clearFilters()">Wyczyść</button>
-    </div>
-  </div>
-
-  <div id="listContainer">
-    <div class="grid mt-4" id="list"></div>
+  <div id="playerSection" class="player-section" style="display:none;">
+    <iframe id="player" allowfullscreen></iframe>
+    <div id="episodeInfo" class="player-info"></div>
   </div>
 </main>
 
-<footer>
-  © <script>document.write(new Date().getFullYear())</script> StreamingHub • free video
-</footer>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // --- Supabase (używa Twojego URL i KEY podanego w oryginale) ---
-  const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
-  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // --- API helpers ---
-  async function getCategories() {
-    const { data } = await db.from("categories").select("*").order("name");
-    return data || [];
+const urlParams = new URLSearchParams(window.location.search);
+const seriesId = urlParams.get("id");
+
+// 🔒 Sprawdzenie logowania
+(async () => {
+  const { data: { session } } = await db.auth.getSession();
+  if (!session || !session.user) {
+    alert("Musisz być zalogowany, aby oglądać seriale!");
+    location.href = "index.html";
+    return;
   }
 
-  async function getSeries(filters = {}) {
-    // Build base query
-    let q = db.from("series").select("*");
-    // Filtering
-    if (filters.category_id) q = q.eq("category_id", filters.category_id);
-    if (filters.year) q = q.eq("year", filters.year);
-    if (filters.minLength) q = q.gte("duration", filters.minLength);
-    if (filters.search) q = q.ilike("title", `%${filters.search}%`);
-    // Sorting
-    if (filters.sort === "oldest") q = q.order("year", { ascending: true });
-    else if (filters.sort === "az") q = q.order("title", { ascending: true });
-    else if (filters.sort === "za") q = q.order("title", { ascending: false });
-    else q = q.order("created_at", { ascending: false }); // newest default
-    const res = await q;
-    return res.data || [];
+  document.getElementById("app").style.display = "block";
+  const authBtns = document.getElementById("authBtns");
+  authBtns.innerHTML = `<button class="btn secondary" onclick="logout()">Wyloguj</button>`;
+
+  loadSeries();
+})();
+
+async function logout() {
+  await db.auth.signOut();
+  location.href = "index.html";
+}
+
+// 📺 Główne funkcje
+async function loadSeries() {
+  const { data: series } = await db.from("series").select("*").eq("id", seriesId).single();
+  if (!series) return;
+
+  document.getElementById("seriesInfo").innerHTML = `
+    <div class="title">${series.title}</div>
+    <div class="desc">${series.description || "Brak opisu"}</div>
+  `;
+
+  const { data: seasons } = await db.from("seasons").select("*").eq("series_id", seriesId).order("season_number");
+  renderSeasons(seasons);
+}
+
+function renderSeasons(seasons) {
+  const container = document.getElementById("seasons");
+  if (!seasons?.length) {
+    container.innerHTML = "<div class='no-results'>Brak sezonów</div>";
+    return;
   }
 
-  // --- UI ---
-  const UI = {
-    el: () => document.getElementById("app"),
+  container.innerHTML = "";
+  seasons.forEach(season => {
+    const btn = document.createElement("button");
+    btn.className = "season-btn";
+    btn.textContent = season.title || `Sezon ${season.season_number}`;
+    btn.onclick = () => {
+      document.querySelectorAll(".season-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      loadEpisodes(season.id);
+    };
+    container.appendChild(btn);
+  });
+}
 
-    async init() {
-      // auth UI (simple)
-      const { data: { session } } = await db.auth.getSession();
-      this.updateAuthUI(session?.user);
-      db.auth.onAuthStateChange((_, s) => this.updateAuthUI(s?.user));
+async function loadEpisodes(seasonId) {
+  const { data: episodes } = await db.from("episodes")
+    .select("*")
+    .eq("season_id", seasonId)
+    .order("episode_number");
 
-      // Setup global search quick-enter
-      document.getElementById("globalSearch").addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-          document.getElementById("search").value = e.target.value;
-          UI.apply();
-        }
-      });
+  const list = document.getElementById("episodes");
+  if (!episodes?.length) {
+    list.innerHTML = "<div class='no-results'>Brak odcinków w tym sezonie</div>";
+    return;
+  }
 
-      // Load initial data & render
-      await this.refreshAll();
-    },
+  list.innerHTML = "";
+  episodes.forEach(ep => {
+    const div = document.createElement("div");
+    div.className = "episode";
+    div.innerHTML = `
+      <div class="episode-title">Odcinek ${ep.episode_number}: ${ep.title}</div>
+      <div class="episode-desc">${ep.description || ""}</div>
+    `;
+    div.onclick = () => playEpisode(ep);
+    list.appendChild(div);
+  });
+}
 
-    updateAuthUI(user) {
-      const authBtns = document.getElementById("authBtns");
-      if (!authBtns) return;
-      if (user) {
-        authBtns.innerHTML = `<button class="btn secondary" onclick="Auth.logout()">Wyloguj</button>`;
-      } else {
-        authBtns.innerHTML = `
-          <a href="index.html" class="btn secondary">Zaloguj się</a>
-          <a href="register.html" class="btn">Zarejestruj</a>
-        `;
-      }
-    },
+function playEpisode(ep) {
+  const playerSection = document.getElementById("playerSection");
+  const player = document.getElementById("player");
+  const info = document.getElementById("episodeInfo");
 
-    async refreshAll() {
-      // fetch categories and series, populate UI elements
-      const cats = await getCategories();
-      const allSeries = await getSeries(); // no filters: full list
-      UI.populateCategorySelect(cats);
-      UI.renderCategoryRow(cats, allSeries);
-      UI.renderList(allSeries);
-    },
+  player.src = ep.iframe_url;
+  info.innerHTML = `<strong>${ep.title}</strong><br>${ep.description || ""}`;
+  playerSection.style.display = "block";
 
-    populateCategorySelect(cats) {
-      const sel = document.getElementById("cat");
-      sel.innerHTML = `<option value="">—</option>` + cats.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
-    },
-
-    renderCategoryRow(cats, allSeries) {
-      // For each category show small card with a sample thumb (first series in that category)
-      const row = document.getElementById("categoryRow");
-      row.innerHTML = "";
-      cats.forEach(cat => {
-        const sample = allSeries.find(s => String(s.category_id) === String(cat.id));
-        const thumb = sample?.thumb || "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='170'%3E%3Crect width='100%25' height='100%25' fill='%23101114'/%3E%3Ctext x='50%25' y='50%25' fill='%23a1a1a1' font-size='16' text-anchor='middle' dominant-baseline='middle'%3EBrak miniatury%3C/text%3E%3C/svg%3E";
-        const div = document.createElement("div");
-        div.className = "cat-card";
-        div.innerHTML = `
-          <img class="cat-thumb" src="${thumb}" alt="${cat.name}">
-          <div class="cat-info">
-            <div class="cat-name">${cat.name}</div>
-            <div class="cat-sub">${sample ? (sample.year || '') : 'brak'}</div>
-          </div>
-        `;
-        div.onclick = () => {
-          // set category filter and apply
-          document.getElementById("cat").value = cat.id;
-          UI.apply();
-          // scroll to filters
-          window.scrollTo({ top: document.querySelector('.filters').offsetTop - 20, behavior: 'smooth' });
-        };
-        row.appendChild(div);
-      });
-
-      // Add "Wszystkie" card to reset quickly
-      const allCard = document.createElement("div");
-      allCard.className = "cat-card";
-      allCard.style.minWidth = "120px";
-      allCard.innerHTML = `<div style="width:56px;height:56px;border-radius:8px;background:linear-gradient(90deg,var(--brand),rgba(79,124,255,0.25));"></div>
-        <div class="cat-info"><div class="cat-name">Wszystkie</div><div class="cat-sub">pokaż wszystko</div></div>`;
-      allCard.onclick = () => { this.clearFilters(); this.refreshAll(); };
-      row.insertBefore(allCard, row.firstChild);
-    },
-
-    renderList(series) {
-      const list = document.getElementById("list");
-      if (!series || series.length === 0) {
-        list.innerHTML = `<div class="no-results">Brak wyników. Spróbuj zmienić filtry.</div>`;
-        return;
-      }
-      list.innerHTML = series.map(s => this.card(s)).join("");
-    },
-
-    card(s) {
-      // safe defaults
-      const thumb = s.thumb || "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect width='100%25' height='100%25' fill='%23101114'/%3E%3Ctext x='50%25' y='50%25' fill='%23a1a1a1' font-size='20' text-anchor='middle' dominant-baseline='middle'%3ENo+Image%3C/text%3E%3C/svg%3E";
-      const year = s.year ? `<div class="meta">${s.year}</div>` : `<div class="meta">${s.created_at ? new Date(s.created_at).getFullYear() : ''}</div>`;
-      const title = s.title || 'Bez tytułu';
-      return `
-        <div class="card" onclick="window.location='movie.html?id=${s.id}'" role="button" title="${title}">
-          <img src="${thumb}" alt="${title}">
-          <div class="p">
-            <div class="title">${title}</div>
-            ${year}
-          </div>
-        </div>
-      `;
-    },
-
-    async apply() {
-      const filters = {
-        category_id: document.getElementById("cat").value || null,
-        year: document.getElementById("year").value || null,
-        minLength: document.getElementById("minLength").value || null,
-        sort: document.getElementById("sort").value || "newest",
-        search: document.getElementById("search").value || null
-      };
-      // call DB
-      const s = await getSeries(filters);
-      this.renderList(s);
-      // update the globalSearch field so it's consistent
-      document.getElementById("globalSearch").value = filters.search || "";
-    },
-
-    clearFilters() {
-      document.getElementById("cat").value = "";
-      document.getElementById("year").value = "";
-      document.getElementById("minLength").value = "";
-      document.getElementById("search").value = "";
-      document.getElementById("sort").value = "newest";
-    }
-  };
-
-  // --- Simple Auth helpers (used by UI.updateAuthUI) ---
-  const Auth = {
-    async logout() { await db.auth.signOut(); location.reload(); },
-    async user() { const { data } = await db.auth.getUser(); return data.user || null; }
-  };
-
-  // --- Init ---
-  UI.init();
+  window.scrollTo({ top: playerSection.offsetTop - 60, behavior: "smooth" });
+}
 </script>
 </body>
 </html>
