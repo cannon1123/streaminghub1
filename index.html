@@ -105,7 +105,7 @@ const Auth = {
     toast("✔️ Zalogowano");
     UI.show("home");
   },
-  async logout(){ await db.auth.signOut(); await UI.updateHeader(); toast("Wylogowano"); UI.show("home"); }
+  async logout(){ await db.auth.signOut(); await UI.updateHeader(); toast("Wylogowano");   window.location.href = 'login.html'; }
 };
 
 db.auth.onAuthStateChange(async ()=>{ UI.updateHeader(); });
