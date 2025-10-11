@@ -198,7 +198,7 @@ let CURRENT_EPISODES = [];   // wszystkie odcinki bieżącej serii (pobierane z 
   if (!session || !session.user) {
     // brak sesji -> przekieruj na index
     alert("Musisz być zalogowany, aby oglądać seriale!");
-    location.href = "index.html";
+    location.href = "login.html";
     return;
   } else {
     authBtns.innerHTML = `<button class="btn secondary" onclick="logout()">Wyloguj</button>`;
@@ -212,7 +212,7 @@ let CURRENT_EPISODES = [];   // wszystkie odcinki bieżącej serii (pobierane z 
 
 async function logout() {
   await db.auth.signOut();
-  location.href = "index.html";
+  location.href = "login.html";
 }
 
 /* ---------- Pobieranie danych z DB ---------- */
