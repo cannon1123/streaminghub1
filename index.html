@@ -53,8 +53,11 @@
       <a href="#" onclick="UI.show('me')">Moja biblioteka</a>
       <a id="adminLink" href="#" onclick="UI.show('admin')" class="hidden">Admin</a>
       <span id="authLinks">
-        <a href="#" onclick="UI.show('login')">Zaloguj</a>
-        <a href="#" onclick="UI.show('register')" class="btn">Rejestracja</a>
+<span id="authLinks">
+  <a href="login.html">Zaloguj</a>
+  <a href="login.html" class="btn">Rejestracja</a>
+</span>
+
       </span>
 <form id="logoutForm" class="hidden" onsubmit="event.preventDefault(); Auth.logout()">
         <button class="btn secondary">Wyloguj</button>
