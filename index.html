@@ -700,8 +700,20 @@ const UI = {
     const { error } = await delCategory(id);
     if(error) alert("❌ " + error.message);
     UI.show('admin');
+  },
+  async function goToFilmy() {
+  const { data: { session } } = await db.auth.getSession();
+
+  if (session && session.user) {
+    // ✅ użytkownik zalogowany — przechodzimy do filmów
+    window.location.href = "filmy.html";
+  } else {
+    // ❌ niezalogowany — przekierowanie do logowania
+    alert("Musisz być zalogowany, aby oglądać filmy 🎬");
+    window.location.href = "login.html";
   }
-  <script>
+}
+
 };
 
 UI.updateHeader();
