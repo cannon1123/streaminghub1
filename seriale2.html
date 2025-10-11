@@ -22,22 +22,13 @@
       line-height: 1.3;
     }
     a { color: var(--text); text-decoration: none; }
-
-    /* header */
     header {
       position: sticky; top: 0;
       background: rgba(11,13,16,0.85);
       backdrop-filter: blur(6px);
       z-index: 10;
       border-bottom: 1px solid rgba(255,255,255,0.02);
-      transition: opacity 0.3s ease;
     }
-    /* 🔹 DODANE: klasa do ukrywania paska */
-    header.covered {
-      opacity: 0;
-      pointer-events: none;
-    }
-
     .nav { display:flex; align-items:center; justify-content:space-between; max-width:1200px; margin:0 auto; padding:12px 16px; gap:12px; }
     .brand { font-weight:700; display:flex; align-items:center; gap:8px; color:var(--text); }
     input[type="search"] { flex:1; background:#0e1218; border:1px solid var(--border); color:#fff; padding:10px 12px; border-radius:12px; max-width:340px; }
@@ -47,7 +38,7 @@
     .btn.secondary { background:#2a3446; }
     .container { max-width:1200px; margin:20px auto; padding:16px; }
 
-    /* --- List view (filters + grid) --- */
+    /* --- List view --- */
     .filters { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; }
     .filters .field { flex:1 1 180px; display:flex; flex-direction:column; }
     .filters label { font-size:0.82rem; color:var(--muted); margin-bottom:6px; }
@@ -82,12 +73,35 @@
     .episode:hover { background:#161822; }
 
     /* player */
-    .player-wrap { margin-top:22px; display:none; }
+    .player-wrap { margin-top:22px; position:relative; display:none; }
     .player { width:100%; height:520px; border-radius:12px; border:none; background:#000; display:block; }
+
+    /* --- MASKA VIDER --- */
+    #iframeMask {
+      position:absolute;
+      top:0; left:0;
+      width:100%;
+      height:70px;
+      background:linear-gradient(180deg, rgba(11,13,16,1) 0%, rgba(11,13,16,0.9) 100%);
+      display:none;
+      justify-content:center;
+      align-items:center;
+      z-index:5;
+      border-top-left-radius:12px;
+      border-top-right-radius:12px;
+      pointer-events:auto;
+    }
+    #iframeMask span {
+      color:var(--text);
+      font-weight:700;
+      font-size:1rem;
+      opacity:0.8;
+      letter-spacing:0.5px;
+    }
+
     .player-info { margin-top:10px; color:var(--muted); }
 
     .no-results { text-align:center; color:var(--muted); margin-top:30px; }
-
     footer { color:var(--muted); text-align:center; padding:30px 0; font-size:0.9rem; }
 
     @media (max-width:1200px) { .grid{ grid-template-columns: repeat(4, 1fr);} .series-thumb{width:160px;height:240px;} }
@@ -111,45 +125,10 @@
 </header>
 
 <main class="container" id="main">
-  <!-- LIST VIEW (filtry + grid) -->
   <div id="listView">
-    <h2>Filtruj</h2>
-    <div class="filters">
-      <div class="field">
-        <label for="cat">Kategoria</label>
-        <select id="cat"><option value="">—</option></select>
-      </div>
-      <div class="field">
-        <label for="year">Rok</label>
-        <input type="number" id="year" placeholder="np. 2023">
-      </div>
-      <div class="field">
-        <label for="minLength">Min. długość (min)</label>
-        <input type="number" id="minLength" placeholder="np. 60">
-      </div>
-      <div class="field">
-        <label for="sort">Sortowanie</label>
-        <select id="sort">
-          <option value="newest">Najnowsze</option>
-          <option value="oldest">Najstarsze</option>
-          <option value="az">A–Z</option>
-          <option value="za">Z–A</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="search">Szukaj tytułu</label>
-        <input type="text" id="search" placeholder="np. The Boys">
-      </div>
-      <div class="actions" style="display:flex; align-items:flex-end;">
-        <button class="btn" onclick="UI.apply()">Szukaj</button>
-        <button class="btn secondary" onclick="UI.clearFilters()">Wyczyść</button>
-      </div>
-    </div>
-
-    <div class="grid" id="list"></div>
+    <!-- ... tu bez zmian (filtry, lista seriali) ... -->
   </div>
 
-  <!-- DETAIL VIEW (seria -> sezony -> odcinki -> player) -->
   <div id="detailView" style="display:none;">
     <a class="back" href="#" onclick="goHome();return false;">← Powrót do listy</a>
     <div class="series-header">
@@ -164,6 +143,7 @@
     <div id="episodesContainer" class="episodes"></div>
 
     <div id="playerWrap" class="player-wrap">
+      <div id="iframeMask"><span>🎬 StreamingHub.pl</span></div>
       <iframe id="playerFrame" class="player" allowfullscreen></iframe>
       <div id="playerInfo" class="player-info"></div>
     </div>
@@ -172,370 +152,27 @@
 
 <footer>© <script>document.write(new Date().getFullYear())</script> StreamingHub</footer>
 
-<!-- supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ---------- Konfiguracja Supabase ---------- */
-const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+/* --- po Twoim istniejącym kodzie --- */
 
-/* ---------- Helpery ---------- */
-function slugify(str) {
-  return String(str || "").toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w\-]+/g, ' ')
-    .replace(/\s+/g, '-')
-    .replace(/\-\-+/g, '-')
-    .replace(/^-+/, '')
-    .replace(/-+$/, '');
-}
-function safeThumb(url) {
-  if (!url) return "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect width='100%25' height='100%25' fill='%23101114'/%3E%3Ctext x='50%25' y='50%25' fill='%23a1a1a1' font-size='18' text-anchor='middle' dominant-baseline='middle'%3EBrak+miniatury%3C/text%3E%3C/svg%3E";
-  return url;
-}
+/* --- MASKA VIDER.PL --- */
+const playerFrame = document.getElementById('playerFrame');
+const iframeMask = document.getElementById('iframeMask');
 
-/* ---------- Global state ---------- */
-let SERIES_LIST = [];
-let SLUG_MAP = {};
-let CURRENT_SERIES = null;
-let CURRENT_EPISODES = [];
-
-/* ---------- Autoryzacja & start ---------- */
-(async function initAuthAndApp() {
+// pokazuj maskę tylko gdy iframe ładuje vider.pl z captcha/login
+playerFrame.addEventListener('load', () => {
   try {
-    const { data: { session } } = await db.auth.getSession();
-    const authBtns = document.getElementById("authBtns");
-    if (!session || !session.user) {
-      alert("Musisz być zalogowany, aby oglądać seriale!");
-      location.href = "index.html";
-      return;
+    const src = playerFrame.src.toLowerCase();
+    if (src.includes('vider.pl') && (src.includes('verify') || src.includes('captcha') || src.includes('login'))) {
+      iframeMask.style.display = 'flex';
     } else {
-      authBtns.innerHTML = `<button class="btn secondary" onclick="logout()">Wyloguj</button>`;
+      iframeMask.style.display = 'none';
     }
-
-    // Inicjalizacja UI i routingu
-    await UI.init();
-    window.addEventListener("hashchange", handleHashChange, false);
-    handleHashChange();
   } catch (err) {
-    console.error("init error:", err);
+    iframeMask.style.display = 'none';
   }
-})();
-
-async function logout() {
-  await db.auth.signOut();
-  location.href = "index.html";
-}
-
-/* ---------- Pobieranie danych z DB ---------- */
-async function getCategories() {
-  const { data, error } = await db.from("categories").select("*").order("name");
-  if (error) { console.error(error); return []; }
-  return data || [];
-}
-
-async function getSeries(filters = {}) {
-  let q = db.from("series").select("*");
-  if (filters.category_id) q = q.eq("category_id", filters.category_id);
-  if (filters.year) q = q.eq("year", filters.year);
-  if (filters.minLength) q = q.gte("duration", filters.minLength);
-  if (filters.search) q = q.ilike("title", `%${filters.search}%`);
-  if (filters.sort === "oldest") q = q.order("year", { ascending: true });
-  else if (filters.sort === "az") q = q.order("title", { ascending: true });
-  else if (filters.sort === "za") q = q.order("title", { ascending: false });
-  else q = q.order("created_at", { ascending: false });
-  const { data, error } = await q;
-  if (error) { console.error(error); return []; }
-  return data || [];
-}
-
-async function getAllEpisodesForSeries(series_id) {
-  const { data, error } = await db.from("episodes").select("*").eq("series_id", series_id);
-  if (error) { console.error(error); return []; }
-  return data || [];
-}
-
-/* ---------- UI & routing ---------- */
-const UI = {
-  async init() {
-    const cats = await getCategories();
-    const series = await getSeries();
-    SERIES_LIST = series;
-
-    const sel = document.getElementById("cat");
-    sel.innerHTML = `<option value="">—</option>` + (cats.map(c => `<option value="${c.id}">${c.name}</option>`).join(""));
-
-    SLUG_MAP = {};
-    series.forEach(s => {
-      const slug = slugify(s.title || `${s.id}`);
-      SLUG_MAP[slug] = s.id;
-    });
-    renderSeriesGrid(series);
-
-    document.getElementById("globalSearch").addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        document.getElementById("search").value = e.target.value;
-        UI.apply();
-      }
-    });
-  },
-
-  async apply() {
-    const filters = {
-      category_id: document.getElementById("cat").value || null,
-      year: document.getElementById("year").value || null,
-      minLength: document.getElementById("minLength").value || null,
-      sort: document.getElementById("sort").value || "newest",
-      search: document.getElementById("search").value?.trim() || null
-    };
-    const s = await getSeries(filters);
-    SERIES_LIST = s;
-    SLUG_MAP = {};
-    s.forEach(item => SLUG_MAP[slugify(item.title || `${item.id}`)] = item.id);
-    renderSeriesGrid(s);
-  },
-
-  clearFilters() {
-    ["cat","year","minLength","search","sort"].forEach(id => document.getElementById(id).value = id === "sort" ? "newest" : "");
-    this.apply();
-  }
-};
-
-/* ---------- Render list (grid) ---------- */
-function renderSeriesGrid(series) {
-  const list = document.getElementById("list");
-  if (!series.length) {
-    list.innerHTML = `<div class="no-results">Brak wyników</div>`;
-    return;
-  }
-  list.innerHTML = series.map(s => {
-    const thumb = safeThumb(s.thumb);
-    const year = s.year || (s.created_at ? new Date(s.created_at).getFullYear() : '');
-    const titleEsc = (s.title || "").replace(/"/g,'&quot;');
-    const slug = slugify(s.title || `${s.id}`);
-    return `
-      <div class="card" data-id="${s.id}" data-slug="${slug}" onclick="openSeriesBySlug('${slug}')">
-        <img src="${thumb}" alt="${titleEsc}">
-        <div class="p">
-          <div class="title">${titleEsc}</div>
-          <div class="meta">${year}</div>
-        </div>
-      </div>
-    `;
-  }).join("");
-}
-
-/* ---------- Hash routing ---------- */
-function handleHashChange() {
-  const raw = location.hash.replace(/^#/, '');
-  if (!raw) {
-    showListView();
-    return;
-  }
-
-  const parts = raw.split('/');
-  const slug = parts[0];
-  const seriesId = SLUG_MAP[slug] || null;
-  if (!seriesId) {
-    (async () => {
-      const series = await getSeries();
-      SERIES_LIST = series;
-      SLUG_MAP = {};
-      series.forEach(s => SLUG_MAP[slugify(s.title || `${s.id}`)] = s.id);
-      const idAgain = SLUG_MAP[slug];
-      if (!idAgain) { showListView(); return; }
-      openSeries(idAgain, parts.slice(1));
-    })();
-    return;
-  }
-  openSeries(seriesId, parts.slice(1));
-}
-
-/* ---------- Widoki: show/hide ---------- */
-function showListView() {
-  document.getElementById("listView").style.display = "block";
-  document.getElementById("detailView").style.display = "none";
-  CURRENT_SERIES = null;
-  CURRENT_EPISODES = [];
-  document.getElementById("playerWrap").style.display = "none";
-
-  // przywróć header (gdy wracasz do listy)
-  document.querySelector("header")?.classList.remove("covered");
-}
-
-async function openSeriesBySlug(slug) {
-  location.hash = slug;
-}
-
-/* ---------- Otwieranie serii + obsługa pod-scopes ---------- */
-async function openSeries(seriesId, tailParts=[]) {
-  const { data: series, error } = await db.from("series").select("*").eq("id", seriesId).single();
-  if (error || !series) { console.error(error); showListView(); return; }
-  CURRENT_SERIES = series;
-
-  CURRENT_EPISODES = await getAllEpisodesForSeries(seriesId);
-
-  document.getElementById("listView").style.display = "none";
-  document.getElementById("detailView").style.display = "block";
-
-  document.getElementById("seriesThumb").src = safeThumb(series.thumb);
-  document.getElementById("seriesTitle").textContent = series.title || 'Bez tytułu';
-  document.getElementById("seriesDesc").textContent = series.description || '';
-
-  const seasons = buildSeasonsFromEpisodes(CURRENT_EPISODES, series);
-  renderSeasons(seasons);
-
-  // jeśli brak tailParts -> nie odtwarzamy nic, ukrywamy player i przywracamy header
-  if (tailParts.length === 0) {
-    document.getElementById("episodesContainer").innerHTML = "<div class='no-results'>Wybierz sezon, aby zobaczyć odcinki</div>";
-    document.getElementById("playerWrap").style.display = "none";
-    document.querySelector("header")?.classList.remove("covered"); // 🔹 przywróć header
-    return;
-  }
-
-  const [seasonPart, epPart] = tailParts;
-  const seasonMatch = seasonPart && seasonPart.match(/^season-(\d+)$/);
-  if (seasonMatch) {
-    const seasonNumber = Number(seasonMatch[1]);
-    renderEpisodesForSeason(seasonNumber);
-    if (epPart) {
-      const epMatch = epPart.match(/^ep-(\d+)$/);
-      if (epMatch) {
-        const epId = Number(epMatch[1]);
-        const ep = CURRENT_EPISODES.find(e => Number(e.id) === epId);
-        if (ep) {
-          // playEpisode doda header.covered
-          playEpisode(ep);
-        } else {
-          // jeśli ep nie znaleziony -> ukryj player
-          document.getElementById("playerWrap").style.display = "none";
-          document.querySelector("header")?.classList.remove("covered");
-        }
-      } else {
-        document.getElementById("playerWrap").style.display = "none";
-        document.querySelector("header")?.classList.remove("covered");
-      }
-    } else {
-      // wybrano sezon, ale nie ep -> hide player
-      document.getElementById("playerWrap").style.display = "none";
-      document.querySelector("header")?.classList.remove("covered");
-    }
-  } else {
-    document.getElementById("episodesContainer").innerHTML = "<div class='no-results'>Wybierz sezon...</div>";
-    document.getElementById("playerWrap").style.display = "none";
-    document.querySelector("header")?.classList.remove("covered");
-  }
-}
-
-/* ---------- Helper: build seasons array from episodes ---------- */
-function buildSeasonsFromEpisodes(episodes, series) {
-  const getSeason = (ep) => (ep.season ?? ep.season_number ?? ep.season_no ?? ep.seasonId ?? ep.seasonId);
-  const getThumb = (ep) => (ep.thumb || ep.episode_thumb || ep.image || null);
-  const seasonMap = {};
-  episodes.forEach(ep => {
-    const sNum = Number(getSeason(ep) ?? 1);
-    if (!seasonMap[sNum]) seasonMap[sNum] = { seasonNumber: sNum, episodes: [], thumb: null };
-    seasonMap[sNum].episodes.push(ep);
-    if (!seasonMap[sNum].thumb) seasonMap[sNum].thumb = getThumb(ep) || null;
-  });
-  const seasons = Object.values(seasonMap).sort((a,b) => a.seasonNumber - b.seasonNumber)
-    .map(s => {
-      return {
-        seasonNumber: s.seasonNumber,
-        count: s.episodes.length,
-        thumb: s.thumb || series.thumb || null,
-        title: `Sezon ${s.seasonNumber}`
-      };
-    });
-  return seasons;
-}
-
-/* ---------- Render seasons ---------- */
-function renderSeasons(seasons) {
-  const cont = document.getElementById("seasonsContainer");
-  cont.innerHTML = "";
-  if (!seasons || seasons.length === 0) {
-    cont.innerHTML = "<div class='no-results'>Brak sezonów (brak odcinków w DB)</div>";
-    return;
-  }
-  seasons.forEach(s => {
-    const div = document.createElement("div");
-    div.className = "season-card";
-    div.innerHTML = `
-      <img class="season-thumb" src="${safeThumb(s.thumb)}" alt="s${s.seasonNumber}">
-      <div class="season-info">${s.title} <div style="font-weight:400;color:var(--muted);font-size:0.85rem;">${s.count} odc.</div></div>
-    `;
-    div.onclick = () => {
-      const slug = slugify(CURRENT_SERIES.title || `${CURRENT_SERIES.id}`);
-      location.hash = `${slug}/season-${s.seasonNumber}`;
-    };
-    cont.appendChild(div);
-  });
-}
-
-/* ---------- Render episodes for season ---------- */
-function renderEpisodesForSeason(seasonNumber) {
-  const getSeasonVal = (ep) => (ep.season ?? ep.season_number ?? ep.season_no ?? ep.seasonId ?? ep.seasonId);
-  const getEpNumber = (ep) => (ep.episode_number ?? ep.episode ?? ep.number ?? ep.ep_number ?? ep.id);
-  const eps = CURRENT_EPISODES.filter(e => Number(getSeasonVal(e) || 0) === Number(seasonNumber));
-  eps.sort((a,b) => (Number(getEpNumber(a) || a.id) - Number(getEpNumber(b) || b.id)));
-  const cont = document.getElementById("episodesContainer");
-  if (!eps.length) {
-    cont.innerHTML = "<div class='no-results'>Brak odcinków w tym sezonie</div>";
-    return;
-  }
-  cont.innerHTML = "";
-  eps.forEach(ep => {
-    const epNumber = getEpNumber(ep);
-    const div = document.createElement("div");
-    div.className = "episode";
-    div.innerHTML = `
-      <div class="episode-title">Odcinek ${epNumber}: ${ep.title || 'Bez tytułu'}</div>
-      <div class="episode-desc">${ep.description || ''}</div>
-    `;
-    div.onclick = () => {
-      const slug = slugify(CURRENT_SERIES.title || `${CURRENT_SERIES.id}`);
-      location.hash = `${slug}/season-${seasonNumber}/ep-${ep.id}`;
-      // odtwarzamy od razu
-      playEpisode(ep);
-    };
-    cont.appendChild(div);
-  });
-}
-
-/* ---------- Play episode (ustaw iframe) ---------- */
-function playEpisode(ep) {
-  const urlCandidates = ep.iframe_url ?? ep.iframe ?? ep.url ?? ep.link ?? ep.video_url ?? ep.video;
-  const playerFrame = document.getElementById("playerFrame");
-  const playerWrap = document.getElementById("playerWrap");
-  const playerInfo = document.getElementById("playerInfo");
-  const header = document.querySelector("header");
-
-  if (!urlCandidates) {
-    alert("Ten odcinek nie ma przypisanego linku do odtworzenia (iframe_url).");
-    return;
-  }
-
-  playerFrame.src = urlCandidates;
-  playerInfo.innerHTML = `<strong>${ep.title || ''}</strong><br>${ep.description || ''}<br><small style="color:var(--muted)">Sezon: ${ep.season ?? ep.season_number ?? ep.season_no ?? '1'} • Odcinek: ${ep.episode_number ?? ep.episode ?? ''}</small>`;
-  playerWrap.style.display = "block";
-
-  // 🔹 schowaj header, bo odtwarzamy (iframe może pokazywać captcha)
-  header?.classList.add("covered");
-
-  setTimeout(()=> window.scrollTo({ top: playerWrap.offsetTop - 60, behavior: 'smooth' }), 80);
-}
-
-/* ---------- Utility: go home ---------- */
-function goHome() {
-  location.hash = '';
-  showListView();
-  // upewnij się, że header jest widoczny
-  document.querySelector("header")?.classList.remove("covered");
-}
-
-/* ---------- Koniec skryptu ---------- */
+});
 </script>
 </body>
 </html>
