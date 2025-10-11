@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Moja biblioteka • StreamingHub</title>
+  <style>
+    :root{--bg:#0b0d10;--card:#151922;--text:#e3e7ee;--muted:#a8bfe2;--brand:#4f7cff;--border:#232a37}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto;min-height:100vh}
+    .container{max-width:1100px;margin:0 auto;padding:16px}
+    header{position:sticky;top:0;background:rgba(11,13,16,.8);backdrop-filter:blur(6px);z-index:10}
+    .nav{display:flex;gap:12px;align-items:center;padding:12px 16px}
+    .brand{font-weight:800}
+    .menu a,.menu button{padding:8px 10px;color:var(--muted);background:none;border:none;cursor:pointer}
+    .btn{background:var(--brand);color:#fff;padding:8px 12px;border-radius:10px;border:none;cursor:pointer}
+    .btn.secondary{background:#2a3446}
+    .card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:12px;margin-top:16px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px}
+    .item{background:#0e1218;border:1px solid var(--border);padding:12px;border-radius:10px;display:flex;gap:12px;align-items:center}
+    .thumb{width:72px;height:56px;object-fit:cover;border-radius:8px;background:#000}
+    h1,h2{margin:0}
+    .small{font-size:13px;color:var(--muted)}
+    footer{color:var(--muted);text-align:center;padding:30px 0}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header>
+  <div class="nav container">
+    <a class="brand" href="filmy.html">🎬 StreamingHub</a>
+    <nav class="menu" style="margin-left:auto">
+      <a href="filmy.html">Filmy</a>
+      <a href="seriale.html">Seriale</a>
+      <a href="top.html">TOP</a>
+      <a href="moja-biblioteka.html" style="color:#fff">Moja biblioteka</a>
+      <button onclick="logout()" class="btn secondary">Wyloguj</button>
+    </nav>
+  </div>
+</header>
+
+<main class="container" id="app">
+  <h1>Moja biblioteka</h1>
+
+  <section id="pointsBox" class="card">
+    <h2>🎯 Twoje punkty: <span id="points">…</span></h2>
+    <div style="margin-top:10px">
+      <button id="watchAdBtn" class="btn">🎬 Obejrzyj reklamę (+50 pkt)</button>
+      <span class="small" style="margin-left:12px;color:var(--muted)">Kliknij, aby otrzymać punkty</span>
+    </div>
+  </section>
+
+  <section id="filmsBox" class="card">
+    <h2>🎞 Historia oglądania — Filmy</h2>
+    <div id="filmsList" class="grid">
+      <div class="small">Ładowanie…</div>
+    </div>
+  </section>
+
+  <section id="seriesBox" class="card">
+    <h2>📺 Historia oglądania — Seriale</h2>
+    <div id="seriesList" class="grid">
+      <div class="small">Ładowanie…</div>
+    </div>
+  </section>
+</main>
+
+<footer>© <script>document.write(new Date().getFullYear())</script> StreamingHub</footer>
+
+<script>
+const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
+const db = supabase.createClient ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+
+/* ----------------------
+   helper: remove polish diacritics BY DELETING those letters entirely
+   we remove characters: ąćęłńóśżź and their uppercase variants
+   ---------------------- */
+function toSlugRemovePolish(name) {
+  if (!name) return "";
+  // lowercase
+  let s = String(name).toLowerCase();
+  // remove Polish letters completely
+  s = s.replace(/[ąćęłńóśżźĄĆĘŁŃÓŚŻŹ]/g, "");
+  // remove any non-alphanumeric (keep spaces and hyphens for now)
+  s = s.replace(/[^a-z0-9\s-]/g, "");
+  // spaces -> hyphen
+  s = s.trim().replace(/\s+/g, "-");
+  // collapse hyphens
+  s = s.replace(/-+/g, "-");
+  // trim leading/trailing hyphens
+  s = s.replace(/^-+|-+$/g, "");
+  return s;
+}
+
+/* ----------------------
+   ensure logged
+   ---------------------- */
+(async function init() {
+  const { data: { session } } = await db.auth.getSession();
+  if (!session || !session.user) {
+    alert("Musisz się zalogować, aby zobaczyć tę stronę.");
+    location.href = "login.html";
+    return;
+  }
+  currentUser = session.user;
+  // init UI
+  await loadPoints();
+  await loadHistory();
+  document.getElementById("watchAdBtn").addEventListener("click", watchAd);
+})();
+
+/* ----------------------
+   load points from profiles.points
+   ---------------------- */
+async function loadPoints() {
+  try {
+    const { data, error } = await db
+      .from("profiles")
+      .select("points")
+      .eq("id", currentUser.id)
+      .maybeSingle();
+
+    if (error) throw error;
+    const pts = (data && (data.points !== null && data.points !== undefined)) ? Number(data.points) : 0;
+    document.getElementById("points").textContent = pts;
+  } catch (err) {
+    console.error("loadPoints:", err);
+    document.getElementById("points").textContent = "—";
+  }
+}
+
+/* ----------------------
+   watch ad -> +50 pkt, log in points_log
+   ---------------------- */
+async function watchAd() {
+  const add = 50;
+  const btn = document.getElementById("watchAdBtn");
+  btn.disabled = true;
+  btn.textContent = "Trwa przetwarzanie…";
+
+  try {
+    // 1) add log entry (points_log)
+    const { error: logErr } = await db.from("points_log").insert([{
+      user_id: currentUser.id,
+      change: add,
+      reason: "Ad reward"
+    }]);
+    if (logErr) throw logErr;
+
+    // 2) update profiles.points (read then update)
+    const { data: prof, error: profErr } = await db
+      .from("profiles")
+      .select("points")
+      .eq("id", currentUser.id)
+      .maybeSingle();
+    if (profErr) throw profErr;
+
+    const current = (prof && (prof.points !== null && prof.points !== undefined)) ? Number(prof.points) : 0;
+    const next = current + add;
+
+    const { error: updateErr } = await db
+      .from("profiles")
+      .update({ points: next })
+      .eq("id", currentUser.id);
+
+    if (updateErr) throw updateErr;
+
+    // success
+    await loadPoints();
+    alert("Dostałeś +50 pkt ✅");
+  } catch (err) {
+    console.error("watchAd error:", err);
+    alert("Wystąpił błąd podczas przyznawania punktów.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "🎬 Obejrzyj reklamę (+50 pkt)";
+  }
+}
+
+/* ----------------------
+   load history: movies and series
+   ---------------------- */
+async function loadHistory() {
+  // get watch_history rows for this user (most recent first)
+  try {
+    const { data, error } = await db
+      .from("watch_history")
+      .select("id, movie_id, episode_id, watched_at")
+      .eq("user_id", currentUser.id)
+      .order("watched_at", { ascending: false })
+      .limit(200);
+
+    if (error) throw error;
+
+    // split into films (episode_id is null) and series (episode_id not null)
+    const films = (data || []).filter(r => !r.episode_id && r.movie_id);
+    const series = (data || []).filter(r => r.episode_id);
+
+    await renderFilmsList(films);
+    await renderSeriesList(series);
+  } catch (err) {
+    console.error("loadHistory:", err);
+    document.getElementById("filmsList").innerHTML = "<div class='small'>Błąd wczytywania historii filmów.</div>";
+    document.getElementById("seriesList").innerHTML = "<div class='small'>Błąd wczytywania historii seriali.</div>";
+  }
+}
+
+/* ----------------------
+   render films - fetch movie details in batch
+   ---------------------- */
+async function renderFilmsList(rows) {
+  const box = document.getElementById("filmsList");
+  if (!rows.length) {
+    box.innerHTML = "<div class='small'>Brak historii filmów.</div>";
+    return;
+  }
+
+  const ids = [...new Set(rows.map(r => r.movie_id))].filter(Boolean);
+  // fetch movies
+  const { data: movies, error: mErr } = await db.from("movies").select("id,title,thumb").in("id", ids);
+  if (mErr) { console.error(mErr); box.innerHTML = "<div class='small'>Błąd pobierania filmów.</div>"; return; }
+  const movieById = new Map((movies||[]).map(m => [String(m.id), m]));
+
+  box.innerHTML = rows.map(r => {
+    const mov = movieById.get(String(r.movie_id));
+    const title = mov ? mov.title : `Film #${r.movie_id}`;
+    const thumb = mov && mov.thumb ? mov.thumb : "";
+    return `
+      <div class="item" data-id="${r.id}">
+        <img class="thumb" src="${escapeHtml(thumb)}" alt="">
+        <div style="flex:1">
+          <div style="font-weight:700">${escapeHtml(title)}</div>
+          <div class="small">${new Date(r.watched_at).toLocaleString()}</div>
+        </div>
+        <div>
+          <button class="btn" onclick="continueMovie('${r.movie_id}')">Odtwórz</button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+/* ----------------------
+   render series - fetch episodes + series in batch
+   ---------------------- */
+async function renderSeriesList(rows) {
+  const box = document.getElementById("seriesList");
+  if (!rows.length) {
+    box.innerHTML = "<div class='small'>Brak historii seriali.</div>";
+    return;
+  }
+
+  const episodeIds = [...new Set(rows.map(r => r.episode_id))].filter(Boolean);
+  // fetch episodes and their series
+  const { data: episodes, error: epErr } = await db.from("episodes").select("id,title,series_id,season,episode,thumb").in("id", episodeIds);
+  if (epErr) { console.error(epErr); box.innerHTML = "<div class='small'>Błąd pobierania odcinków.</div>"; return; }
+  const seriesIds = [...new Set((episodes||[]).map(e => e.series_id))].filter(Boolean);
+  const { data: seriesRows } = await db.from("series").select("id,title").in("id", seriesIds);
+  const seriesById = new Map((seriesRows||[]).map(s => [String(s.id), s]));
+  const episodeById = new Map((episodes||[]).map(e => [String(e.id), e]));
+
+  box.innerHTML = rows.map(r => {
+    const ep = episodeById.get(String(r.episode_id));
+    if (!ep) {
+      return `<div class="item"><div style="flex:1">Odcinek #${r.episode_id}<div class="small">${new Date(r.watched_at).toLocaleString()}</div></div></div>`;
+    }
+    const ser = seriesById.get(String(ep.series_id));
+    const seriesTitle = ser ? ser.title : `Serial #${ep.series_id}`;
+    const episodeTitle = ep.title || `S${ep.season}E${ep.episode}`;
+    const thumb = ep.thumb || "";
+    // slug for series (remove Polish diacritics BY REMOVAL as requested)
+    const slugSeries = toSlugRemovePolish(seriesTitle);
+    const seasonSegment = `season-${ep.season}`;
+    const epSegment = `ep-${ep.episode}`;
+    const hash = `${slugSeries}/${seasonSegment}/${epSegment}`;
+
+    // store hash on element for click handler
+    return `
+      <div class="item">
+        <img class="thumb" src="${escapeHtml(thumb)}" alt="">
+        <div style="flex:1">
+          <div style="font-weight:700">${escapeHtml(seriesTitle)}</div>
+          <div class="small">${escapeHtml(episodeTitle)} • ${new Date(r.watched_at).toLocaleString()}</div>
+        </div>
+        <div>
+          <button class="btn" onclick="resumeSeries('${hash}')">Wznów</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+/* ----------------------
+   continue movie -> redirect to filmy.html#movie-id or filmy.html?movie=ID
+   (adjust target to your player routing)
+   ---------------------- */
+function continueMovie(movieId) {
+  // przykład: kierujemy do filmy.html#movie-123
+  // możesz dopasować do swojej ścieżki odtwarzacza
+  window.location.href = `filmy.html#movie-${encodeURIComponent(movieId)}`;
+}
+
+/* ----------------------
+   resume series -> confirm then redirect to seriale.html#slug/season-X/ep-Y
+   ---------------------- */
+function resumeSeries(hash) {
+  const confirmMsg = "Czy chcesz wznowić oglądanie tego odcinka?";
+  if (confirm(confirmMsg)) {
+    window.location.href = `seriale.html#${hash}`;
+  }
+}
+
+/* ----------------------
+   logout
+   ---------------------- */
+async function logout() {
+  await db.auth.signOut();
+  location.href = "login.html";
+}
+
+/* ----------------------
+   small helper to escape text for safe HTML insertion
+   ---------------------- */
+function escapeHtml(str) {
+  if (!str && str !== 0) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+</script>
+
+</body>
+</html>
