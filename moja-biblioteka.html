@@ -71,109 +71,38 @@
 <script>
 const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
-const db = supabase.createClient ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 
 /* ----------------------
    helper: remove polish diacritics BY DELETING those letters entirely
-   we remove characters: ąćęłńóśżź and their uppercase variants
    ---------------------- */
 function toSlugRemovePolish(name) {
   if (!name) return "";
-  // lowercase
   let s = String(name).toLowerCase();
-  // remove Polish letters completely
   s = s.replace(/[ąćęłńóśżźĄĆĘŁŃÓŚŻŹ]/g, "");
-  // remove any non-alphanumeric (keep spaces and hyphens for now)
   s = s.replace(/[^a-z0-9\s-]/g, "");
-  // spaces -> hyphen
-  s = s.trim().replace(/\s+/g, "-");
-  // collapse hyphens
-  s = s.replace(/-+/g, "-");
-  // trim leading/trailing hyphens
-  s = s.replace(/^-+|-+$/g, "");
+  s = s.trim().replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
   return s;
 }
 
 /* ----------------------
-   ensure logged
+   init (sprawdź sesję, załaduj dane)
    ---------------------- */
 (async function init() {
   const { data: { session } } = await db.auth.getSession();
+
   if (!session || !session.user) {
     alert("Musisz się zalogować, aby zobaczyć tę stronę.");
     location.href = "login.html";
     return;
   }
+
   currentUser = session.user;
-  // init UI
+
   await loadPoints();
-async function loadHistory() {
-  try {
-    const { data, error } = await db
-      .from("watch_history")
-      .select("episode_id, watched_at")
-      .eq("user_id", currentUser.id)
-      .order("watched_at", { ascending: false })
-      .limit(100);
-
-    if (error) throw error;
-    await renderSeriesList(data);
-  } catch (err) {
-    console.error("loadHistory:", err);
-    document.getElementById("seriesList").innerHTML = "<div class='small'>Błąd wczytywania historii.</div>";
-  }
-}
-
-async function renderSeriesList(rows) {
-  const box = document.getElementById("seriesList");
-  if (!rows.length) {
-    box.innerHTML = "<div class='small'>Brak historii oglądania seriali.</div>";
-    return;
-  }
-
-  const episodeIds = [...new Set(rows.map(r => r.episode_id))];
-  const { data: episodes, error: epErr } = await db
-    .from("episodes")
-    .select("id,title,series_id,season,episode,thumb")
-    .in("id", episodeIds);
-
-  if (epErr) { console.error(epErr); box.innerHTML = "❌ Błąd pobierania odcinków."; return; }
-
-  const seriesIds = [...new Set(episodes.map(e => e.series_id))];
-  const { data: series } = await db
-    .from("series")
-    .select("id,title")
-    .in("id", seriesIds);
-
-  const seriesById = new Map(series.map(s => [String(s.id), s]));
-  const episodeById = new Map(episodes.map(e => [String(e.id), e]));
-
-  box.innerHTML = rows.map(r => {
-    const ep = episodeById.get(String(r.episode_id));
-    if (!ep) return "";
-
-    const ser = seriesById.get(String(ep.series_id));
-    const seriesTitle = ser ? ser.title : "Nieznany serial";
-    const episodeTitle = ep.title || `S${ep.season}E${ep.episode}`;
-    const thumb = ep.thumb || "";
-    const slug = toSlugRemovePolish(seriesTitle);
-    const hash = `${slug}/season-${ep.season}/ep-${ep.episode}`;
-
-    return `
-      <div class="item">
-        <img class="thumb" src="${escapeHtml(thumb)}" alt="">
-        <div style="flex:1">
-          <div style="font-weight:700">${escapeHtml(seriesTitle)}</div>
-          <div class="small">${escapeHtml(episodeTitle)} • ${new Date(r.watched_at).toLocaleString()}</div>
-        </div>
-        <div>
-          <button class="btn" onclick="resumeSeries('${hash}')">Wznów</button>
-        </div>
-      </div>`;
-  }).join("");
-}
+  await loadHistory();
 
   document.getElementById("watchAdBtn").addEventListener("click", watchAd);
 })();
@@ -190,7 +119,7 @@ async function loadPoints() {
       .maybeSingle();
 
     if (error) throw error;
-    const pts = (data && (data.points !== null && data.points !== undefined)) ? Number(data.points) : 0;
+    const pts = data && data.points !== null ? Number(data.points) : 0;
     document.getElementById("points").textContent = pts;
   } catch (err) {
     console.error("loadPoints:", err);
@@ -208,7 +137,6 @@ async function watchAd() {
   btn.textContent = "Trwa przetwarzanie…";
 
   try {
-    // 1) add log entry (points_log)
     const { error: logErr } = await db.from("points_log").insert([{
       user_id: currentUser.id,
       change: add,
@@ -216,7 +144,6 @@ async function watchAd() {
     }]);
     if (logErr) throw logErr;
 
-    // 2) update profiles.points (read then update)
     const { data: prof, error: profErr } = await db
       .from("profiles")
       .select("points")
@@ -224,17 +151,13 @@ async function watchAd() {
       .maybeSingle();
     if (profErr) throw profErr;
 
-    const current = (prof && (prof.points !== null && prof.points !== undefined)) ? Number(prof.points) : 0;
-    const next = current + add;
-
+    const next = (prof?.points || 0) + add;
     const { error: updateErr } = await db
       .from("profiles")
       .update({ points: next })
       .eq("id", currentUser.id);
-
     if (updateErr) throw updateErr;
 
-    // success
     await loadPoints();
     alert("Dostałeś +50 pkt ✅");
   } catch (err) {
@@ -247,10 +170,9 @@ async function watchAd() {
 }
 
 /* ----------------------
-   load history: movies and series
+   load history (movies + series)
    ---------------------- */
 async function loadHistory() {
-  // get watch_history rows for this user (most recent first)
   try {
     const { data, error } = await db
       .from("watch_history")
@@ -261,7 +183,6 @@ async function loadHistory() {
 
     if (error) throw error;
 
-    // split into films (episode_id is null) and series (episode_id not null)
     const films = (data || []).filter(r => !r.episode_id && r.movie_id);
     const series = (data || []).filter(r => r.episode_id);
 
@@ -275,7 +196,7 @@ async function loadHistory() {
 }
 
 /* ----------------------
-   render films - fetch movie details in batch
+   render films
    ---------------------- */
 async function renderFilmsList(rows) {
   const box = document.getElementById("filmsList");
@@ -285,17 +206,16 @@ async function renderFilmsList(rows) {
   }
 
   const ids = [...new Set(rows.map(r => r.movie_id))].filter(Boolean);
-  // fetch movies
   const { data: movies, error: mErr } = await db.from("movies").select("id,title,thumb").in("id", ids);
   if (mErr) { console.error(mErr); box.innerHTML = "<div class='small'>Błąd pobierania filmów.</div>"; return; }
-  const movieById = new Map((movies||[]).map(m => [String(m.id), m]));
 
+  const movieById = new Map(movies.map(m => [String(m.id), m]));
   box.innerHTML = rows.map(r => {
     const mov = movieById.get(String(r.movie_id));
     const title = mov ? mov.title : `Film #${r.movie_id}`;
-    const thumb = mov && mov.thumb ? mov.thumb : "";
+    const thumb = mov?.thumb || "";
     return `
-      <div class="item" data-id="${r.id}">
+      <div class="item">
         <img class="thumb" src="${escapeHtml(thumb)}" alt="">
         <div style="flex:1">
           <div style="font-weight:700">${escapeHtml(title)}</div>
@@ -309,7 +229,7 @@ async function renderFilmsList(rows) {
 }
 
 /* ----------------------
-   render series - fetch episodes + series in batch
+   render series
    ---------------------- */
 async function renderSeriesList(rows) {
   const box = document.getElementById("seriesList");
@@ -319,30 +239,24 @@ async function renderSeriesList(rows) {
   }
 
   const episodeIds = [...new Set(rows.map(r => r.episode_id))].filter(Boolean);
-  // fetch episodes and their series
   const { data: episodes, error: epErr } = await db.from("episodes").select("id,title,series_id,season,episode,thumb").in("id", episodeIds);
   if (epErr) { console.error(epErr); box.innerHTML = "<div class='small'>Błąd pobierania odcinków.</div>"; return; }
-  const seriesIds = [...new Set((episodes||[]).map(e => e.series_id))].filter(Boolean);
+
+  const seriesIds = [...new Set(episodes.map(e => e.series_id))];
   const { data: seriesRows } = await db.from("series").select("id,title").in("id", seriesIds);
-  const seriesById = new Map((seriesRows||[]).map(s => [String(s.id), s]));
-  const episodeById = new Map((episodes||[]).map(e => [String(e.id), e]));
+
+  const seriesById = new Map(seriesRows.map(s => [String(s.id), s]));
+  const episodeById = new Map(episodes.map(e => [String(e.id), e]));
 
   box.innerHTML = rows.map(r => {
     const ep = episodeById.get(String(r.episode_id));
-    if (!ep) {
-      return `<div class="item"><div style="flex:1">Odcinek #${r.episode_id}<div class="small">${new Date(r.watched_at).toLocaleString()}</div></div></div>`;
-    }
+    if (!ep) return "";
     const ser = seriesById.get(String(ep.series_id));
-    const seriesTitle = ser ? ser.title : `Serial #${ep.series_id}`;
+    const seriesTitle = ser ? ser.title : "Nieznany serial";
     const episodeTitle = ep.title || `S${ep.season}E${ep.episode}`;
     const thumb = ep.thumb || "";
-    // slug for series (remove Polish diacritics BY REMOVAL as requested)
-    const slugSeries = toSlugRemovePolish(seriesTitle);
-    const seasonSegment = `season-${ep.season}`;
-    const epSegment = `ep-${ep.episode}`;
-    const hash = `${slugSeries}/${seasonSegment}/${epSegment}`;
-
-    // store hash on element for click handler
+    const slug = toSlugRemovePolish(seriesTitle);
+    const hash = `${slug}/season-${ep.season}/ep-${ep.episode}`;
     return `
       <div class="item">
         <img class="thumb" src="${escapeHtml(thumb)}" alt="">
@@ -353,27 +267,19 @@ async function renderSeriesList(rows) {
         <div>
           <button class="btn" onclick="resumeSeries('${hash}')">Wznów</button>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join("");
 }
 
 /* ----------------------
-   continue movie -> redirect to filmy.html#movie-id or filmy.html?movie=ID
-   (adjust target to your player routing)
+   continue / resume
    ---------------------- */
 function continueMovie(movieId) {
-  // przykład: kierujemy do filmy.html#movie-123
-  // możesz dopasować do swojej ścieżki odtwarzacza
   window.location.href = `filmy.html#movie-${encodeURIComponent(movieId)}`;
 }
 
-/* ----------------------
-   resume series -> confirm then redirect to seriale.html#slug/season-X/ep-Y
-   ---------------------- */
 function resumeSeries(hash) {
-  const confirmMsg = "Czy chcesz wznowić oglądanie tego odcinka?";
-  if (confirm(confirmMsg)) {
+  if (confirm("Czy chcesz wznowić oglądanie tego odcinka?")) {
     window.location.href = `seriale.html#${hash}`;
   }
 }
@@ -387,7 +293,7 @@ async function logout() {
 }
 
 /* ----------------------
-   small helper to escape text for safe HTML insertion
+   escape html
    ---------------------- */
 function escapeHtml(str) {
   if (!str && str !== 0) return "";
