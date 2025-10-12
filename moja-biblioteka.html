@@ -109,7 +109,72 @@ function toSlugRemovePolish(name) {
   currentUser = session.user;
   // init UI
   await loadPoints();
-  await loadHistory();
+async function loadHistory() {
+  try {
+    const { data, error } = await db
+      .from("watch_history")
+      .select("episode_id, watched_at")
+      .eq("user_id", currentUser.id)
+      .order("watched_at", { ascending: false })
+      .limit(100);
+
+    if (error) throw error;
+    await renderSeriesList(data);
+  } catch (err) {
+    console.error("loadHistory:", err);
+    document.getElementById("seriesList").innerHTML = "<div class='small'>Błąd wczytywania historii.</div>";
+  }
+}
+
+async function renderSeriesList(rows) {
+  const box = document.getElementById("seriesList");
+  if (!rows.length) {
+    box.innerHTML = "<div class='small'>Brak historii oglądania seriali.</div>";
+    return;
+  }
+
+  const episodeIds = [...new Set(rows.map(r => r.episode_id))];
+  const { data: episodes, error: epErr } = await db
+    .from("episodes")
+    .select("id,title,series_id,season,episode,thumb")
+    .in("id", episodeIds);
+
+  if (epErr) { console.error(epErr); box.innerHTML = "❌ Błąd pobierania odcinków."; return; }
+
+  const seriesIds = [...new Set(episodes.map(e => e.series_id))];
+  const { data: series } = await db
+    .from("series")
+    .select("id,title")
+    .in("id", seriesIds);
+
+  const seriesById = new Map(series.map(s => [String(s.id), s]));
+  const episodeById = new Map(episodes.map(e => [String(e.id), e]));
+
+  box.innerHTML = rows.map(r => {
+    const ep = episodeById.get(String(r.episode_id));
+    if (!ep) return "";
+
+    const ser = seriesById.get(String(ep.series_id));
+    const seriesTitle = ser ? ser.title : "Nieznany serial";
+    const episodeTitle = ep.title || `S${ep.season}E${ep.episode}`;
+    const thumb = ep.thumb || "";
+    const slug = toSlugRemovePolish(seriesTitle);
+    const hash = `${slug}/season-${ep.season}/ep-${ep.episode}`;
+
+    return `
+      <div class="item">
+        <img class="thumb" src="${escapeHtml(thumb)}" alt="">
+        <div style="flex:1">
+          <div style="font-weight:700">${escapeHtml(seriesTitle)}</div>
+          <div class="small">${escapeHtml(episodeTitle)} • ${new Date(r.watched_at).toLocaleString()}</div>
+        </div>
+        <div>
+          <button class="btn" onclick="resumeSeries('${hash}')">Wznów</button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
   document.getElementById("watchAdBtn").addEventListener("click", watchAd);
 })();
 
