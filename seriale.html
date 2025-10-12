@@ -534,14 +534,20 @@ function goHome() {
 // openSeries is used by handleHashChange
 
 //<!-- Zapis historii oglądania odcinka -->
+<script>
 async function saveEpisodeHistory(seriesId, episodeId) {
   try {
+    console.log("💾 saveEpisodeHistory →", { seriesId, episodeId }); // DIAG
+
     const { data: { session } } = await db.auth.getSession();
-    if (!session || !session.user) return; // niezalogowany użytkownik
+    if (!session || !session.user) {
+      console.warn("❌ Użytkownik niezalogowany — historia nie zapisana");
+      return;
+    }
 
     const userId = session.user.id;
 
-    // sprawdź, czy istnieje wpis dla tego odcinka
+    // sprawdź czy istnieje już wpis
     const { data: existing, error: existingErr } = await db
       .from("watch_history")
       .select("id")
@@ -549,27 +555,32 @@ async function saveEpisodeHistory(seriesId, episodeId) {
       .eq("episode_id", episodeId)
       .maybeSingle();
 
-    if (existingErr) throw existingErr;
+    if (existingErr) {
+      console.error("❌ existingErr:", existingErr);
+      return;
+    }
 
     if (existing) {
-      // aktualizacja czasu
-      await db
+      console.log("🔁 aktualizacja historii:", existing.id);
+      const { error: upErr } = await db
         .from("watch_history")
         .update({ watched_at: new Date().toISOString() })
         .eq("id", existing.id);
+      if (upErr) console.error("❌ update error:", upErr);
     } else {
-      // nowy wpis
-      await db
+      console.log("🆕 dodaję nowy wpis historii");
+      const { error: insErr } = await db
         .from("watch_history")
         .insert([{ user_id: userId, episode_id: episodeId }]);
+      if (insErr) console.error("❌ insert error:", insErr);
     }
 
-    console.log("📺 Zapisano historię odcinka:", episodeId);
   } catch (err) {
-    console.error("Błąd zapisu historii:", err);
+    console.error("❌ saveEpisodeHistory błąd:", err);
   }
 }
 </script>
+
 
 </body>
 </html>
