@@ -518,6 +518,7 @@ function playEpisode(ep) {
   playerFrame.src = urlCandidates;
   playerInfo.innerHTML = `<strong>${ep.title || ''}</strong><br>${ep.description || ''}<br><small style="color:var(--muted)">Sezon: ${ep.season ?? ep.season_number ?? ep.season_no ?? '1'} • Odcinek: ${ep.episode_number ?? ep.episode ?? ''}</small>`;
   playerWrap.style.display = "block";
+  saveEpisodeHistory(ep.series_id, ep.id);
   // scroll to player
   setTimeout(()=> window.scrollTo({ top: playerWrap.offsetTop - 60, behavior: 'smooth' }), 80);
 }
@@ -531,7 +532,44 @@ function goHome() {
 /* ---------- Init helpers: open series from card click, deep link ---------- */
 // openSeries is used by handleHashChange
 
+//<!-- Zapis historii oglądania odcinka -->
+async function saveEpisodeHistory(seriesId, episodeId) {
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session || !session.user) return; // niezalogowany użytkownik
+
+    const userId = session.user.id;
+
+    // sprawdź, czy istnieje wpis dla tego odcinka
+    const { data: existing, error: existingErr } = await db
+      .from("watch_history")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("episode_id", episodeId)
+      .maybeSingle();
+
+    if (existingErr) throw existingErr;
+
+    if (existing) {
+      // aktualizacja czasu
+      await db
+        .from("watch_history")
+        .update({ watched_at: new Date().toISOString() })
+        .eq("id", existing.id);
+    } else {
+      // nowy wpis
+      await db
+        .from("watch_history")
+        .insert([{ user_id: userId, episode_id: episodeId }]);
+    }
+
+    console.log("📺 Zapisano historię odcinka:", episodeId);
+  } catch (err) {
+    console.error("Błąd zapisu historii:", err);
+  }
+}
 </script>
+
 </body>
 </html>
 
