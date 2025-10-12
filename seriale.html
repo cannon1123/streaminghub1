@@ -171,6 +171,44 @@ const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  <script>
+// --- zapisz historię obejrzenia odcinka ---
+async function saveEpisodeHistory(seriesId, episodeId) {
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session || !session.user) return; // niezalogowany użytkownik
+
+    const userId = session.user.id;
+
+    // sprawdź, czy już istnieje wpis
+    const { data: existing } = await db
+      .from("watch_history")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("episode_id", episodeId)
+      .maybeSingle();
+
+    if (existing) {
+      // aktualizacja czasu
+      await db
+        .from("watch_history")
+        .update({ watched_at: new Date().toISOString() })
+        .eq("id", existing.id);
+    } else {
+      // nowy wpis
+      await db
+        .from("watch_history")
+        .insert([{ user_id: userId, series_id: seriesId, episode_id: episodeId }]);
+    }
+
+    console.log("Zapisano historię:", { seriesId, episodeId });
+  } catch (err) {
+    console.error("Błąd zapisu historii:", err);
+  }
+}
+</script>
+
+
 /* ---------- Helpery ---------- */
 function slugify(str) {
   return String(str || "").toLowerCase()
