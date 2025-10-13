@@ -90,7 +90,7 @@ function toast(msg){ const d=document.createElement("div"); d.className="alert";
    AUTH + PROFILES
    ========================= */
 const Auth = {
-  async currentUser(){ const { data:{ user } } await db.auth.getUser(); return user||null; },
+  async currentUser(){ const { data:{ user } } = await db.auth.getUser(); return user||null; },
   async currentProfile(){
     const user = await Auth.currentUser(); if(!user) return null;
     const { data, error } = await db.from("profiles").select("*").eq("id", user.id).maybeSingle();
