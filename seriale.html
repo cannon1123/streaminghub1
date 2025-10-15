@@ -536,13 +536,55 @@ function goHome() {
 //<!-- Zapis historii oglądania odcinka -->
 async function saveEpisodeHistory(seriesId, episodeId) {
   try {
-    console.log("💾 saveEpisodeHistory →", { seriesId, episodeId }); // DIAG
+    console.log("💾 saveEpisodeHistory →", { seriesId, episodeId });
 
     const { data: { session } } = await db.auth.getSession();
     if (!session || !session.user) {
       console.warn("❌ Użytkownik niezalogowany — historia nie zapisana");
       return;
     }
+
+    const userId = session.user.id;
+
+    // 1️⃣ Pobierz wszystkie odcinki z tej samej serii
+    const { data: eps, error: epsErr } = await db
+      .from("episodes")
+      .select("id")
+      .eq("series_id", seriesId);
+
+    if (epsErr) {
+      console.error("❌ Błąd pobierania odcinków serii:", epsErr);
+      return;
+    }
+
+    const epIds = eps.map(e => e.id);
+    if (epIds.length) {
+      // 2️⃣ Usuń wszystkie wpisy historii użytkownika z tej serii
+      const { error: delErr } = await db
+        .from("watch_history")
+        .delete()
+        .eq("user_id", userId)
+        .in("episode_id", epIds);
+
+      if (delErr) console.error("❌ Błąd usuwania starych wpisów historii:", delErr);
+    }
+
+    // 3️⃣ Dodaj nowy wpis dla aktualnego odcinka
+    const { error: insErr } = await db
+      .from("watch_history")
+      .insert([{ user_id: userId, episode_id: episodeId }]);
+
+    if (insErr) {
+      console.error("❌ insert error:", insErr);
+    } else {
+      console.log("✅ Historia zaktualizowana — zapisano najnowszy odcinek serii.");
+    }
+
+  } catch (err) {
+    console.error("❌ saveEpisodeHistory błąd:", err);
+  }
+}
+
 
     const userId = session.user.id;
 
