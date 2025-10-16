@@ -67,6 +67,7 @@
     }
     .friend-info { display: flex; flex-direction: column; }
     .muted { color: var(--muted); font-size: 13px; }
+    .small { font-size: 12px; color: var(--muted); }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -92,18 +93,33 @@
   <!-- Twój kod znajomego -->
   <section class="card">
     <h2>🔑 Twój kod znajomego</h2>
-    <p class="muted">Udostępnij go, aby inni mogli Cię dodać.</p>
+    <p class="muted">Udostępnij go, aby inni mogli Ci wysłać zaproszenie.</p>
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <input type="text" id="friendCode" readonly style="flex:1;">
       <button class="btn secondary" onclick="copyCode()">📋 Skopiuj</button>
+      <button class="btn danger" onclick="changeCode()">🔄 Zmień kod</button>
     </div>
+
     <hr style="margin:20px 0; border-color:var(--border)">
-    <h3>➕ Dodaj znajomego po kodzie</h3>
+
+    <h3>➕ Wyślij zaproszenie po kodzie</h3>
+    <p class="small">Jeśli chcesz wysłać zaproszenie do kogoś — wklej jego kod poniżej. Ten kod spowoduje, że ta osoba otrzyma zaproszenie od Ciebie (i będzie mogła je anulować). Gdy właściciel kodu zaakceptuje, staniecie się znajomymi.</p>
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <input type="text" id="addCodeInput" placeholder="Wpisz kod znajomego" style="flex:1;">
-      <button class="btn" onclick="addFriend()">Dodaj</button>
+      <button class="btn" onclick="addFriend()">Wyślij zaproszenie</button>
     </div>
     <p id="addMessage" class="muted"></p>
+  </section>
+
+  <!-- Zaproszenia -->
+  <section class="card">
+    <h2>📩 Zaproszenia</h2>
+    <p class="small">Masz tu 2 sekcje: przychodzące (to Ty możesz zaakceptować/odrzucić) oraz wysłane (to Ty możesz anulować).</p>
+    <h3>Przychodzące</h3>
+    <div id="incomingList">Ładowanie...</div>
+    <hr style="margin:12px 0; border-color:var(--border)">
+    <h3>Wysłane</h3>
+    <div id="outgoingList">Ładowanie...</div>
   </section>
 
   <!-- Lista znajomych -->
@@ -113,7 +129,9 @@
   </section>
 </main>
 
-<footer>© <script>document.write(new Date().getFullYear())</script> StreamingHub</footer>
+<footer style="text-align:center;margin:40px 0;color:var(--muted);">
+  © <script>document.write(new Date().getFullYear())</script> StreamingHub
+</footer>
 
 <script>
 const db = supabase.createClient(
@@ -122,13 +140,13 @@ const db = supabase.createClient(
 );
 let currentUser = null;
 
-/* INIT */
 (async()=>{
   const { data:{ session } } = await db.auth.getSession();
   if(!session) return location.href="login.html";
   currentUser = session.user;
 
   await loadFriendCode();
+  await loadRequests();   // both incoming & outgoing
   await loadFriends();
 })();
 
@@ -144,25 +162,164 @@ function copyCode(){
   alert("Skopiowano kod znajomego ✅");
 }
 
-/* DODAWANIE ZNAJOMEGO */
+/* ZMIANA KODU */
+async function changeCode(){
+  if(!confirm("Czy na pewno chcesz zmienić swój kod znajomego? Osoby z poprzednim kodem będą musiały użyć nowego.")) return;
+  // prosty generator 8 znaków
+  const newCode = Math.random().toString(36).substring(2,10);
+  await db.from("profiles").update({ friend_code: newCode }).eq("id", currentUser.id);
+  await loadFriendCode();
+  alert("🔄 Kod znajomego został zmieniony!");
+}
+
+/* KIEDY UŻYTKOWNIK WPISUJE CZYJŚ KOD -> tworzymy zaproszenie:
+   sender_id = currentUser.id (osoba, która wysyła request),
+   receiver_id = owner.id (właściciel kodu) */
 async function addFriend(){
   const code = document.getElementById("addCodeInput").value.trim();
   const msg = document.getElementById("addMessage");
   msg.textContent = "";
   if(!code) return alert("Podaj kod znajomego.");
 
-  const { data: friend } = await db.from("profiles").select("id,username").eq("friend_code", code).maybeSingle();
-  if(!friend) return msg.textContent = "❌ Nie znaleziono użytkownika o tym kodzie.";
-  if(friend.id === currentUser.id) return msg.textContent = "❌ Nie możesz dodać siebie.";
+  // znajdź właściciela kodu
+  const { data: owner } = await db.from("profiles").select("id,username").eq("friend_code", code).maybeSingle();
+  if(!owner) return msg.textContent = "❌ Nie znaleziono użytkownika o tym kodzie.";
+  if(owner.id === currentUser.id) return msg.textContent = "❌ Nie możesz wysłać zaproszenia do siebie.";
 
-  const { data: existing } = await db.from("friends").select("*")
-    .eq("user_id", currentUser.id).eq("friend_id", friend.id).maybeSingle();
-  if(existing) return msg.textContent = "ℹ️ Już jesteście znajomymi.";
+  // sprawdź czy już jesteście znajomymi
+  const { data: already } = await db.from("friends")
+    .select("*")
+    .or(`(user_id.eq.${currentUser.id},friend_id.eq.${owner.id})`)
+    .maybeSingle();
+  if(already) return msg.textContent = "ℹ️ Już jesteście znajomymi.";
 
-  await db.from("friends").insert([{ user_id: currentUser.id, friend_id: friend.id }]);
-  msg.textContent = "✅ Dodano znajomego: " + (friend.username || "Użytkownik");
+  // sprawdź czy istnieje już pending request (albo od Ciebie -> owner albo odwrotnie)
+  const { data: existing } = await db.from("friend_requests")
+    .select("*")
+    .or(`(sender_id.eq.${currentUser.id},receiver_id.eq.${owner.id})`)
+    .or(`(sender_id.eq.${owner.id},receiver_id.eq.${currentUser.id})`)
+    .maybeSingle();
+  if(existing) return msg.textContent = "ℹ️ Istnieje już zaproszenie między tymi użytkownikami.";
+
+  // utwórz zaproszenie: sender = current user (ten, który wpisuje kod)
+  const { error } = await db.from("friend_requests").insert([{ sender_id: currentUser.id, receiver_id: owner.id, status: "pending" }]);
+  if(error) {
+    console.error(error);
+    return msg.textContent = "❌ Błąd przy wysyłaniu zaproszenia.";
+  }
+
+  msg.textContent = `✅ Wysłano zaproszenie do ${owner.username || "użytkownika"}.`;
   document.getElementById("addCodeInput").value = "";
+  await loadRequests();
+}
+
+/* WCZYTYWANIE ZAPROSZEŃ:
+   - incoming: gdzie receiver_id = currentUser.id (to Ty możesz zaakceptować/odrzucić)
+   - outgoing: gdzie sender_id = currentUser.id (to Ty możesz anulować) */
+async function loadRequests(){
+  // incoming
+  const { data: incoming } = await db.from("friend_requests")
+    .select("id,sender_id,receiver_id,status,created_at,profiles!sender_id(username,friend_code)")
+    .eq("receiver_id", currentUser.id)
+    .eq("status", "pending");
+
+  if(!incoming?.length){
+    document.getElementById("incomingList").innerHTML = "<p class='muted'>Brak przychodzących zaproszeń.</p>";
+  } else {
+    const htmlIn = incoming.map(r=>{
+      const sender = r.profiles;
+      const date = new Date(r.created_at);
+      return `
+        <div class="friend-item">
+          <div class="friend-info">
+            <b>${sender.username || "Nieznany"}</b>
+            <span class="muted">Kod: ${sender.friend_code || "-"}</span>
+            <span class="muted">Wysłano: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}</span>
+          </div>
+          <div>
+            <button class="btn" onclick="acceptRequest(${r.id}, '${r.sender_id}')">✅ Akceptuj</button>
+            <button class="btn danger" onclick="rejectRequest(${r.id})">❌ Odrzuć</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+    document.getElementById("incomingList").innerHTML = htmlIn;
+  }
+
+  // outgoing
+  const { data: outgoing } = await db.from("friend_requests")
+    .select("id,sender_id,receiver_id,status,created_at,profiles!receiver_id(username,friend_code)")
+    .eq("sender_id", currentUser.id)
+    .eq("status", "pending");
+
+  if(!outgoing?.length){
+    document.getElementById("outgoingList").innerHTML = "<p class='muted'>Brak wysłanych zaproszeń.</p>";
+  } else {
+    const htmlOut = outgoing.map(r=>{
+      const recv = r.profiles;
+      const date = new Date(r.created_at);
+      return `
+        <div class="friend-item">
+          <div class="friend-info">
+            <b>${recv.username || "Nieznany"}</b>
+            <span class="muted">Kod: ${recv.friend_code || "-"}</span>
+            <span class="muted">Wysłano: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}</span>
+          </div>
+          <div>
+            <button class="btn danger" onclick="cancelRequest(${r.id})">🗑 Anuluj</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+    document.getElementById("outgoingList").innerHTML = htmlOut;
+  }
+}
+
+/* AKCEPTACJA (wykonuje ją receiver = właściciel kodu)
+   - update request.status = 'accepted'
+   - dodaj dwukierunkowy wpis w tabeli friends (jeśli jeszcze nie ma)
+*/
+async function acceptRequest(requestId, senderId){
+  // upewnij się, że currentUser jest receiver (dodatkowe zabezpieczenie)
+  const { data: req } = await db.from("friend_requests").select("receiver_id").eq("id", requestId).maybeSingle();
+  if(!req || req.receiver_id !== currentUser.id) return alert("Brak uprawnień do akceptacji tego zaproszenia.");
+
+  // update status
+  await db.from("friend_requests").update({ status: "accepted" }).eq("id", requestId);
+
+  // sprawdź czy friendship nie istnieje i wstaw dwukierunkowo
+  const { data: exists } = await db.from("friends")
+    .select("*")
+    .or(`(user_id.eq.${currentUser.id},friend_id.eq.${senderId})`)
+    .maybeSingle();
+
+  if(!exists){
+    await db.from("friends").insert([
+      { user_id: currentUser.id, friend_id: senderId },
+      { user_id: senderId, friend_id: currentUser.id }
+    ]);
+  }
+
   await loadFriends();
+  await loadRequests();
+}
+
+/* ODRZUCENIE (wykonuje receiver) */
+async function rejectRequest(requestId){
+  const { data: req } = await db.from("friend_requests").select("receiver_id").eq("id", requestId).maybeSingle();
+  if(!req || req.receiver_id !== currentUser.id) return alert("Brak uprawnień do odrzucenia tego zaproszenia.");
+
+  await db.from("friend_requests").update({ status: "rejected" }).eq("id", requestId);
+  await loadRequests();
+}
+
+/* ANULOWANIE (wykonuje sender) - zaktualizujemy status na 'rejected' */
+async function cancelRequest(requestId){
+  const { data: req } = await db.from("friend_requests").select("sender_id").eq("id", requestId).maybeSingle();
+  if(!req || req.sender_id !== currentUser.id) return alert("Brak uprawnień do anulowania tego zaproszenia.");
+
+  await db.from("friend_requests").update({ status: "rejected" }).eq("id", requestId);
+  await loadRequests();
 }
 
 /* LISTA ZNAJOMYCH */
