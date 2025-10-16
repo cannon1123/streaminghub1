@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Moja biblioteka • StreamingHub</title>
+  <style>
+    :root{--bg:#0b0d10;--card:#151922;--text:#e3e7ee;--muted:#a8bfe2;--brand:#4f7cff;--border:#232a37}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto;min-height:100vh}
+    .container{max-width:1100px;margin:0 auto;padding:16px}
+    header{position:sticky;top:0;background:rgba(11,13,16,.8);backdrop-filter:blur(6px);z-index:10}
+    .nav{display:flex;gap:12px;align-items:center;padding:12px 16px}
+    .brand{font-weight:800}
+    .menu a,.menu button{padding:8px 10px;color:var(--muted);background:none;border:none;cursor:pointer}
+    .btn{background:var(--brand);color:#fff;padding:8px 12px;border-radius:10px;border:none;cursor:pointer}
+    .btn.secondary{background:#2a3446}
+    .card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:12px;margin-top:16px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px}
+    .item{background:#0e1218;border:1px solid var(--border);padding:12px;border-radius:10px;display:flex;gap:12px;align-items:center}
+    .thumb{width:72px;height:56px;object-fit:cover;border-radius:8px;background:#000}
+    h1,h2{margin:0}
+    .small{font-size:13px;color:var(--muted)}
+    footer{color:var(--muted);text-align:center;padding:30px 0}
+    .top-row{display:flex;justify-content:space-between;align-items:center;}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header>
+  <div class="nav container">
+    <a class="brand" href="filmy.html">🎬 StreamingHub</a>
+    <nav class="menu" style="margin-left:auto">
+      <a href="filmy.html">Filmy</a>
+      <a href="seriale.html">Seriale</a>
+      <a href="top.html">TOP</a>
+      <a href="moja-biblioteka.html" style="color:#fff">Moja biblioteka</a>
+      <button onclick="logout()" class="btn secondary">Wyloguj</button>
+    </nav>
+  </div>
+</header>
+
+<main class="container" id="app">
+  <h1>Moja biblioteka</h1>
+
+  <section id="pointsBox" class="card">
+    <h2>🎯 Twoje punkty: <span id="points">…</span></h2>
+    <div style="margin-top:10px">
+      <button id="watchAdBtn" class="btn">🎬 Obejrzyj reklamę (+50 pkt)</button>
+      <span class="small" style="margin-left:12px;color:var(--muted)">Kliknij, aby otrzymać punkty</span>
+    </div>
+  </section>
+
+  <section id="filmsBox" class="card">
+    <div class="top-row">
+      <h2>🎞 Historia oglądania — Filmy</h2>
+      <button class="btn secondary" onclick="location.hash='#history-movie'">Pokaż całą historię</button>
+    </div>
+    <div id="filmsList" class="grid"><div class="small">Ładowanie…</div></div>
+  </section>
+
+  <section id="seriesBox" class="card">
+    <div class="top-row">
+      <h2>📺 Historia oglądania — Seriale</h2>
+      <button class="btn secondary" onclick="location.hash='#history-series'">Pokaż całą historię</button>
+    </div>
+    <div id="seriesList" class="grid"><div class="small">Ładowanie…</div></div>
+  </section>
+
+  <!-- 🔹 Ustawienia konta -->
+  <section id="accountBox" class="card">
+    <h2>⚙️ Ustawienia konta</h2>
+    <div style="margin-top:12px">
+      <label>Nazwa użytkownika:</label><br>
+      <input id="usernameInput" style="width:100%;padding:8px;margin-top:4px;border-radius:8px;border:1px solid var(--border);background:#0e1218;color:var(--text)">
+      <br><br>
+      <label>Opis (bio):</label><br>
+      <textarea id="bioInput" rows="3" style="width:100%;padding:8px;margin-top:4px;border-radius:8px;border:1px solid var(--border);background:#0e1218;color:var(--text)"></textarea>
+      <br><br>
+      <button class="btn" onclick="saveProfile()">💾 Zapisz zmiany</button>
+    </div>
+
+    <hr style="margin:20px 0;border-color:var(--border)">
+
+    <div>
+      <h3>🔐 Zmień hasło</h3>
+      <input type="password" id="newPassword" placeholder="Nowe hasło" style="width:100%;padding:8px;margin-top:4px;border-radius:8px;border:1px solid var(--border);background:#0e1218;color:var(--text)">
+      <br><br>
+      <button class="btn" onclick="changePassword()">Zmień hasło</button>
+    </div>
+
+    <hr style="margin:20px 0;border-color:var(--border)">
+
+    <div>
+      <h3>🎟 Wykorzystaj kod</h3>
+      <input id="codeInput" placeholder="Wpisz kod" style="width:100%;padding:8px;margin-top:4px;border-radius:8px;border:1px solid var(--border);background:#0e1218;color:var(--text)">
+      <br><br>
+      <button class="btn" onclick="redeemCode()">Aktywuj kod</button>
+      <p class="small" id="codeMessage"></p>
+    </div>
+  </section>
+
+</main>
+
+<footer>© <script>document.write(new Date().getFullYear())</script> StreamingHub</footer>
+
+<script>
+const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let currentUser = null;
+
+/* ---------------------- helpers ---------------------- */
+function escapeHtml(str){return str?String(str).replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[s])):"";}
+function toSlugRemovePolish(name){return String(name||"").toLowerCase().replace(/[ąćęłńóśżźĄĆĘŁŃÓŚŻŹ]/g,"").replace(/[^a-z0-9\s-]/g,"").trim().replace(/\s+/g,"-");}
+
+/* ---------------------- init ---------------------- */
+(async function init(){
+  const {data:{session}}=await db.auth.getSession();
+  if(!session||!session.user){alert("Musisz się zalogować.");location.href="login.html";return;}
+  currentUser=session.user;
+  document.getElementById("watchAdBtn").addEventListener("click",watchAd);
+  await loadPoints();
+  await loadProfile();
+  handleHash();
+})();
+window.addEventListener("hashchange",handleHash);
+
+/* ---------------------- points ---------------------- */
+async function loadPoints(){
+  const {data}=await db.from("profiles").select("points").eq("id",currentUser.id).maybeSingle();
+  document.getElementById("points").textContent=data?.points||0;
+}
+async function watchAd(){
+  const add=50;
+  await db.from("points_log").insert([{user_id:currentUser.id,change:add,reason:"Ad reward"}]);
+  const {data}=await db.from("profiles").select("points").eq("id",currentUser.id).maybeSingle();
+  await db.from("profiles").update({points:(data?.points||0)+add}).eq("id",currentUser.id);
+  await loadPoints();alert("Dostałeś +50 pkt ✅");
+}
+
+/* ---------------------- history ---------------------- */
+async function handleHash(){
+  const hash=location.hash;
+  if(hash==="#history-movie") return showFullHistory("movie");
+  if(hash==="#history-series") return showFullHistory("series");
+  await loadHistory();
+}
+
+async function loadHistory(){
+  const {data}=await db.from("watch_history").select("movie_id,episode_id,watched_at").eq("user_id",currentUser.id).order("watched_at",{ascending:false}).limit(200);
+  const movies=(data||[]).filter(r=>r.movie_id&&!r.episode_id);
+  const series=(data||[]).filter(r=>r.episode_id);
+  const uniqMovies=[...new Map(movies.map(m=>[m.movie_id,m])).values()].slice(0,8);
+  const uniqSeries=[...new Map(series.map(s=>[s.episode_id,s])).values()].slice(0,8);
+  await renderFilmsList(uniqMovies);
+  await renderSeriesList(uniqSeries);
+}
+
+async function showFullHistory(type){
+  const app=document.getElementById("app");
+  const {data}=await db.from("watch_history").select("movie_id,episode_id,watched_at").eq("user_id",currentUser.id).order("watched_at",{ascending:false});
+  if(type==="movie"){
+    const movies=(data||[]).filter(r=>r.movie_id&&!r.episode_id);
+    const uniq=[...new Map(movies.map(m=>[m.movie_id,m])).values()];
+    const list=await makeFilmsHtml(uniq);
+    app.innerHTML=`<h1>🎞 Cała historia filmów</h1><div class="grid">${list}</div><button class='btn mt-4' onclick='location.hash=""'>← Powrót</button>`;
+  }else{
+    const series=(data||[]).filter(r=>r.episode_id);
+    const uniq=[...new Map(series.map(s=>[s.episode_id,s])).values()];
+    const list=await makeSeriesHtml(uniq);
+    app.innerHTML=`<h1>📺 Cała historia seriali</h1><div class="grid">${list}</div><button class='btn mt-4' onclick='location.hash=""'>← Powrót</button>`;
+  }
+}
+
+/* ---------------------- render ---------------------- */
+async function renderFilmsList(rows){document.getElementById("filmsList").innerHTML=await makeFilmsHtml(rows);}
+async function renderSeriesList(rows){document.getElementById("seriesList").innerHTML=await makeSeriesHtml(rows);}
+
+async function makeFilmsHtml(rows){
+  if(!rows.length)return"<div class='small'>Brak historii.</div>";
+  const ids=[...new Set(rows.map(r=>r.movie_id))];
+  const {data:movies}=await db.from("movies").select("id,title,thumb").in("id",ids);
+  const map=new Map(movies.map(m=>[String(m.id),m]));
+  return rows.map(r=>{
+    const m=map.get(String(r.movie_id));
+    return `<div class='item'>
+      <img class='thumb' src='${escapeHtml(m?.thumb||"")}' alt=''>
+      <div style='flex:1'><div style='font-weight:700'>${escapeHtml(m?.title||"Film #"+r.movie_id)}</div>
+      <div class='small'>${new Date(r.watched_at).toLocaleString()}</div></div>
+      <button class='btn' onclick='continueMovie("${r.movie_id}")'>Odtwórz</button>
+    </div>`;
+  }).join("");
+}
+
+async function makeSeriesHtml(rows){
+  if(!rows.length)return"<div class='small'>Brak historii.</div>";
+  const eids=[...new Set(rows.map(r=>r.episode_id))];
+  const {data:eps}=await db.from("episodes").select("id,title,series_id,season,episode,thumb").in("id",eids);
+  const sids=[...new Set(eps.map(e=>e.series_id))];
+  const {data:series}=await db.from("series").select("id,title").in("id",sids);
+  const sMap=new Map(series.map(s=>[String(s.id),s]));
+  const eMap=new Map(eps.map(e=>[String(e.id),e]));
+  for(const e of eps.filter(e=>!e.thumb)){
+    const {data:first}=await db.from("episodes").select("thumb").eq("series_id",e.series_id).eq("season",1).eq("episode",1).maybeSingle();
+    if(first?.thumb)e.thumb=first.thumb;
+  }
+  return rows.map(r=>{
+    const e=eMap.get(String(r.episode_id)); if(!e)return"";
+    const s=sMap.get(String(e.series_id));
+    const slug=toSlugRemovePolish(s?.title);
+    const hash=`${slug}/season-${e.season}/ep-${e.episode}`;
+    return `<div class='item'>
+      <img class='thumb' src='${escapeHtml(e.thumb||"")}' alt=''>
+      <div style='flex:1'><div style='font-weight:700'>${escapeHtml(s?.title||"Serial")}</div>
+      <div class='small'>${escapeHtml(e.title||`S${e.season}E${e.episode}`)} • ${new Date(r.watched_at).toLocaleString()}</div></div>
+      <button class='btn' onclick='resumeSeries("${hash}")'>Wznów</button>
+    </div>`;
+  }).join("");
+}
+
+/* ---------------------- account ---------------------- */
+async function loadProfile() {
+  const { data, error } = await db.from("profiles").select("username, bio").eq("id", currentUser.id).maybeSingle();
+  if (error) console.error(error);
+  document.getElementById("usernameInput").value = data?.username || "";
+  document.getElementById("bioInput").value = data?.bio || "";
+}
+
+async function saveProfile() {
+  const username = document.getElementById("usernameInput").value.trim();
+  const bio = document.getElementById("bioInput").value.trim();
+  if (!username) return alert("Nazwa nie może być pusta.");
+  const { error } = await db.from("profiles").update({ username, bio }).eq("id", currentUser.id);
+  if (error) alert("Błąd zapisu: " + error.message);
+  else alert("Zapisano zmiany ✅");
+}
+
+async function changePassword() {
+  const newPassword = document.getElementById("newPassword").value.trim();
+  if (newPassword.length < 6) return alert("Hasło musi mieć co najmniej 6 znaków.");
+  const { error } = await db.auth.updateUser({ password: newPassword });
+  if (error) alert("Błąd: " + error.message);
+  else { alert("Hasło zostało zmienione ✅"); document.getElementById("newPassword").value = ""; }
+}
+
+async function redeemCode() {
+  const input = document.getElementById("codeInput");
+  const codeMessage = document.getElementById("codeMessage");
+  const codeValue = input.value.trim();
+  if (!codeValue) return alert("Wpisz kod.");
+  codeMessage.textContent = "Sprawdzanie kodu…";
+
+  const { data: code } = await db.from("codes").select("*").eq("code", codeValue).maybeSingle();
+  if (!code) return codeMessage.textContent = "❌ Kod nie istnieje.";
+
+  if (code.limit_left <= 0) return codeMessage.textContent = "❌ Ten kod został już wykorzystany.";
+
+  if (code.expires && new Date(code.expires) < new Date()) return codeMessage.textContent = "❌ Kod wygasł.";
+
+  if (code.type === "points") {
+    await db.from("profiles").update({ points: db.sql`points + ${code.amount}` }).eq("id", currentUser.id);
+    await db.from("points_log").insert([{ user_id: currentUser.id, change: code.amount, reason: "Kod: " + code.code }]);
+    codeMessage.textContent = `✅ Dodano ${code.amount} punktów!`;
+  } else if (code.type === "premium") {
+    const days = code.days || 30;
+    const { data: user } = await db.from("users").select("premium_until").eq("id", currentUser.id).maybeSingle();
+    const baseDate = user?.premium_until ? new Date(user.premium_until) : new Date();
+    baseDate.setDate(baseDate.getDate() + days);
+    await db.from("users").update({ premium_until: baseDate.toISOString() }).eq("id", currentUser.id);
+    codeMessage.textContent = `🌟 Premium przedłużone o ${days} dni!`;
+  }
+
+  await db.from("codes").update({ limit_left: code.limit_left - 1 }).eq("id", code.id);
+
+  input.value = "";
+  await loadPoints();
+}
+
+/* ---------------------- navigation ---------------------- */
+function continueMovie(id){location.href=`filmy.html#movie-${id}`;}
+function resumeSeries(hash){location.href=`seriale.html#${hash}`;}
+async function logout(){await db.auth.signOut();location.href="login.html";}
+</script>
+</body>
+</html>
