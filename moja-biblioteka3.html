@@ -46,7 +46,7 @@
 <main class="container" id="app">
   <h1>Moja biblioteka</h1>
 
-  <!-- Punkty i kod -->
+  <!-- 🔹 Punkty i kod -->
   <section id="pointsBox" class="card">
     <h2>🎯 Twoje punkty: <span id="points">…</span></h2>
     <div style="margin-top:10px">
@@ -63,49 +63,47 @@
     </div>
   </section>
 
-  <!-- Ustawienia konta (nad historią) -->
+  <!-- 🔹 Ustawienia konta -->
   <section id="accountBox" class="card">
     <h2>⚙️ Ustawienia konta</h2>
     <div style="margin-top:12px">
       <label>Nazwa użytkownika:</label>
       <input id="usernameInput" placeholder="Twoja nazwa">
-      <div class="muted-block">Aktualna nazwa jest w polu powyżej — zmień i zapisz</div>
+      <div class="muted-block">Aktualna nazwa widoczna powyżej — zmień i zapisz</div>
       <br>
       <label>Opis (bio):</label>
       <textarea id="bioInput" rows="3" placeholder="Krótki opis..."></textarea>
       <br><br>
       <button class="btn" onclick="saveProfile()">💾 Zapisz zmiany</button>
     </div>
-
-    <hr style="margin:20px 0;border-color:var(--border)">
-
-    <div>
-      <h3>🔐 Zmień hasło</h3>
-      <input type="password" id="currentPassword" placeholder="Obecne hasło">
-      <br><br>
-      <input type="password" id="newPassword" placeholder="Nowe hasło">
-      <br><br>
-      <input type="password" id="confirmPassword" placeholder="Powtórz nowe hasło">
-      <br><br>
-      <button class="btn" onclick="changePassword()">Zmień hasło</button>
-      <div class="muted-block">Aby zmienić hasło, podaj obecne, następnie nowe i potwierdź</div>
-    </div>
   </section>
 
-  <!-- Historia oglądania (filmy) -->
+  <!-- 🔹 Zmiana hasła -->
+  <section id="passwordBox" class="card">
+    <h2>🔐 Zmień hasło</h2>
+    <input type="password" id="currentPassword" placeholder="Obecne hasło">
+    <br><br>
+    <input type="password" id="newPassword" placeholder="Nowe hasło">
+    <br><br>
+    <input type="password" id="confirmPassword" placeholder="Powtórz nowe hasło">
+    <br><br>
+    <button class="btn" onclick="changePassword()">Zmień hasło</button>
+  </section>
+
+  <!-- 🔹 Historia oglądania — Filmy -->
   <section id="filmsBox" class="card">
     <div class="top-row">
       <h2>🎞 Historia oglądania — Filmy</h2>
-      <button class="btn secondary" onclick="location.hash='#history-movie'">Pokaż całą historię</button>
+      <button class="btn secondary" onclick="showFullHistory('movie')">Pokaż całą historię</button>
     </div>
     <div id="filmsList" class="grid"><div class="small">Ładowanie…</div></div>
   </section>
 
-  <!-- Historia oglądania (seriale) -->
+  <!-- 🔹 Historia oglądania — Seriale -->
   <section id="seriesBox" class="card">
     <div class="top-row">
       <h2>📺 Historia oglądania — Seriale</h2>
-      <button class="btn secondary" onclick="location.hash='#history-series'">Pokaż całą historia</button>
+      <button class="btn secondary" onclick="showFullHistory('series')">Pokaż całą historię</button>
     </div>
     <div id="seriesList" class="grid"><div class="small">Ładowanie…</div></div>
   </section>
@@ -119,109 +117,73 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let currentUser = null;
 
-/* helpers */
-function escapeHtml(str){return str?String(str).replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[s])):"";}
-function toSlugRemovePolish(name){return String(name||"").toLowerCase().replace(/[ąćęłńóśżźĄĆĘŁŃÓŚŻŹ]/g,"").replace(/[^a-z0-9\s-]/g,"").trim().replace(/\s+/g,"-");}
-
-/* init */
+/* ---------------------- INIT ---------------------- */
 (async function init(){
-  try{
-    const {data:{session}}=await db.auth.getSession();
-    if(!session||!session.user){alert("Musisz się zalogować.");location.href="login.html";return;}
-    currentUser=session.user;
-    document.getElementById("watchAdBtn").addEventListener("click",watchAd);
-    await loadPoints();
-    await loadProfile();
-    handleHash();
-  }catch(e){
-    console.error("Init error:", e);
-    alert("Błąd inicjalizacji. Sprawdź konsolę.");
-  }
+  const {data:{session}}=await db.auth.getSession();
+  if(!session||!session.user){alert("Musisz się zalogować.");location.href="login.html";return;}
+  currentUser=session.user;
+  document.getElementById("watchAdBtn").addEventListener("click",watchAd);
+  await loadPoints();
+  await loadProfile();
+  await loadHistory();
 })();
-window.addEventListener("hashchange",handleHash);
 
-/* points */
+/* ---------------------- PUNKTY ---------------------- */
 async function loadPoints(){
-  try{
-    const {data, error} = await db.from("profiles").select("points").eq("id", currentUser.id).maybeSingle();
-    if(error) { console.error("loadPoints error:", error); document.getElementById("points").textContent="—"; return; }
-    document.getElementById("points").textContent = data?.points ?? 0;
-  }catch(e){ console.error("loadPoints exception:", e); document.getElementById("points").textContent="—"; }
+  const {data}=await db.from("profiles").select("points").eq("id",currentUser.id).maybeSingle();
+  document.getElementById("points").textContent=data?.points||0;
 }
 async function watchAd(){
-  try{
-    const add = 50;
-    await db.from("points_log").insert([{user_id:currentUser.id,change:add,reason:"Ad reward"}]);
-    const {data} = await db.from("profiles").select("points").eq("id",currentUser.id).maybeSingle();
-    await db.from("profiles").update({points:(data?.points||0)+add}).eq("id",currentUser.id);
-    await loadPoints();
-    alert("Dostałeś +50 pkt ✅");
-  }catch(e){ console.error("watchAd error:", e); alert("Błąd podczas przyznawania punktów."); }
+  const add=50;
+  await db.from("points_log").insert([{user_id:currentUser.id,change:add,reason:"Ad reward"}]);
+  const {data}=await db.from("profiles").select("points").eq("id",currentUser.id).maybeSingle();
+  await db.from("profiles").update({points:(data?.points||0)+add}).eq("id",currentUser.id);
+  await loadPoints();alert("Dostałeś +50 pkt ✅");
 }
 
-/* codes */
+/* ---------------------- KODY ---------------------- */
 async function redeemCode() {
   const input = document.getElementById("codeInput");
   const codeMessage = document.getElementById("codeMessage");
   const codeValue = input.value.trim();
   if (!codeValue) return alert("Wpisz kod.");
   codeMessage.textContent = "Sprawdzanie kodu…";
-  try{
-    const { data: code, error } = await db.from("codes").select("*").eq("code", codeValue).maybeSingle();
-    if(error){ console.error("redeemCode select error:", error); codeMessage.textContent="Błąd serwera."; return; }
-    if (!code) return codeMessage.textContent = "❌ Kod nie istnieje.";
-    if (code.limit_left <= 0) return codeMessage.textContent = "❌ Kod został już wykorzystany.";
-    if (code.expires && new Date(code.expires) < new Date()) return codeMessage.textContent = "❌ Kod wygasł.";
 
-    if (code.type === "points") {
-      // Jeśli chcesz atomowo zwiększać, zwykle lepiej zrobić to po stronie serwera. Tutaj proste aktual.
-      const { data: profile } = await db.from("profiles").select("points").eq("id", currentUser.id).maybeSingle();
-      const newPoints = (profile?.points||0) + (code.amount||0);
-      await db.from("profiles").update({ points: newPoints }).eq("id", currentUser.id);
-      await db.from("points_log").insert([{ user_id: currentUser.id, change: code.amount, reason: "Kod: " + code.code }]);
-      codeMessage.textContent = `✅ Dodano ${code.amount} punktów!`;
-    } else if (code.type === "premium") {
-      const days = code.days || 30;
-      const { data: user, error: uerr } = await db.from("users").select("premium_until").eq("id", currentUser.id).maybeSingle();
-      if(uerr) console.error("fetch user premium:", uerr);
-      const baseDate = user?.premium_until ? new Date(user.premium_until) : new Date();
-      baseDate.setDate(baseDate.getDate() + days);
-      await db.from("users").update({ premium_until: baseDate.toISOString() }).eq("id", currentUser.id);
-      codeMessage.textContent = `🌟 Premium przedłużone o ${days} dni!`;
-    }
+  const { data: code } = await db.from("codes").select("*").eq("code", codeValue).maybeSingle();
+  if (!code) return codeMessage.textContent = "❌ Kod nie istnieje.";
+  if (code.expires && new Date(code.expires) < new Date()) return codeMessage.textContent = "❌ Kod wygasł.";
+  if (code.limit_left !== null && code.limit_left <= 0) return codeMessage.textContent = "❌ Kod został już wykorzystany.";
 
-    // zmniejsz limit kodu (jeżeli limit_left to null/undefined - zachowaj 0)
-    const newLimit = (typeof code.limit_left === "number") ? Math.max(0, code.limit_left - 1) : 0;
-    await db.from("codes").update({ limit_left: newLimit }).eq("id", code.id);
-
+  try {
+    const { data: prof } = await db.from("profiles").select("points").eq("id", currentUser.id).maybeSingle();
+    const newPts = (prof?.points || 0) + code.amount;
+    await db.from("profiles").update({ points: newPts }).eq("id", currentUser.id);
+    await db.from("points_log").insert([{ user_id: currentUser.id, change: code.amount, reason: "Kod: " + code.code }]);
+    await db.from("codes").update({ limit_left: (code.limit_left || 1) - 1 }).eq("id", code.id);
+    codeMessage.textContent = `✅ Dodano ${code.amount} punktów!`;
     input.value = "";
     await loadPoints();
-  }catch(e){ console.error("redeemCode exception:", e); codeMessage.textContent="Błąd podczas aktywacji kodu."; }
+  } catch (err) {
+    codeMessage.textContent = "❌ Błąd aktywacji kodu.";
+  }
 }
 
-/* profile */
+/* ---------------------- PROFIL ---------------------- */
 async function loadProfile() {
-  try{
-    // pobieramy username i bio z profiles
-    const { data, error } = await db.from("profiles").select("username, bio").eq("id", currentUser.id).maybeSingle();
-    if(error){ console.error("loadProfile error:", error); return; }
-    document.getElementById("usernameInput").value = data?.username ?? "";
-    document.getElementById("bioInput").value = data?.bio ?? "";
-  }catch(e){ console.error("loadProfile exception:", e); }
+  const { data: prof } = await db.from("profiles").select("username,bio").eq("id", currentUser.id).maybeSingle();
+  document.getElementById("usernameInput").value = prof?.username || "";
+  document.getElementById("bioInput").value = prof?.bio || "";
 }
-
 async function saveProfile() {
   const username = document.getElementById("usernameInput").value.trim();
   const bio = document.getElementById("bioInput").value.trim();
   if (!username) return alert("Nazwa nie może być pusta.");
-  try{
-    const { error } = await db.from("profiles").update({ username, bio }).eq("id", currentUser.id);
-    if (error) { console.error("saveProfile error:", error); alert("Błąd zapisu: " + error.message); }
-    else alert("Zapisano zmiany ✅");
-  }catch(e){ console.error("saveProfile exception:", e); alert("Błąd zapisu profilu."); }
+  const { error } = await db.from("profiles").update({ username, bio }).eq("id", currentUser.id);
+  if (error) alert("Błąd zapisu: " + error.message);
+  else alert("Zapisano zmiany ✅");
 }
 
-/* password */
+/* ---------------------- HASŁO ---------------------- */
 async function changePassword() {
   const currentPass = document.getElementById("currentPassword").value.trim();
   const newPass = document.getElementById("newPassword").value.trim();
@@ -229,124 +191,77 @@ async function changePassword() {
   if (!currentPass || !newPass || !confirmPass) return alert("Uzupełnij wszystkie pola.");
   if (newPass !== confirmPass) return alert("Hasła nie są identyczne.");
   if (newPass.length < 6) return alert("Nowe hasło musi mieć co najmniej 6 znaków.");
-
-  try{
-    // sprawdź aktualne hasło przez ponowne logowanie
-    const { data, error } = await db.auth.signInWithPassword({ email: currentUser.email, password: currentPass });
-    if (error || !data?.user) { console.warn("Reauth failed:", error); return alert("Błędne obecne hasło."); }
-
-    // zmień hasło
-    const { error: updErr } = await db.auth.updateUser({ password: newPass });
-    if (updErr) { console.error("updateUser error:", updErr); alert("Błąd podczas zmiany hasła: " + updErr.message); }
-    else { alert("Hasło zmienione ✅"); document.getElementById("currentPassword").value=""; document.getElementById("newPassword").value=""; document.getElementById("confirmPassword").value=""; }
-  }catch(e){ console.error("changePassword exception:", e); alert("Błąd podczas zmiany hasła."); }
+  const { error: loginErr } = await db.auth.signInWithPassword({ email: currentUser.email, password: currentPass });
+  if (loginErr) return alert("Błędne obecne hasło.");
+  const { error } = await db.auth.updateUser({ password: newPass });
+  if (error) alert("Błąd: " + error.message);
+  else alert("Hasło zmienione ✅");
 }
 
-/* history/render */
-async function handleHash(){
-  const hash=location.hash;
-  if(hash==="#history-movie") return showFullHistory("movie");
-  if(hash==="#history-series") return showFullHistory("series");
-  await loadHistory();
-}
-
+/* ---------------------- HISTORIA ---------------------- */
 async function loadHistory(){
-  try{
-    const { data: rows, error } = await db.from("watch_history").select("movie_id,episode_id,watched_at").eq("user_id", currentUser.id).order("watched_at",{ascending:false}).limit(200);
-    if(error){ console.error("loadHistory error:", error); document.getElementById("filmsList").innerHTML="<div class='small'>Błąd ładowania historii.</div>"; document.getElementById("seriesList").innerHTML=""; return; }
-    const data = rows || [];
-    // rozdzielamy
-    const movies=(data||[]).filter(r=>r.movie_id && !r.episode_id);
-    const series=(data||[]).filter(r=>r.episode_id);
-    const uniqMovies=[...new Map(movies.map(m=>[m.movie_id,m])).values()].slice(0,8);
-    const uniqSeries=[...new Map(series.map(s=>[s.episode_id,s])).values()].slice(0,8);
-    document.getElementById("filmsList").innerHTML = await makeFilmsHtml(uniqMovies);
-    document.getElementById("seriesList").innerHTML = await makeSeriesHtml(uniqSeries);
-  }catch(e){ console.error("loadHistory exception:", e); document.getElementById("filmsList").innerHTML="<div class='small'>Błąd ładowania historii.</div>"; document.getElementById("seriesList").innerHTML=""; }
+  const {data}=await db.from("watch_history").select("movie_id,episode_id,watched_at")
+    .eq("user_id",currentUser.id).order("watched_at",{ascending:false}).limit(200);
+
+  const movies=(data||[]).filter(r=>r.movie_id&&!r.episode_id);
+  const series=(data||[]).filter(r=>r.episode_id);
+
+  const uniqMovies=[...new Map(movies.map(m=>[m.movie_id,m])).values()].slice(0,8);
+  const uniqSeries=[...new Map(series.map(s=>[s.episode_id,s])).values()].slice(0,8);
+
+  document.getElementById("filmsList").innerHTML=await makeFilmsHtml(uniqMovies);
+  document.getElementById("seriesList").innerHTML=await makeSeriesHtml(uniqSeries);
 }
 
 async function showFullHistory(type){
-  try{
-    const { data: rows, error } = await db.from("watch_history").select("movie_id,episode_id,watched_at").eq("user_id", currentUser.id).order("watched_at",{ascending:false});
-    if(error){ console.error("showFullHistory error:", error); alert("Błąd ładowania historii."); return; }
-    const data = rows || [];
-    if(type==="movie"){
-      const movies=(data||[]).filter(r=>r.movie_id && !r.episode_id);
-      const uniq=[...new Map(movies.map(m=>[m.movie_id,m])).values()];
-      const list = await makeFilmsHtml(uniq);
-      // renderujemy zawartość do zastąpienia głównego contentu (używamy innerHTML app — uwaga: usuwa niektóre event listenery, ale hashchange przywróci)
-      document.getElementById("app").innerHTML = `<h1>🎞 Cała historia filmów</h1><div class="grid">${list}</div><button class='btn mt-4' onclick='location.hash=\"\"'>← Powrót</button>`;
-    } else {
-      const series=(data||[]).filter(r=>r.episode_id);
-      const uniq=[...new Map(series.map(s=>[s.episode_id,s])).values()];
-      const list = await makeSeriesHtml(uniq);
-      document.getElementById("app").innerHTML = `<h1>📺 Cała historia seriali</h1><div class="grid">${list}</div><button class='btn mt-4' onclick='location.hash=\"\"'>← Powrót</button>`;
-    }
-  }catch(e){ console.error("showFullHistory exception:", e); alert("Błąd wyświetlania historii."); }
+  const {data}=await db.from("watch_history").select("movie_id,episode_id,watched_at")
+    .eq("user_id",currentUser.id).order("watched_at",{ascending:false});
+  if(type==="movie"){
+    const movies=[...new Map((data||[]).filter(r=>r.movie_id&&!r.episode_id).map(m=>[m.movie_id,m])).values()];
+    document.getElementById("filmsList").innerHTML=await makeFilmsHtml(movies);
+  }else{
+    const series=[...new Map((data||[]).filter(r=>r.episode_id).map(s=>[s.episode_id,s])).values()];
+    document.getElementById("seriesList").innerHTML=await makeSeriesHtml(series);
+  }
 }
 
 async function makeFilmsHtml(rows){
-  try{
-    if(!rows || rows.length===0) return "<div class='small'>Brak historii.</div>";
-    const ids=[...new Set(rows.map(r=>r.movie_id)).values ? [...new Set(rows.map(r=>r.movie_id))] : [...new Set(rows.map(r=>r.movie_id))]];
-    if(ids.length===0) return "<div class='small'>Brak historii.</div>";
-    // unikaj wywołania .in() z pustą tablicą
-    const {data:movies, error} = await db.from("movies").select("id,title,thumb").in("id", ids);
-    if(error){ console.error("makeFilmsHtml movies select error:", error); }
-    const map = new Map((movies||[]).map(m=>[String(m.id),m]));
-    return rows.map(r=>{
-      const m = map.get(String(r.movie_id)) || {};
-      return `<div class='item'>
-        <img class='thumb' src='${escapeHtml(m.thumb||"")}' alt=''>
-        <div style='flex:1'><div style='font-weight:700'>${escapeHtml(m.title||"Film #"+r.movie_id)}</div>
-        <div class='small'>${r.watched_at ? new Date(r.watched_at).toLocaleString() : ""}</div></div>
-        <button class='btn' onclick='continueMovie("${r.movie_id}")'>Odtwórz</button>
-      </div>`;
-    }).join("");
-  }catch(e){ console.error("makeFilmsHtml exception:", e); return "<div class='small'>Błąd renderowania.</div>"; }
+  if(!rows.length)return"<div class='small'>Brak historii filmów.</div>";
+  const ids=[...new Set(rows.map(r=>r.movie_id))];
+  const {data:movies}=await db.from("movies").select("id,title,thumb").in("id",ids);
+  const map=new Map((movies||[]).map(m=>[String(m.id),m]));
+  return rows.map(r=>{
+    const m=map.get(String(r.movie_id));
+    return `<div class='item'>
+      <img class='thumb' src='${m?.thumb||""}' alt=''>
+      <div style='flex:1'><div style='font-weight:700'>${m?.title||"Film #"+r.movie_id}</div>
+      <div class='small'>${new Date(r.watched_at).toLocaleString()}</div></div>
+      <button class='btn' onclick='continueMovie("${r.movie_id}")'>Odtwórz</button>
+    </div>`;
+  }).join("");
 }
 
 async function makeSeriesHtml(rows){
-  try{
-    if(!rows || rows.length===0) return "<div class='small'>Brak historii.</div>";
-    const eids=[...new Set(rows.map(r=>r.episode_id))];
-    if(eids.length===0) return "<div class='small'>Brak historii.</div>";
-    const {data:eps, error:epsErr} = await db.from("episodes").select("id,title,series_id,season,episode,thumb").in("id", eids);
-    if(epsErr){ console.error("makeSeriesHtml episodes select error:", epsErr); }
-    const sids = [...new Set((eps||[]).map(e=>e.series_id))];
-    const {data:series, error:seriesErr} = sids.length ? await db.from("series").select("id,title").in("id", sids) : { data: [], error: null };
-    if(seriesErr) console.error("makeSeriesHtml series select error:", seriesErr);
-    const sMap = new Map((series||[]).map(s=>[String(s.id),s]));
-    const eMap = new Map((eps||[]).map(e=>[String(e.id),e]));
-    // ustaw miniatury tam gdzie brak
-    for(const e of (eps||[])){
-      if(!e.thumb){
-        try{
-          const {data:first} = await db.from("episodes").select("thumb").eq("series_id", e.series_id).eq("season",1).eq("episode",1).maybeSingle();
-          if(first?.thumb) e.thumb = first.thumb;
-        }catch(_){ /* ignorujemy */ }
-      }
-    }
-    return rows.map(r=>{
-      const e = eMap.get(String(r.episode_id));
-      if(!e) return "";
-      const s = sMap.get(String(e.series_id)) || {};
-      const slug = toSlugRemovePolish(s.title || "");
-      const hash = `${slug}/season-${e.season}/ep-${e.episode}`;
-      return `<div class='item'>
-        <img class='thumb' src='${escapeHtml(e.thumb||"")}' alt=''>
-        <div style='flex:1'><div style='font-weight:700'>${escapeHtml(s.title||"Serial")}</div>
-        <div class='small'>${escapeHtml(e.title||`S${e.season}E${e.episode}`)} • ${r.watched_at ? new Date(r.watched_at).toLocaleString() : ""}</div></div>
-        <button class='btn' onclick='resumeSeries("${hash}")'>Wznów</button>
-      </div>`;
-    }).join("");
-  }catch(e){ console.error("makeSeriesHtml exception:", e); return "<div class='small'>Błąd renderowania.</div>"; }
+  if(!rows.length)return"<div class='small'>Brak historii seriali.</div>";
+  const eids=[...new Set(rows.map(r=>r.episode_id))];
+  const {data:eps}=await db.from("episodes").select("id,title,series_id,season,episode,thumb").in("id",eids);
+  const sids=[...new Set((eps||[]).map(e=>e.series_id))];
+  const {data:series}=await db.from("series").select("id,title").in("id",sids);
+  const smap=new Map((series||[]).map(s=>[String(s.id),s]));
+  return eps.map(e=>{
+    const s=smap.get(String(e.series_id));
+    return `<div class='item'>
+      <img class='thumb' src='${e.thumb||""}' alt=''>
+      <div style='flex:1'><div style='font-weight:700'>${s?.title||"Serial"}</div>
+      <div class='small'>S${e.season}E${e.episode}</div></div>
+      <button class='btn' onclick='resumeSeries("${s?.id||e.series_id}-${e.season}-${e.episode}")'>Odtwórz</button>
+    </div>`;
+  }).join("");
 }
 
-/* navigation */
-function continueMovie(id){ location.href = `filmy.html#movie-${id}`; }
-function resumeSeries(hash){ location.href = `seriale.html#${hash}`; }
-async function logout(){ await db.auth.signOut(); location.href="login.html"; }
+function continueMovie(id){location.href=`filmy.html#movie-${id}`;}
+function resumeSeries(hash){location.href=`seriale.html#${hash}`;}
+async function logout(){await db.auth.signOut();location.href="login.html";}
 </script>
 </body>
 </html>
