@@ -78,6 +78,7 @@
       gap: 12px;
       align-items: center;
       min-width: 320px;
+      justify-content: space-between;
     }
     .thumb { width: 120px; height: 80px; object-fit: cover; border-radius: 8px; background: #000; }
     .top-row { display: flex; justify-content: space-between; align-items: center; }
@@ -92,16 +93,33 @@
     }
     .muted-block { color: var(--muted); margin-top: 8px; font-size: 13px; }
     footer { color: var(--muted); text-align: center; padding: 30px 0; }
-    .category-btn {
-      background: #2a3446;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 12px;
-      cursor: pointer;
-      transition: 0.2s;
+
+    /* MODAL STYLES */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(6px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
     }
-    .category-btn:hover { background: var(--brand); }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 800px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      animation: fadeIn 0.25s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -134,13 +152,14 @@
     <p id="codeMessage" class="muted-block"></p>
   </section>
 
-  <!-- Kategorie -->
-  <section id="categoriesBox" class="card">
-    <div class="top-row">
-      <h2>🎭 Kategorie</h2>
-      <button class="btn secondary" onclick="loadCategories()">🔄 Odśwież</button>
+  <!-- Znajomi i wspólne oglądanie -->
+  <section id="friendsBox" class="card">
+    <h2>🧑‍🤝‍🧑 Społeczność</h2>
+    <p>Połącz się ze znajomymi i oglądaj razem filmy!</p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn" onclick="location.href='znajomi.html'">👥 Znajomi</button>
+      <button class="btn secondary" onclick="location.href='wspolne-oglądanie.html'">🎥 Wspólne oglądanie</button>
     </div>
-    <div id="categoriesList" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px"></div>
   </section>
 
   <!-- Zmiana profilu -->
@@ -183,12 +202,13 @@
 
 <footer>© <script>document.write(new Date().getFullYear())</script> StreamingHub</footer>
 
+<!-- Modal container -->
 <div id="historyModalContainer"></div>
 
 <script>
 const db = supabase.createClient(
   "https://jjmnacolebxsifmnmqks.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0"
 );
 let currentUser = null;
 
@@ -200,13 +220,12 @@ let currentUser = null;
   document.getElementById("watchAdBtn").onclick = watchAd;
   await loadPoints();
   await loadProfile();
-  await loadCategories();
   await loadCompactHistory();
 })();
 
 /* ------------------- PROFIL ------------------- */
 async function loadProfile(){
-  const { data } = await db.from("profiles").select("username,bio").eq("id", currentUser.id).maybeSingle();
+  const { data, error } = await db.from("profiles").select("username,bio").eq("id", currentUser.id).maybeSingle();
   if (data) {
     document.getElementById("usernameInput").value = data.username || "";
     document.getElementById("bioInput").value = data.bio || "";
@@ -218,26 +237,9 @@ async function updateProfile(){
   const bio = document.getElementById("bioInput").value.trim();
   if(!username) return alert("Podaj nazwę użytkownika");
 
-  const { data: existing } = await db.from("profiles")
-    .select("id")
-    .eq("username", username)
-    .neq("id", currentUser.id);
-  if(existing && existing.length) return alert("❌ Ta nazwa użytkownika jest już zajęta");
-
   const { error } = await db.from("profiles").update({ username, bio }).eq("id", currentUser.id);
   if(error) alert("Błąd: " + error.message);
   else alert("✅ Zaktualizowano profil!");
-}
-
-/* ------------------- KATEGORIE ------------------- */
-async function loadCategories(){
-  const list = document.getElementById("categoriesList");
-  list.innerHTML = "Ładowanie…";
-  const { data, error } = await db.from("categories").select("*").order("name");
-  if(error){ list.textContent="Błąd ładowania kategorii"; return; }
-  list.innerHTML = data.map(cat=>`
-    <button class="category-btn" onclick="location.href='kategoria.html?id=${cat.id}'">${cat.name}</button>
-  `).join("");
 }
 
 /* ------------------- PUNKTY ------------------- */
@@ -253,6 +255,36 @@ async function watchAd(){
   alert("Dodano +50 pkt!");
 }
 
+async function redeemCode(){
+  const input = document.getElementById("codeInput");
+  const msg = document.getElementById("codeMessage");
+  const val = input.value.trim();
+  if(!val) return alert("Podaj kod");
+  const { data: code } = await db.from("codes").select("*").eq("code", val).maybeSingle();
+  if(!code) return msg.textContent="❌ Kod nie istnieje";
+  if(code.limit_left<=0) return msg.textContent="❌ Kod wykorzystany";
+  const { data: prof } = await db.from("profiles").select("points").eq("id", currentUser.id).maybeSingle();
+  await db.from("profiles").update({ points: (prof?.points||0)+(code.amount||0) }).eq("id", currentUser.id);
+  await db.from("points_log").insert([{ user_id: currentUser.id, change: code.amount, reason: "Kod: "+val }]);
+  await db.from("codes").update({ limit_left: code.limit_left-1 }).eq("id", code.id);
+  msg.textContent="✅ Dodano "+code.amount+" pkt!";
+  input.value="";
+  await loadPoints();
+}
+
+/* ------------------- HASŁO ------------------- */
+async function changePassword(){
+  const cur=document.getElementById("currentPassword").value.trim();
+  const n=document.getElementById("newPassword").value.trim();
+  const c=document.getElementById("confirmPassword").value.trim();
+  if(!cur||!n||!c) return alert("Uzupełnij pola");
+  if(n!==c) return alert("Hasła różne");
+  const { error: loginErr } = await db.auth.signInWithPassword({ email: currentUser.email, password: cur });
+  if(loginErr) return alert("Złe obecne hasło");
+  const { error } = await db.auth.updateUser({ password:n });
+  if(error) alert(error.message); else alert("Hasło zmienione ✅");
+}
+
 /* ------------------- HISTORIA ------------------- */
 async function loadCompactHistory(){
   const { data } = await db.from("watch_history").select("*").eq("user_id", currentUser.id).order("watched_at",{ascending:false}).limit(100);
@@ -262,6 +294,54 @@ async function loadCompactHistory(){
   document.getElementById("seriesList").innerHTML = await makeSeriesHtml(series);
 }
 
+/* ------------------- MODAL ------------------- */
+async function openHistoryModal(type){
+  const modalContainer = document.getElementById("historyModalContainer");
+  modalContainer.innerHTML = `<div class='modal-backdrop' onclick='closeModal(event)'><div class='modal' onclick='event.stopPropagation()'>
+    <h2>${type==='movie'?'🎞 Cała historia filmów':'📺 Cała historia seriali'}</h2>
+    <div id='modalList' class='mt-2'>Ładowanie…</div>
+    <div style='margin-top:12px;text-align:right'>
+      <button class='btn danger' onclick="confirmClear('${type}')">🗑 Wyczyść historię</button>
+      <button class='btn secondary' onclick='closeModal()'>← Powrót</button>
+    </div>
+  </div></div>`;
+  const list = document.getElementById("modalList");
+  const { data } = await db.from("watch_history").select("*").eq("user_id", currentUser.id).order("watched_at",{ascending:false});
+  if(type==='movie'){
+    const rows = [...new Map(data.filter(r=>r.movie_id).map(r=>[r.movie_id,r])).values()];
+    list.innerHTML = await makeFilmsHtml(rows);
+  }else{
+    const rows = [...new Map(data.filter(r=>r.episode_id).map(r=>[r.episode_id,r])).values()];
+    list.innerHTML = await makeSeriesHtml(rows);
+  }
+}
+
+function closeModal(e){
+  if(e && e.target!==e.currentTarget) return;
+  document.getElementById("historyModalContainer").innerHTML="";
+}
+
+/* Potwierdzenie usunięcia */
+function confirmClear(type){
+  const modal = document.querySelector(".modal");
+  modal.innerHTML = `
+    <h2>🗑 Usuń historię</h2>
+    <p>Czy na pewno chcesz usunąć całą historię ${type==='movie'?'filmów':'seriali'}?</p>
+    <button class='btn danger' onclick="clearHistory('${type}')">Tak, usuń</button>
+    <button class='btn secondary' onclick='closeModal()'>Anuluj</button>`;
+}
+
+async function clearHistory(type){
+  if(type==='movie')
+    await db.from("watch_history").delete().eq("user_id", currentUser.id).not("movie_id","is",null);
+  else
+    await db.from("watch_history").delete().eq("user_id", currentUser.id).not("episode_id","is",null);
+  alert("Historia usunięta ✅");
+  closeModal();
+  await loadCompactHistory();
+}
+
+/* ------------------- HTML GENERATORY ------------------- */
 async function makeFilmsHtml(rows){
   if(!rows.length) return "<div class='muted-block'>Brak historii filmów.</div>";
   const ids=rows.map(r=>r.movie_id);
@@ -269,7 +349,16 @@ async function makeFilmsHtml(rows){
   const map=new Map((data||[]).map(m=>[m.id,m]));
   return rows.map(r=>{
     const m=map.get(r.movie_id);
-    return `<div class='item'><img class='thumb' src='${m?.thumb||''}'><div style='flex:1'><b>${m?.title||'Film'}</b><div class='muted-block'>${new Date(r.watched_at).toLocaleString()}</div></div><button class='small-btn' onclick="location.href='film.html?id=${m?.id}'">▶️ Otwórz</button></div>`;
+    return `<div class='item'>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <img class='thumb' src='${m?.thumb||''}'>
+        <div>
+          <b>${m?.title||'Film'}</b>
+          <div class='muted-block'>${new Date(r.watched_at).toLocaleString()}</div>
+        </div>
+      </div>
+      <button class='small-btn' onclick="location.href='film.html?id=${m?.id}'">▶ Otwórz</button>
+    </div>`;
   }).join("");
 }
 
@@ -281,21 +370,18 @@ async function makeSeriesHtml(rows){
   const { data: series }=await db.from("series").select("id,title").in("id",sids);
   const sMap=new Map(series.map(s=>[s.id,s]));
   return eps.map(e=>{
-    return `<div class='item'><img class='thumb' src='${e.thumb||''}'><div style='flex:1'><b>${sMap.get(e.series_id)?.title||'Serial'}</b><div class='muted-block'>S${e.season}E${e.episode}</div></div><button class='small-btn' onclick="location.href='serial.html?id=${e.series_id}&season=${e.season}&episode=${e.episode}'">▶️ Otwórz</button></div>`;
+    const thumb=e.thumb;
+    return `<div class='item'>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <img class='thumb' src='${thumb||''}'>
+        <div>
+          <b>${sMap.get(e.series_id)?.title||'Serial'}</b>
+          <div class='muted-block'>S${e.season}E${e.episode}</div>
+        </div>
+      </div>
+      <button class='small-btn' onclick="location.href='serial.html?series=${e.series_id}&season=${e.season}&episode=${e.episode}'">▶ Otwórz</button>
+    </div>`;
   }).join("");
-}
-
-/* ------------------- INNE ------------------- */
-async function changePassword(){
-  const cur=document.getElementById("currentPassword").value.trim();
-  const n=document.getElementById("newPassword").value.trim();
-  const c=document.getElementById("confirmPassword").value.trim();
-  if(!cur||!n||!c) return alert("Uzupełnij pola");
-  if(n!==c) return alert("Hasła różne");
-  const { error: loginErr } = await db.auth.signInWithPassword({ email: currentUser.email, password: cur });
-  if(loginErr) return alert("Złe obecne hasło");
-  const { error } = await db.auth.updateUser({ password:n });
-  if(error) alert(error.message); else alert("Hasło zmienione ✅");
 }
 
 async function logout(){ await db.auth.signOut(); location.href="login.html"; }
