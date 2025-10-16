@@ -5,31 +5,108 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Moja biblioteka • StreamingHub</title>
   <style>
-    :root{--bg:#0b0d10;--card:#151922;--text:#e3e7ee;--muted:#a8bfe2;--brand:#4f7cff;--border:#232a37}
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto;min-height:100vh}
-    .container{max-width:1100px;margin:0 auto;padding:16px}
-    header{position:sticky;top:0;background:rgba(11,13,16,.8);backdrop-filter:blur(6px);z-index:10}
-    .nav{display:flex;gap:12px;align-items:center;padding:12px 16px}
-    .brand{font-weight:800}
-    .menu a,.menu button{padding:8px 10px;color:var(--muted);background:none;border:none;cursor:pointer}
-    .btn{background:var(--brand);color:#fff;padding:8px 12px;border-radius:10px;border:none;cursor:pointer}
-    .btn.secondary{background:#2a3446}
-    .card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:12px;margin-top:16px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px}
-    .item{background:#0e1218;border:1px solid var(--border);padding:12px;border-radius:10px;display:flex;gap:12px;align-items:center}
-    .thumb{width:72px;height:56px;object-fit:cover;border-radius:8px;background:#000}
-    h1,h2{margin:0}
-    .small{font-size:13px;color:var(--muted)}
-    footer{color:var(--muted);text-align:center;padding:30px 0}
-    .top-row{display:flex;justify-content:space-between;align-items:center;}
-    input, textarea {width:100%;padding:8px;margin-top:4px;border-radius:8px;border:1px solid var(--border);background:#0e1218;color:var(--text);}
-    .muted-block { color: var(--muted); margin-top:8px; font-size:13px; }
+    :root {
+      --bg: #0b0d10;
+      --card: #151922;
+      --text: #e3e7ee;
+      --muted: #a8bfe2;
+      --brand: #4f7cff;
+      --border: #232a37;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto;
+      min-height: 100vh;
+    }
+    .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    header {
+      position: sticky;
+      top: 0;
+      background: rgba(11, 13, 16, .8);
+      backdrop-filter: blur(6px);
+      z-index: 10;
+    }
+    .nav { display: flex; gap: 12px; align-items: center; padding: 12px 16px; }
+    .brand { font-weight: 800; }
+    .menu a, .menu button {
+      padding: 8px 10px;
+      color: var(--muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    .btn {
+      background: var(--brand);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+    }
+    .btn.secondary { background: #2a3446; }
+    .btn.danger { background: #c24b4b; }
+    .small-btn {
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: #2a3446;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 16px;
+      border-radius: 12px;
+      margin-top: 16px;
+    }
+    .row-scroll {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .item {
+      background: #0e1218;
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 10px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      min-width: 320px;
+    }
+    .thumb { width: 120px; height: 80px; object-fit: cover; border-radius: 8px; background: #000; }
+    .top-row { display: flex; justify-content: space-between; align-items: center; }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #0e1218;
+      color: var(--text);
+    }
+    .muted-block { color: var(--muted); margin-top: 8px; font-size: 13px; }
+    footer { color: var(--muted); text-align: center; padding: 30px 0; }
+    .category-btn {
+      background: #2a3446;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .category-btn:hover { background: var(--brand); }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
 
+<body>
 <header>
   <div class="nav container">
     <a class="brand" href="filmy.html">🎬 StreamingHub</a>
@@ -46,222 +123,182 @@
 <main class="container" id="app">
   <h1>Moja biblioteka</h1>
 
-  <!-- 🔹 Punkty i kod -->
+  <!-- Punkty -->
   <section id="pointsBox" class="card">
     <h2>🎯 Twoje punkty: <span id="points">…</span></h2>
-    <div style="margin-top:10px">
-      <button id="watchAdBtn" class="btn">🎬 Obejrzyj reklamę (+50 pkt)</button>
-      <span class="small" style="margin-left:12px;">Kliknij, aby otrzymać punkty</span>
-    </div>
+    <button id="watchAdBtn" class="btn">🎬 Obejrzyj reklamę (+50 pkt)</button>
     <hr style="margin:20px 0;border-color:var(--border)">
-    <div>
-      <h3>🎟 Wykorzystaj kod</h3>
-      <input id="codeInput" placeholder="Wpisz kod promocyjny">
-      <br><br>
-      <button class="btn" onclick="redeemCode()">Aktywuj kod</button>
-      <p class="small" id="codeMessage"></p>
-    </div>
+    <h3>🎟 Wykorzystaj kod</h3>
+    <input id="codeInput" placeholder="Wpisz kod promocyjny">
+    <button class="btn" onclick="redeemCode()">Aktywuj</button>
+    <p id="codeMessage" class="muted-block"></p>
   </section>
 
-  <!-- 🔹 Ustawienia konta -->
-  <section id="accountBox" class="card">
-    <h2>⚙️ Ustawienia konta</h2>
-    <div style="margin-top:12px">
-      <label>Nazwa użytkownika:</label>
-      <input id="usernameInput" placeholder="Twoja nazwa">
-      <div class="muted-block">Aktualna nazwa widoczna powyżej — zmień i zapisz</div>
-      <br>
-      <label>Opis (bio):</label>
-      <textarea id="bioInput" rows="3" placeholder="Krótki opis..."></textarea>
-      <br><br>
-      <button class="btn" onclick="saveProfile()">💾 Zapisz zmiany</button>
+  <!-- Kategorie -->
+  <section id="categoriesBox" class="card">
+    <div class="top-row">
+      <h2>🎭 Kategorie</h2>
+      <button class="btn secondary" onclick="loadCategories()">🔄 Odśwież</button>
     </div>
+    <div id="categoriesList" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px"></div>
   </section>
 
-  <!-- 🔹 Zmiana hasła -->
+  <!-- Zmiana profilu -->
+  <section id="profileBox" class="card">
+    <h2>👤 Zmień dane profilu</h2>
+    <label>Nazwa użytkownika</label>
+    <input type="text" id="usernameInput" placeholder="Nowa nazwa">
+    <label>Opis (bio)</label>
+    <textarea id="bioInput" placeholder="Napisz coś o sobie..."></textarea>
+    <button class="btn" onclick="updateProfile()">💾 Zapisz zmiany</button>
+  </section>
+
+  <!-- Zmiana hasła -->
   <section id="passwordBox" class="card">
     <h2>🔐 Zmień hasło</h2>
     <input type="password" id="currentPassword" placeholder="Obecne hasło">
-    <br><br>
     <input type="password" id="newPassword" placeholder="Nowe hasło">
-    <br><br>
     <input type="password" id="confirmPassword" placeholder="Powtórz nowe hasło">
-    <br><br>
     <button class="btn" onclick="changePassword()">Zmień hasło</button>
   </section>
 
-  <!-- 🔹 Historia oglądania — Filmy -->
+  <!-- Historia filmów -->
   <section id="filmsBox" class="card">
     <div class="top-row">
       <h2>🎞 Historia oglądania — Filmy</h2>
-      <button class="btn secondary" onclick="showFullHistory('movie')">Pokaż całą historię</button>
+      <button class="btn secondary" onclick="openHistoryModal('movie')">Pokaż całą historię</button>
     </div>
-    <div id="filmsList" class="grid"><div class="small">Ładowanie…</div></div>
+    <div id="filmsList" class="row-scroll"></div>
   </section>
 
-  <!-- 🔹 Historia oglądania — Seriale -->
+  <!-- Historia seriali -->
   <section id="seriesBox" class="card">
     <div class="top-row">
       <h2>📺 Historia oglądania — Seriale</h2>
-      <button class="btn secondary" onclick="showFullHistory('series')">Pokaż całą historię</button>
+      <button class="btn secondary" onclick="openHistoryModal('series')">Pokaż całą historię</button>
     </div>
-    <div id="seriesList" class="grid"><div class="small">Ładowanie…</div></div>
+    <div id="seriesList" class="row-scroll"></div>
   </section>
 </main>
 
 <footer>© <script>document.write(new Date().getFullYear())</script> StreamingHub</footer>
 
+<div id="historyModalContainer"></div>
+
 <script>
-const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = supabase.createClient(
+  "https://jjmnacolebxsifmnmqks.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+);
 let currentUser = null;
 
-/* ---------------------- INIT ---------------------- */
-(async function init(){
-  const {data:{session}}=await db.auth.getSession();
-  if(!session||!session.user){alert("Musisz się zalogować.");location.href="login.html";return;}
-  currentUser=session.user;
-  document.getElementById("watchAdBtn").addEventListener("click",watchAd);
+/* ------------------- INIT ------------------- */
+(async()=>{
+  const { data:{ session } } = await db.auth.getSession();
+  if(!session) return location.href="login.html";
+  currentUser = session.user;
+  document.getElementById("watchAdBtn").onclick = watchAd;
   await loadPoints();
   await loadProfile();
-  await loadHistory();
+  await loadCategories();
+  await loadCompactHistory();
 })();
 
-/* ---------------------- PUNKTY ---------------------- */
-async function loadPoints(){
-  const {data}=await db.from("profiles").select("points").eq("id",currentUser.id).maybeSingle();
-  document.getElementById("points").textContent=data?.points||0;
-}
-async function watchAd(){
-  const add=50;
-  await db.from("points_log").insert([{user_id:currentUser.id,change:add,reason:"Ad reward"}]);
-  const {data}=await db.from("profiles").select("points").eq("id",currentUser.id).maybeSingle();
-  await db.from("profiles").update({points:(data?.points||0)+add}).eq("id",currentUser.id);
-  await loadPoints();alert("Dostałeś +50 pkt ✅");
-}
-
-/* ---------------------- KODY ---------------------- */
-async function redeemCode() {
-  const input = document.getElementById("codeInput");
-  const codeMessage = document.getElementById("codeMessage");
-  const codeValue = input.value.trim();
-  if (!codeValue) return alert("Wpisz kod.");
-  codeMessage.textContent = "Sprawdzanie kodu…";
-
-  const { data: code } = await db.from("codes").select("*").eq("code", codeValue).maybeSingle();
-  if (!code) return codeMessage.textContent = "❌ Kod nie istnieje.";
-  if (code.expires && new Date(code.expires) < new Date()) return codeMessage.textContent = "❌ Kod wygasł.";
-  if (code.limit_left !== null && code.limit_left <= 0) return codeMessage.textContent = "❌ Kod został już wykorzystany.";
-
-  try {
-    const { data: prof } = await db.from("profiles").select("points").eq("id", currentUser.id).maybeSingle();
-    const newPts = (prof?.points || 0) + code.amount;
-    await db.from("profiles").update({ points: newPts }).eq("id", currentUser.id);
-    await db.from("points_log").insert([{ user_id: currentUser.id, change: code.amount, reason: "Kod: " + code.code }]);
-    await db.from("codes").update({ limit_left: (code.limit_left || 1) - 1 }).eq("id", code.id);
-    codeMessage.textContent = `✅ Dodano ${code.amount} punktów!`;
-    input.value = "";
-    await loadPoints();
-  } catch (err) {
-    codeMessage.textContent = "❌ Błąd aktywacji kodu.";
+/* ------------------- PROFIL ------------------- */
+async function loadProfile(){
+  const { data } = await db.from("profiles").select("username,bio").eq("id", currentUser.id).maybeSingle();
+  if (data) {
+    document.getElementById("usernameInput").value = data.username || "";
+    document.getElementById("bioInput").value = data.bio || "";
   }
 }
 
-/* ---------------------- PROFIL ---------------------- */
-async function loadProfile() {
-  const { data: prof } = await db.from("profiles").select("username,bio").eq("id", currentUser.id).maybeSingle();
-  document.getElementById("usernameInput").value = prof?.username || "";
-  document.getElementById("bioInput").value = prof?.bio || "";
-}
-async function saveProfile() {
+async function updateProfile(){
   const username = document.getElementById("usernameInput").value.trim();
   const bio = document.getElementById("bioInput").value.trim();
-  if (!username) return alert("Nazwa nie może być pusta.");
+  if(!username) return alert("Podaj nazwę użytkownika");
+
+  const { data: existing } = await db.from("profiles")
+    .select("id")
+    .eq("username", username)
+    .neq("id", currentUser.id);
+  if(existing && existing.length) return alert("❌ Ta nazwa użytkownika jest już zajęta");
+
   const { error } = await db.from("profiles").update({ username, bio }).eq("id", currentUser.id);
-  if (error) alert("Błąd zapisu: " + error.message);
-  else alert("Zapisano zmiany ✅");
+  if(error) alert("Błąd: " + error.message);
+  else alert("✅ Zaktualizowano profil!");
 }
 
-/* ---------------------- HASŁO ---------------------- */
-async function changePassword() {
-  const currentPass = document.getElementById("currentPassword").value.trim();
-  const newPass = document.getElementById("newPassword").value.trim();
-  const confirmPass = document.getElementById("confirmPassword").value.trim();
-  if (!currentPass || !newPass || !confirmPass) return alert("Uzupełnij wszystkie pola.");
-  if (newPass !== confirmPass) return alert("Hasła nie są identyczne.");
-  if (newPass.length < 6) return alert("Nowe hasło musi mieć co najmniej 6 znaków.");
-  const { error: loginErr } = await db.auth.signInWithPassword({ email: currentUser.email, password: currentPass });
-  if (loginErr) return alert("Błędne obecne hasło.");
-  const { error } = await db.auth.updateUser({ password: newPass });
-  if (error) alert("Błąd: " + error.message);
-  else alert("Hasło zmienione ✅");
+/* ------------------- KATEGORIE ------------------- */
+async function loadCategories(){
+  const list = document.getElementById("categoriesList");
+  list.innerHTML = "Ładowanie…";
+  const { data, error } = await db.from("categories").select("*").order("name");
+  if(error){ list.textContent="Błąd ładowania kategorii"; return; }
+  list.innerHTML = data.map(cat=>`
+    <button class="category-btn" onclick="location.href='kategoria.html?id=${cat.id}'">${cat.name}</button>
+  `).join("");
 }
 
-/* ---------------------- HISTORIA ---------------------- */
-async function loadHistory(){
-  const {data}=await db.from("watch_history").select("movie_id,episode_id,watched_at")
-    .eq("user_id",currentUser.id).order("watched_at",{ascending:false}).limit(200);
-
-  const movies=(data||[]).filter(r=>r.movie_id&&!r.episode_id);
-  const series=(data||[]).filter(r=>r.episode_id);
-
-  const uniqMovies=[...new Map(movies.map(m=>[m.movie_id,m])).values()].slice(0,8);
-  const uniqSeries=[...new Map(series.map(s=>[s.episode_id,s])).values()].slice(0,8);
-
-  document.getElementById("filmsList").innerHTML=await makeFilmsHtml(uniqMovies);
-  document.getElementById("seriesList").innerHTML=await makeSeriesHtml(uniqSeries);
+/* ------------------- PUNKTY ------------------- */
+async function loadPoints(){
+  const { data } = await db.from("profiles").select("points").eq("id", currentUser.id).maybeSingle();
+  document.getElementById("points").textContent = data?.points ?? 0;
 }
 
-async function showFullHistory(type){
-  const {data}=await db.from("watch_history").select("movie_id,episode_id,watched_at")
-    .eq("user_id",currentUser.id).order("watched_at",{ascending:false});
-  if(type==="movie"){
-    const movies=[...new Map((data||[]).filter(r=>r.movie_id&&!r.episode_id).map(m=>[m.movie_id,m])).values()];
-    document.getElementById("filmsList").innerHTML=await makeFilmsHtml(movies);
-  }else{
-    const series=[...new Map((data||[]).filter(r=>r.episode_id).map(s=>[s.episode_id,s])).values()];
-    document.getElementById("seriesList").innerHTML=await makeSeriesHtml(series);
-  }
+async function watchAd(){
+  const { data: prof } = await db.from("profiles").select("points").eq("id", currentUser.id).maybeSingle();
+  await db.from("profiles").update({ points: (prof?.points||0)+50 }).eq("id", currentUser.id);
+  await loadPoints();
+  alert("Dodano +50 pkt!");
+}
+
+/* ------------------- HISTORIA ------------------- */
+async function loadCompactHistory(){
+  const { data } = await db.from("watch_history").select("*").eq("user_id", currentUser.id).order("watched_at",{ascending:false}).limit(100);
+  const movies = [...new Map(data.filter(d=>d.movie_id).map(x=>[x.movie_id,x])).values()].slice(0,6);
+  const series = [...new Map(data.filter(d=>d.episode_id).map(x=>[x.episode_id,x])).values()].slice(0,6);
+  document.getElementById("filmsList").innerHTML = await makeFilmsHtml(movies);
+  document.getElementById("seriesList").innerHTML = await makeSeriesHtml(series);
 }
 
 async function makeFilmsHtml(rows){
-  if(!rows.length)return"<div class='small'>Brak historii filmów.</div>";
-  const ids=[...new Set(rows.map(r=>r.movie_id))];
-  const {data:movies}=await db.from("movies").select("id,title,thumb").in("id",ids);
-  const map=new Map((movies||[]).map(m=>[String(m.id),m]));
+  if(!rows.length) return "<div class='muted-block'>Brak historii filmów.</div>";
+  const ids=rows.map(r=>r.movie_id);
+  const { data }=await db.from("movies").select("id,title,thumb").in("id",ids);
+  const map=new Map((data||[]).map(m=>[m.id,m]));
   return rows.map(r=>{
-    const m=map.get(String(r.movie_id));
-    return `<div class='item'>
-      <img class='thumb' src='${m?.thumb||""}' alt=''>
-      <div style='flex:1'><div style='font-weight:700'>${m?.title||"Film #"+r.movie_id}</div>
-      <div class='small'>${new Date(r.watched_at).toLocaleString()}</div></div>
-      <button class='btn' onclick='continueMovie("${r.movie_id}")'>Odtwórz</button>
-    </div>`;
+    const m=map.get(r.movie_id);
+    return `<div class='item'><img class='thumb' src='${m?.thumb||''}'><div style='flex:1'><b>${m?.title||'Film'}</b><div class='muted-block'>${new Date(r.watched_at).toLocaleString()}</div></div><button class='small-btn' onclick="location.href='film.html?id=${m?.id}'">▶️ Otwórz</button></div>`;
   }).join("");
 }
 
 async function makeSeriesHtml(rows){
-  if(!rows.length)return"<div class='small'>Brak historii seriali.</div>";
-  const eids=[...new Set(rows.map(r=>r.episode_id))];
-  const {data:eps}=await db.from("episodes").select("id,title,series_id,season,episode,thumb").in("id",eids);
-  const sids=[...new Set((eps||[]).map(e=>e.series_id))];
-  const {data:series}=await db.from("series").select("id,title").in("id",sids);
-  const smap=new Map((series||[]).map(s=>[String(s.id),s]));
+  if(!rows.length) return "<div class='muted-block'>Brak historii seriali.</div>";
+  const eids=rows.map(r=>r.episode_id);
+  const { data: eps }=await db.from("episodes").select("id,series_id,season,episode,thumb").in("id",eids);
+  const sids=[...new Set(eps.map(e=>e.series_id))];
+  const { data: series }=await db.from("series").select("id,title").in("id",sids);
+  const sMap=new Map(series.map(s=>[s.id,s]));
   return eps.map(e=>{
-    const s=smap.get(String(e.series_id));
-    return `<div class='item'>
-      <img class='thumb' src='${e.thumb||""}' alt=''>
-      <div style='flex:1'><div style='font-weight:700'>${s?.title||"Serial"}</div>
-      <div class='small'>S${e.season}E${e.episode}</div></div>
-      <button class='btn' onclick='resumeSeries("${s?.id||e.series_id}-${e.season}-${e.episode}")'>Odtwórz</button>
-    </div>`;
+    return `<div class='item'><img class='thumb' src='${e.thumb||''}'><div style='flex:1'><b>${sMap.get(e.series_id)?.title||'Serial'}</b><div class='muted-block'>S${e.season}E${e.episode}</div></div><button class='small-btn' onclick="location.href='serial.html?id=${e.series_id}&season=${e.season}&episode=${e.episode}'">▶️ Otwórz</button></div>`;
   }).join("");
 }
 
-function continueMovie(id){location.href=`filmy.html#movie-${id}`;}
-function resumeSeries(hash){location.href=`seriale.html#${hash}`;}
-async function logout(){await db.auth.signOut();location.href="login.html";}
+/* ------------------- INNE ------------------- */
+async function changePassword(){
+  const cur=document.getElementById("currentPassword").value.trim();
+  const n=document.getElementById("newPassword").value.trim();
+  const c=document.getElementById("confirmPassword").value.trim();
+  if(!cur||!n||!c) return alert("Uzupełnij pola");
+  if(n!==c) return alert("Hasła różne");
+  const { error: loginErr } = await db.auth.signInWithPassword({ email: currentUser.email, password: cur });
+  if(loginErr) return alert("Złe obecne hasło");
+  const { error } = await db.auth.updateUser({ password:n });
+  if(error) alert(error.message); else alert("Hasło zmienione ✅");
+}
+
+async function logout(){ await db.auth.signOut(); location.href="login.html"; }
 </script>
 </body>
 </html>
