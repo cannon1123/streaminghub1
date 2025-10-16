@@ -24,6 +24,7 @@
     footer{color:var(--muted);text-align:center;padding:30px 0}
     .top-row{display:flex;justify-content:space-between;align-items:center;}
     input, textarea {width:100%;padding:8px;margin-top:4px;border-radius:8px;border:1px solid var(--border);background:#0e1218;color:var(--text);}
+    .muted-block { color: var(--muted); margin-top:8px; font-size:13px; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -67,10 +68,11 @@
     <h2>⚙️ Ustawienia konta</h2>
     <div style="margin-top:12px">
       <label>Nazwa użytkownika:</label>
-      <input id="usernameInput">
-      <br><br>
+      <input id="usernameInput" placeholder="Twoja nazwa">
+      <div class="muted-block">Aktualna nazwa widoczna powyżej — zmień i zapisz</div>
+      <br>
       <label>Opis (bio):</label>
-      <textarea id="bioInput" rows="3"></textarea>
+      <textarea id="bioInput" rows="3" placeholder="Krótki opis..."></textarea>
       <br><br>
       <button class="btn" onclick="saveProfile()">💾 Zapisz zmiany</button>
     </div>
@@ -89,7 +91,7 @@
     </div>
   </section>
 
-  <!-- 🔹 Historia oglądania -->
+  <!-- 🔹 Historia oglądania — Filmy -->
   <section id="filmsBox" class="card">
     <div class="top-row">
       <h2>🎞 Historia oglądania — Filmy</h2>
@@ -98,6 +100,7 @@
     <div id="filmsList" class="grid"><div class="small">Ładowanie…</div></div>
   </section>
 
+  <!-- 🔹 Historia oglądania — Seriale -->
   <section id="seriesBox" class="card">
     <div class="top-row">
       <h2>📺 Historia oglądania — Seriale</h2>
@@ -127,7 +130,7 @@ let currentUser = null;
 })();
 window.addEventListener("hashchange",handleHash);
 
-/* ---------------------- points ---------------------- */
+/* ---------------------- punkty ---------------------- */
 async function loadPoints(){
   const {data}=await db.from("profiles").select("points").eq("id",currentUser.id).maybeSingle();
   document.getElementById("points").textContent=data?.points||0;
@@ -140,7 +143,7 @@ async function watchAd(){
   await loadPoints();alert("Dostałeś +50 pkt ✅");
 }
 
-/* ---------------------- codes ---------------------- */
+/* ---------------------- kody ---------------------- */
 async function redeemCode() {
   const input = document.getElementById("codeInput");
   const codeMessage = document.getElementById("codeMessage");
@@ -154,7 +157,9 @@ async function redeemCode() {
   if (code.expires && new Date(code.expires) < new Date()) return codeMessage.textContent = "❌ Kod wygasł.";
 
   if (code.type === "points") {
-    await db.from("profiles").update({ points: db.sql`points + ${code.amount}` }).eq("id", currentUser.id);
+    const { data: prof } = await db.from("profiles").select("points").eq("id", currentUser.id).maybeSingle();
+    const newPts = (prof?.points || 0) + code.amount;
+    await db.from("profiles").update({ points: newPts }).eq("id", currentUser.id);
     await db.from("points_log").insert([{ user_id: currentUser.id, change: code.amount, reason: "Kod: " + code.code }]);
     codeMessage.textContent = `✅ Dodano ${code.amount} punktów!`;
   } else if (code.type === "premium") {
@@ -171,22 +176,25 @@ async function redeemCode() {
   await loadPoints();
 }
 
-/* ---------------------- profile ---------------------- */
+/* ---------------------- profil ---------------------- */
 async function loadProfile() {
-  const { data } = await db.from("profiles").select("username, bio").eq("id", currentUser.id).maybeSingle();
-  document.getElementById("usernameInput").value = data?.username || "";
-  document.getElementById("bioInput").value = data?.bio || "";
+  const { data: prof } = await db.from("profiles").select("username").eq("id", currentUser.id).maybeSingle();
+  document.getElementById("usernameInput").value = prof?.username || "";
+
+  const { data: user } = await db.from("users").select("bio").eq("id", currentUser.id).maybeSingle();
+  document.getElementById("bioInput").value = user?.bio || "";
 }
 async function saveProfile() {
   const username = document.getElementById("usernameInput").value.trim();
   const bio = document.getElementById("bioInput").value.trim();
   if (!username) return alert("Nazwa nie może być pusta.");
-  const { error } = await db.from("profiles").update({ username, bio }).eq("id", currentUser.id);
-  if (error) alert("Błąd zapisu: " + error.message);
+  const { error: e1 } = await db.from("profiles").update({ username }).eq("id", currentUser.id);
+  const { error: e2 } = await db.from("users").update({ bio }).eq("id", currentUser.id);
+  if (e1 || e2) alert("Błąd zapisu: " + (e1?.message || e2?.message));
   else alert("Zapisano zmiany ✅");
 }
 
-/* ---------------------- password ---------------------- */
+/* ---------------------- zmiana hasła ---------------------- */
 async function changePassword() {
   const currentPass = document.getElementById("currentPassword").value.trim();
   const newPass = document.getElementById("newPassword").value.trim();
@@ -195,14 +203,15 @@ async function changePassword() {
   if (newPass !== confirmPass) return alert("Hasła nie są identyczne.");
   if (newPass.length < 6) return alert("Nowe hasło musi mieć co najmniej 6 znaków.");
 
-  const { data: { user }, error: loginErr } = await db.auth.signInWithPassword({ email: currentUser.email, password: currentPass });
+  const { error: loginErr } = await db.auth.signInWithPassword({ email: currentUser.email, password: currentPass });
   if (loginErr) return alert("Błędne obecne hasło.");
+
   const { error } = await db.auth.updateUser({ password: newPass });
   if (error) alert("Błąd: " + error.message);
   else alert("Hasło zmienione ✅");
 }
 
-/* ---------------------- history ---------------------- */
+/* ---------------------- historia ---------------------- */
 async function handleHash(){
   const hash=location.hash;
   if(hash==="#history-movie") return showFullHistory("movie");
@@ -216,8 +225,8 @@ async function loadHistory(){
   const series=(data||[]).filter(r=>r.episode_id);
   const uniqMovies=[...new Map(movies.map(m=>[m.movie_id,m])).values()].slice(0,8);
   const uniqSeries=[...new Map(series.map(s=>[s.episode_id,s])).values()].slice(0,8);
-  await renderFilmsList(uniqMovies);
-  await renderSeriesList(uniqSeries);
+  document.getElementById("filmsList").innerHTML=await makeFilmsHtml(uniqMovies);
+  document.getElementById("seriesList").innerHTML=await makeSeriesHtml(uniqSeries);
 }
 
 async function showFullHistory(type){
@@ -236,9 +245,42 @@ async function showFullHistory(type){
   }
 }
 
-/* ---------------------- render ---------------------- */
-async function renderFilmsList(rows){document.getElementById("filmsList").innerHTML=await makeFilmsHtml(rows);}
-async function renderSeriesList(rows){document.getElementById("seriesList").innerHTML=await makeSeriesHtml(rows);}
+async function makeFilmsHtml(rows){
+  if(!rows.length)return"<div class='small'>Brak historii.</div>";
+  const ids=[...new Set(rows.map(r=>r.movie_id))];
+  if(!ids.length)return"<div class='small'>Brak historii.</div>";
+  const {data:movies}=await db.from("movies").select("id,title,thumb").in("id",ids);
+  const map=new Map((movies||[]).map(m=>[String(m.id),m]));
+  return rows.map(r=>{
+    const m=map.get(String(r.movie_id));
+    return `<div class='item'>
+      <img class='thumb' src='${m?.thumb||""}' alt=''>
+      <div style='flex:1'><div style='font-weight:700'>${m?.title||"Film #"+r.movie_id}</div>
+      <div class='small'>${new Date(r.watched_at).toLocaleString()}</div></div>
+      <button class='btn' onclick='continueMovie("${r.movie_id}")'>Odtwórz</button>
+    </div>`;
+  }).join("");
+}
+
+async function makeSeriesHtml(rows){
+  if(!rows.length)return"<div class='small'>Brak historii.</div>";
+  const eids=[...new Set(rows.map(r=>r.episode_id))];
+  if(!eids.length)return"<div class='small'>Brak historii.</div>";
+  const {data:eps}=await db.from("episodes").select("id,title,series_id,season,episode,thumb").in("id",eids);
+  const sids=[...new Set((eps||[]).map(e=>e.series_id))];
+  const {data:series}=await db.from("series").select("id,title").in("id",sids);
+  const smap=new Map((series||[]).map(s=>[String(s.id),s]));
+  return eps.map(e=>{
+    const s=smap.get(String(e.series_id));
+    return `<div class='item'>
+      <img class='thumb' src='${e.thumb||""}' alt=''>
+      <div style='flex:1'><div style='font-weight:700'>${s?.title||"Serial"}</div>
+      <div class='small'>S${e.season}E${e.episode} • ${new Date().toLocaleDateString()}</div></div>
+      <button class='btn' onclick='resumeSeries("${s?.id||e.series_id}-${e.season}-${e.episode}")'>Odtwórz</button>
+    </div>`;
+  }).join("");
+}
+
 function continueMovie(id){location.href=`filmy.html#movie-${id}`;}
 function resumeSeries(hash){location.href=`seriale.html#${hash}`;}
 async function logout(){await db.auth.signOut();location.href="login.html";}
