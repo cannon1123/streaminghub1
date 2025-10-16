@@ -254,7 +254,8 @@ async function loadFriends(){
   }).join("");
 }
 
-async function showProfile(id){
+
+  async function showProfile(id){
   const { data } = await db.from("profiles").select("id,username,bio,created_at").eq("id", id).maybeSingle();
   if(!data) return;
   document.getElementById("profileView").style.display = "block";
@@ -268,13 +269,30 @@ async function showProfile(id){
   `;
   window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
 }
-function closeProfile(){ document.getElementById("profileView").style.display="none"; }
-async function removeFriend(id){
-  if(!confirm("Na pewno usunąć tego znajomego?")) return;
-  await db.from("friends").delete().or(`(user_id.eq.${currentUser.id},friend_id.eq.${id}),(user_id.eq.${id},friend_id.eq.${currentUser.id})`);
+
+  
+  function closeProfile(){ document.getElementById("profileView").style.display="none"; }
+
+  
+  async function removeFriend(id) {
+  if (!confirm("Na pewno usunąć tego znajomego?")) return;
+
+  // usuń relację w obu kierunkach
+  await db.from("friends")
+    .delete()
+    .eq("user_id", currentUser.id)
+    .eq("friend_id", id);
+
+  await db.from("friends")
+    .delete()
+    .eq("user_id", id)
+    .eq("friend_id", currentUser.id);
+
   closeProfile();
   await loadFriends();
+  alert("❌ Usunięto ze znajomych!");
 }
+
 async function logout(){ await db.auth.signOut(); location.href="login.html"; }
 </script>
 </body>
