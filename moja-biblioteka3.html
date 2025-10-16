@@ -357,7 +357,7 @@ async function makeFilmsHtml(rows){
           <div class='muted-block'>${new Date(r.watched_at).toLocaleString()}</div>
         </div>
       </div>
-      <button class='small-btn' onclick="location.href='film.html?id=${m?.id}'">▶ Otwórz</button>
+      <button class='small-btn' onclick="location.href='filmy.html?id=${m?.id}'">▶ Otwórz</button>
     </div>`;
   }).join("");
 }
@@ -379,7 +379,7 @@ async function makeSeriesHtml(rows){
           <div class='muted-block'>S${e.season}E${e.episode}</div>
         </div>
       </div>
-      <button class='small-btn' onclick="location.href='serial.html?series=${e.series_id}&season=${e.season}&episode=${e.episode}'">▶ Otwórz</button>
+      <button class='small-btn' onclick="location.href='seriale.html?series=${e.series_id}&season=${e.season}&episode=${e.episode}'">▶ Otwórz</button>
     </div>`;
   }).join("");
 }
