@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>StreamingHub • Filmy (Mobile)</title>
+  <style>
+    :root{
+      --bg:#0b0d10;
+      --card:#151922;
+      --text:#e3e7ee;
+      --muted:#a8bfe2;
+      --brand:#4f7cff;
+      --border:#232a37;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Roboto,sans-serif;line-height:1.4}
+
+    /* --- HEADER --- */
+    header{
+      position:sticky;top:0;z-index:10;
+      background:rgba(11,13,16,0.9);backdrop-filter:blur(8px);
+      border-bottom:1px solid var(--border);
+    }
+    .nav{
+      display:flex;flex-wrap:wrap;align-items:center;
+      gap:8px;padding:10px 14px;
+    }
+    .brand{font-weight:700;font-size:1.2em;white-space:nowrap}
+    .nav input[type=search]{
+      flex:1;background:#0e1218;border:1px solid var(--border);
+      color:#fff;padding:8px 10px;border-radius:10px;font-size:.9em;
+    }
+    .menu{display:flex;flex-wrap:wrap;gap:8px}
+    .menu a,.menu button{
+      padding:6px 10px;color:var(--muted);
+      background:none;border:none;cursor:pointer;
+      font-size:.9em;border-radius:8px;
+    }
+    .menu a:hover,.menu button:hover{color:#fff;background:#1a2233}
+
+    /* --- BUTTONS --- */
+    .btn{background:var(--brand);color:#fff;padding:10px 14px;border-radius:10px;border:none;cursor:pointer}
+    .btn.secondary{background:#2a3446}
+
+    /* --- GRID --- */
+    .container{max-width:1000px;margin:0 auto;padding:14px}
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+      gap:12px;
+    }
+    @media (min-width:700px){
+      .grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+    }
+
+    /* --- CARD --- */
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:14px;
+      overflow:hidden;
+    }
+    .card img{width:100%;height:220px;object-fit:cover}
+    .card.p{padding:10px;border:0}
+    .small{font-size:12px;color:var(--muted)}
+    .badge{font-size:12px;background:#2a3446;padding:2px 8px;border-radius:999px}
+
+    /* --- VIDEO --- */
+    .video-container{
+      position:relative;width:100%;padding-bottom:56.25%;
+      height:0;overflow:hidden;background:black;border-radius:16px;
+    }
+    .video-container iframe{
+      position:absolute;top:0;left:0;width:100%;height:100%;border:0;
+    }
+
+    footer{color:var(--muted);text-align:center;padding:20px 0;font-size:.8em}
+
+    .alert{background:#152031;padding:10px;border-radius:8px;color:#fff;margin:8px 0}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <a class="brand" href="#" onclick="UI.show('home')">🎬 StreamingHub</a>
+    <input type="search" placeholder="Szukaj…" oninput="UI.search(this.value)">
+    <nav class="menu">
+      <a href="#" onclick="UI.show('home')">Filmy</a>
+      <a href="seriale.html">Seriale</a>
+      <a href="top.html">TOP</a>
+      <a href="moja-biblioteka.html">Biblioteka</a>
+      <button class="btn secondary" onclick="Auth.logout()">Wyloguj</button>
+    </nav>
+  </div>
+</header>
+
+<main class="container" id="app"></main>
+
+<footer>© <script>document.write(new Date().getFullYear())</script> StreamingHub Mobile</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+// Skrócona wersja logiki – działa z tą samą bazą co desktop
+const db = window.supabase.createClient("https://jjmnacolebxsifmnmqks.supabase.co",
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...");
+
+const Auth = {
+  async currentUser(){ const { data:{ user } } = await db.auth.getUser(); return user; },
+  async logout(){ await db.auth.signOut(); location.href="login.html"; }
+};
+
+const UI = {
+  el:()=>document.getElementById("app"),
+  async show(view){
+    if(view==="home"){
+      const { data:movies } = await db.from("movies").select("*").order("created_at",{ascending:false});
+      const grid = movies.map(m=>`
+        <div class="card">
+          <a href="#" onclick="UI.showMovie(${m.id})">
+            <img src="${m.thumb}" alt="${m.title}">
+          </a>
+          <div class="card p">
+            <b>${m.title}</b>
+            <div class="small">${m.year||"?"} • ${m.duration||"?"} min</div>
+          </div>
+        </div>`).join("");
+      UI.el().innerHTML = `<div class="grid">${grid}</div>`;
+    }
+  },
+  async showMovie(id){
+    const { data:m } = await db.from("movies").select("*").eq("id",id).single();
+    UI.el().innerHTML = `
+      <h2>${m.title}</h2>
+      <div class="video-container mt-2"><iframe src="${m.iframe}" allowfullscreen></iframe></div>
+      <p class="small mt-2">${m.year} • ${m.duration} min</p>
+      <p>${m.description||""}</p>
+      <button class="btn secondary mt-2" onclick="UI.show('home')">← Powrót</button>
+    `;
+  },
+  async search(q){
+    const { data:movies } = await db.from("movies").select("*").ilike("title",`%${q}%`);
+    const grid = movies.map(m=>`
+      <div class="card">
+        <a href="#" onclick="UI.showMovie(${m.id})"><img src="${m.thumb}"></a>
+        <div class="card p"><b>${m.title}</b></div>
+      </div>`).join("");
+    UI.el().innerHTML = `<div class="grid">${grid||'<p class="small">Brak wyników</p>'}</div>`;
+  }
+};
+
+UI.show("home");
+</script>
+</body>
+</html>
