@@ -701,8 +701,7 @@ const UI = {
     const { error } = await delCategory(id);
     if(error) alert("❌ " + error.message);
     UI.show('admin');
-  },
-  {
+  }
   async function "goToFilmy()" {
   const { data: { session } } = await db.auth.getSession();
 
