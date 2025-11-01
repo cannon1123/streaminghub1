@@ -702,6 +702,7 @@ const UI = {
     if(error) alert("❌ " + error.message);
     UI.show('admin');
   },
+  {
   async function "goToFilmy()" {
   const { data: { session } } = await db.auth.getSession();
 
