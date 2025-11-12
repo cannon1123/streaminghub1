@@ -519,13 +519,6 @@ const UI = {
 
       // Historia dla zalogowanych
       let historyHTML = "";
-      if(me){
-        const hist = await getWatchHistory(me.id, 12);
-        if(hist.length){
-          historyHTML = `
-            <section class="section mt-8">
-              <div class="flex" style="justify-content:space-between;">
-              
       app.innerHTML = `
         ${UI.filters(cats)}
         ${historyHTML}
@@ -640,18 +633,6 @@ const UI = {
 
     // LOGIN/REGISTER/PROFILE usunięte - tylko filmy
 
-    else if(view==="me"){
-      if(!me) return UI.show("login");
-      const hist = await getWatchHistory(me.id, 100);
-      const wishSet = await getWishlist(me.id);
-      const wishIds = [...wishSet];
-      let wishMovies = [];
-      if(wishIds.length){
-        const { data } = await db.from("movies").select("*").in("id", wishIds);
-        wishMovies = data||[];
-      }
-      app.innerHTML = 
- 
     // TOP usunięte - tylko filmy
 
     else if(view==="admin"){
