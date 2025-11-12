@@ -525,16 +525,7 @@ const UI = {
           historyHTML = `
             <section class="section mt-8">
               <div class="flex" style="justify-content:space-between;">
-                <h2>Historia oglądania</h2>
-                <a href="#" onclick="UI.show('me')">zobacz wszystko →</a>
-              </div>
-              <div class="grid">
-                ${hist.map(h=> UI.card(h.movies, ratingsMap.get(h.movies?.id))).join("")}
-              </div>
-            </section>`;
-        }
-      }
-
+              
       app.innerHTML = `
         ${UI.filters(cats)}
         ${historyHTML}
@@ -659,43 +650,8 @@ const UI = {
         const { data } = await db.from("movies").select("*").in("id", wishIds);
         wishMovies = data||[];
       }
-      app.innerHTML = `
-        <h1>Mój profil</h1>
-        <div class="grid" style="grid-template-columns:2fr 1fr;gap:16px">
-          <div class="card p">
-            <h3>Profil</h3>
-            <p><strong>${escapeHtml(me.username||me.email||"Użytkownik")}</strong></p>
-            <p>Punkty: <strong id="pts">${me.points||0}</strong></p>
-            <form class="mt-2" onsubmit="event.preventDefault(); UI.saveBio(this.username.value)">
-              <label>Nick</label>
-              <input name="username" value="${escapeHtml(me.username||'')}">
-              <button class="btn mt-2">Zapisz</button>
-            </form>
-            <div class="mt-4">
-              <button class="btn" onclick="UI.earnAd()">+50 pkt (demo)</button>
-              <form class="flex mt-2" onsubmit="event.preventDefault(); UI.redeem(this.code.value); this.reset();">
-                <input type="text" name="code" placeholder="Kod premium/punkty">
-                <button class="btn secondary">Użyj</button>
-              </form>
-            </div>
-          </div>
-          <div class="card p">
-            <h3>Skróty</h3>
-            <div class="small">Zgłoś błąd? Napisz w komentarzu pod dowolnym filmem 😉</div>
-          </div>
-        </div>
-
-        <div class="mt-4">
-          <h3>Historia oglądania</h3>
-          <div class="grid">${hist.map(h=> UI.card(h.movies)).join("") || '<div class="small">Brak historii.</div>'}</div>
-        </div>
-        <div class="mt-4">
-          <h3>Lista „Chcę obejrzeć”</h3>
-          <div class="grid">${wishMovies.map(m=> UI.card(m)).join("") || '<div class="small">Pusto.</div>'}</div>
-        </div>
-      `;
-    }
-
+      app.innerHTML = 
+ 
     // TOP usunięte - tylko filmy
 
     else if(view==="admin"){
