@@ -213,15 +213,11 @@ footer {
       <a href="#" onclick="UI.show('home')">Filmy</a>
       <a href="seriale.html">seriale</a>
       <a href="top.html">TOP</a>
-      <a href="moja-biblioteka.html">Moja biblioteka</a>
-      
-      <!-- Przycisk "Zaloguj się" dla niezalogowanych użytkowników -->
-      <a href="login.html" id="loginLink" class="btn">Zaloguj się</a>
-      
-      <!-- Przycisk "Wyloguj" dla zalogowanych użytkowników -->
-      <form id="logoutForm" class="hidden" onsubmit="event.preventDefault(); Auth.logout(); window.location='filmy.html';">
-        <button class="btn secondary">Wyloguj</button>
-      </form>
+<a href="moja-biblioteka.html">Moja biblioteka</a>
+<form onsubmit="event.preventDefault(); Auth.logout(); window.location='login.html';">
+  <button class="btn secondary">Wyloguj</button>
+</form>
+
     </nav>
 
   </div>
@@ -356,61 +352,146 @@ async function toggleWishlist(userId, movieId){
   const { data, error } = await db.from("wishlist").select("*").eq("user_id", userId).eq("movie_id", movieId).maybeSingle();
   if(error && error.code!=="PGRST116") console.warn(error);
   if(data){
-    await db.from("wishlist").delete().eq("user_id", userId).eq("movie_id", movieId);
+    return db.from("wishlist").delete().eq("id", data.id);
   } else {
-    await db.from("wishlist").insert({ user_id: userId, movie_id: movieId });
+    return db.from("wishlist").insert({ user_id:userId, movie_id:movieId });
   }
 }
 
-// Unlocks
-async function getUnlocked(userId){
-  const { data, error } = await db.from("unlocks").select("movie_id").eq("user_id", userId);
-  if(error) throw error; return new Set((data||[]).map(x=>x.movie_id));
+// Watch history
+async function addWatch(userId, movieId){
+  return db.from("watch_history").insert({ user_id: userId, movie_id: movieId, watched_at: new Date().toISOString() });
+}
+async function getWatchHistory(userId, limit=100){
+  const { data, error } = await db
+    .from("watch_history")
+    .select("movie_id, watched_at, movies(title,thumb,id)")
+    .eq("user_id", userId)
+    .order("watched_at", { ascending:false })
+    .limit(limit);
+  if(error) throw error; return data||[];
+}
+
+async function buyMovie(movieId, pointsRequired, megaUrl) {
+  const userId = getCurrentUserId(); // Zakładam, że masz funkcję zwracającą aktualne ID użytkownika
+
+  // Pobierz dane użytkownika
+  const { data: user, error: userError } = await supabase
+    .from('users')
+    .select('points')
+    .eq('id', userId)
+    .single();
+
+  if (userError || !user) {
+    alert('Nie udało się pobrać danych użytkownika.');
+    return;
+  }
+
+  // Sprawdź, czy użytkownik ma wystarczającą liczbę punktów
+  if (user.points < pointsRequired) {
+    alert('Masz za mało punktów, aby kupić ten film.');
+    return;
+  }
+
+  // Odejmij punkty
+  const { error: updateError } = await supabase
+    .from('users')
+    .update({ points: user.points - pointsRequired })
+    .eq('id', userId);
+
+  if (updateError) {
+    alert('Nie udało się zaktualizować punktów.');
+    return;
+  }
+
+  // Dodaj wpis do tabeli unlocks
+  const { error: insertError } = await supabase
+    .from('unlocks')
+    .insert([{ user_id: userId, movie_id: movieId }]);
+
+  if (insertError) {
+    alert('Nie udało się odblokować filmu.');
+    return;
+  }
+
+  // Odśwież przycisk, by zmienił się na „Oglądaj”
+  renderMovieButton(movieId, pointsRequired, megaUrl);
+}
+
+// Points & unlocks
+async function addPoints(userId, change, reason){
+  // 1) log
+  const { error: logErr } = await db.from("points_log").insert({ user_id:userId, change, reason });
+  if(logErr) throw logErr;
+  // 2) update profiles.points (race-safe-ish: re-read then set)
+  const { data: prof } = await db.from("profiles").select("points").eq("id", userId).single();
+  const next = (prof?.points||0) + change;
+  const { error: upErr } = await db.from("profiles").update({ points: next }).eq("id", userId);
+  if(upErr) throw upErr;
+}
+async function getPoints(userId){
+  const { data, error } = await db.from("profiles").select("points").eq("id", userId).single();
+  if(error) throw error; return data?.points||0;
 }
 async function ensureUnlocked(userId, movieId){
   const { data, error } = await db.from("unlocks").select("*").eq("user_id", userId).eq("movie_id", movieId).maybeSingle();
-  if(error && error.code!=="PGRST116") console.warn(error);
-  if(!data){
-    await db.from("unlocks").insert({ user_id: userId, movie_id: movieId });
-  }
+  if(error && error.code!=="PGRST116") throw error;
+  if(!data){ const { error: insErr } = await db.from("unlocks").insert({ user_id:userId, movie_id:movieId }); if(insErr) throw insErr; }
 }
-
-// History
-async function getHistory(userId){
-  const { data, error } = await db.from("history").select("*").eq("user_id", userId).order("watched_at", { ascending:false }).limit(10);
-  if(error) throw error; return data||[];
-}
-async function addHistory(userId, movieId){
-  const { data, error } = await db.from("history").select("*").eq("user_id", userId).eq("movie_id", movieId).maybeSingle();
-  if(error && error.code!=="PGRST116") console.warn(error);
-  if(data){
-    await db.from("history").update({ watched_at: new Date().toISOString() }).eq("id", data.id);
-  } else {
-    await db.from("history").insert({ user_id: userId, movie_id: movieId, watched_at: new Date().toISOString() });
-  }
-}
-
-// Points
-async function getPoints(userId){
-  const { data, error } = await db.from("profiles").select("points").eq("id", userId).maybeSingle();
-  if(error){ console.error(error); return 0; }
-  return data?.points || 0;
-}
-async function addPoints(userId, delta, reason){
-  const current = await getPoints(userId);
-  const newVal = current + delta;
-  await db.from("profiles").update({ points: newVal }).eq("id", userId);
-  await db.from("points_log").insert({ user_id: userId, delta, reason, created_at: new Date().toISOString() });
+async function isUnlocked(userId, movieId){
+  const { data, error } = await db.from("unlocks").select("id").eq("user_id", userId).eq("movie_id", movieId).maybeSingle();
+  if(error && error.code!=="PGRST116") throw error;
+  return !!data;
 }
 
 // Codes
-async function redeemCode(userId, code){
+async function redeemCode(userId, codeStr){
+  const code = (codeStr||"").trim();
+  if(!code) return { ok:false, msg:"Podaj kod" };
   const { data, error } = await db.from("codes").select("*").eq("code", code).maybeSingle();
-  if(error || !data) return { msg: "❌ Kod nieprawidłowy" };
-  if(data.used) return { msg: "❌ Kod już wykorzystany" };
-  await db.from("codes").update({ used: true, used_by: userId }).eq("code", code);
-  await addPoints(userId, data.points, `Kod: ${code}`);
-  return { msg: `✔️ Zdobyto ${data.points} pkt!` };
+  if(error) return { ok:false, msg:error.message };
+  if(!data) return { ok:false, msg:"Nieprawidłowy kod" };
+  if((data.limit_left||0) <= 0) return { ok:false, msg:"Wyczerpany limit użyć" };
+  if(data.expires && new Date(data.expires) < new Date()) return { ok:false, msg:"Kod wygasł" };
+
+  if(data.type === "points"){
+    await addPoints(userId, data.amount, `Kod: ${data.code}`);
+  } else if(data.type === "premium"){
+    // wymaga kolumny premium_until w profiles
+    const { data: prof } = await db.from("profiles").select("premium_until").eq("id", userId).maybeSingle();
+    if(!prof || typeof prof.premium_until === "undefined"){
+      return { ok:false, msg:"Brak pola premium w profiles (premium_until)" };
+    }
+    const days = Number(data.days||data.amount||7);
+    const base = prof.premium_until ? new Date(prof.premium_until) : new Date();
+    const start = (prof.premium_until && new Date(prof.premium_until) > new Date()) ? new Date(prof.premium_until) : new Date();
+    const until = new Date(start.getTime() + days*24*60*60*1000);
+    const { error: upErr } = await db.from("profiles").update({ premium_until: until.toISOString() }).eq("id", userId);
+    if(upErr) return { ok:false, msg: upErr.message };
+  }
+  // zmniejsz limit
+  await db.from("codes").update({ limit_left: (data.limit_left||0) - 1 }).eq("id", data.id);
+  return { ok:true, msg:"Kod zrealizowany ✔️" };
+}
+
+// Leaderboard (last N days)
+async function leaderboard(days){
+  const since = new Date(Date.now() - days*24*60*60*1000).toISOString();
+  const { data, error } = await db.from("points_log").select("user_id, change, created_at").gte("created_at", since);
+  if(error) throw error;
+  const map = new Map();
+  (data||[]).forEach(r=>{ if(r.change>0) map.set(r.user_id, (map.get(r.user_id)||0) + r.change); });
+  const entries = [...map.entries()].map(([user_id, gained])=>({ user_id, gained }));
+  entries.sort((a,b)=>b.gained-a.gained);
+  const top = entries.slice(0,100);
+  // dołącz nicki
+  if(top.length){
+    const ids = top.map(t=>t.user_id);
+    const { data: profs } = await db.from("profiles").select("id,username").in("id", ids);
+    const nameById = new Map((profs||[]).map(p=>[p.id,p.username]));
+    top.forEach(t=> t.username = nameById.get(t.user_id)||"Użytkownik");
+  }
+  return top.map((t,i)=>({ rank:i+1, user:t.username, gained:t.gained }));
 }
 
 /* =========================
@@ -420,18 +501,9 @@ const UI = {
   el: ()=>document.getElementById("app"),
   async updateHeader(){
     const u = await Auth.currentProfile();
-    
-    // Pokaż/ukryj przycisk "Zaloguj się"
-    const loginLink = document.getElementById("loginLink");
-    if(loginLink){
-      loginLink.classList.toggle("hidden", !!u);
-    }
-    
-    // Pokaż/ukryj przycisk "Wyloguj"
-    const logoutForm = document.getElementById("logoutForm");
-    if(logoutForm){
-      logoutForm.classList.toggle("hidden", !u);
-    }
+    document.getElementById("adminLink")?.classList?.toggle("hidden", !(u&&u.is_admin));
+    document.getElementById("logoutForm")?.classList?.toggle("hidden", !u);
+    document.getElementById("authLinks")?.classList?.toggle("hidden", !!u);
   },
   async show(view, params={}){
     const app = UI.el();
@@ -447,286 +519,221 @@ const UI = {
 
       // Historia dla zalogowanych
       let historyHTML = "";
-      if(me){
-        const hist = await getHistory(me.id);
-        const histMovies = await Promise.all(hist.map(h=>getMovie(h.movie_id).catch(()=>null)));
-        const validHist = histMovies.filter(Boolean);
-        if(validHist.length){
-          historyHTML = `<section class="mt-4">
-            <h3>Ostatnio oglądane</h3>
-            <div class="grid">${validHist.map(m=>UI.card(m, ratingsMap.get(m.id))).join("")}</div>
-          </section>`;
-        }
-      }
-
-      app.innerHTML = UI.filters(cats) + historyHTML + `
-        <section class="mt-4">
-          <h3>Wszystkie filmy</h3>
-          <div class="grid">${movies.map(m=>UI.card(m, ratingsMap.get(m.id))).join("")}</div>
+      app.innerHTML = `
+        ${UI.filters(cats)}
+        ${historyHTML}
+        <section class="section mt-8">
+          <div class="flex" style="justify-content:space-between">
+            <h2>Nowo dodane</h2>
+            <a class="small" href="#" onclick="UI.search('', {sort:'new'})">Najświeższe →</a>
+          </div>
+          <div class="grid">
+            ${movies.map(m=> UI.card(m, ratingsMap.get(m.id))).join("")}
+          </div>
         </section>
       `;
     }
 
-    // MOVIE DETAIL
+    // MOVIE
     else if(view==="movie"){
-      const m = await getMovie(params.id);
-      const ratings = await getRatingsFor(m.id);
-      const avg = ratings.length ? (ratings.reduce((a,b)=>a+b.score,0)/ratings.length).toFixed(1) : "-";
-      const count = ratings.length;
-      const comments = await getComments(m.id);
-
-      let youRated = null;
-      if(me){
-        youRated = await getUserRating(m.id, me.id);
-      }
-
-      const rateHTML = me ? `
-        <form onsubmit="event.preventDefault(); UI.rate(${m.id}, this.score.value)">
-          <select name="score" required>
-            <option value="">Oceń film</option>
-            ${[1,2,3,4,5,6,7,8,9,10].map(s=>`<option value="${s}" ${youRated&&youRated.score===s?"selected":""}>${s}</option>`).join("")}
-          </select>
-          <button class="btn mt-2">Wyślij ocenę</button>
-        </form>
-      ` : `<p class="small">Zaloguj się, aby ocenić.</p>`;
-
-      const commentHTML = me ? `
-        <form onsubmit="event.preventDefault(); UI.comment(${m.id}, this.text.value); this.reset();">
-          <textarea name="text" placeholder="Twój komentarz…" rows="3" required></textarea>
-          <button class="btn mt-2">Dodaj komentarz</button>
-        </form>
-      ` : `<p class="small">Zaloguj się, aby komentować.</p>`;
-
-      const commentsHTML = comments.map(c=>`
-        <div class="card p mt-2">
-          <strong>${escapeHtml(c.profiles?.username||"Anonim")}</strong>
-          <p>${escapeHtml(c.text)}</p>
-          <div class="small">${new Date(c.created_at).toLocaleString("pl")}</div>
-        </div>
-      `).join("");
-
-      // Wishlist
-      let wishlistHTML = "";
-      if(me){
-        const wish = await getWishlist(me.id);
-        const inWish = wish.has(m.id);
-        wishlistHTML = `<button class="btn secondary" onclick="UI.onToggleWishlist(${m.id})">${inWish?"Usuń z listy":"Dodaj do listy"}</button>`;
-      }
-
-      // Unlock
-      let unlockHTML = "";
-      if(me){
-        const unlocked = await getUnlocked(me.id);
-        const isUnlocked = unlocked.has(m.id);
-        const cost = m.points_required || 0;
-        if(cost > 0 && !isUnlocked){
-          unlockHTML = `<button class="btn" onclick="UI.buyMovie(${m.id}, ${cost})">Kup za ${cost} pkt</button>`;
-        } else if(isUnlocked){
-          unlockHTML = `<button class="btn" onclick="UI.show('watch',{id:${m.id}})">Oglądaj</button>`;
-        } else {
-          unlockHTML = `<button class="btn" onclick="UI.show('watch',{id:${m.id}})">Oglądaj</button>`;
-        }
-      } else {
-        unlockHTML = `<p class="small">Zaloguj się, aby oglądać.</p>`;
-      }
+      const id = Number(params.id);
+      let m; try { m = await getMovie(id); } catch { app.innerHTML=`<div class="alert">Nie znaleziono</div>`; return; }
+      const [comments, ratings] = await Promise.all([ getComments(id), getRatingsFor(id) ]);
+      const avg = ratings.length ? (ratings.reduce((a,b)=>a+b.score,0)/ratings.length).toFixed(1) : null;
+      const youRated = me ? await getUserRating(id, me.id) : null;
+      const unlocked = me ? await isUnlocked(me.id, id) : false;
+      const canWatch = !!me && (unlocked || (m.points_required||0)===0);
 
       app.innerHTML = `
-        <div class="row mt-4">
+        <div class="flex" style="justify-content:space-between;">
           <div>
-            <img src="${m.thumb}" alt="${escapeHtml(m.title)}" style="width:100%; border-radius:14px;">
+            <h1>${escapeHtml(m.title)}</h1>
+            <div class="small">Rok: ${m.year||"?"} • Długość: ${m.duration||"?"} min</div>
+            ${m.points_required ? `
+    <div class="mt-2 alert">
+    Dostęp za: <b>${m.points_required}</b> pkt
+    ${me && !(await isUnlocked(me.id, m.id)) ? `
+      <button class="btn mt-2" onclick="UI.buyMovie(${m.id}, ${m.points_required})">
+        Kup dostęp
+      </button>
+    ` : ""}
+  </div>` : ""}
+
           </div>
-          <div>
-            <h2>${escapeHtml(m.title)}</h2>
-            <p>${escapeHtml(m.description||"")}</p>
-            <div class="small">Rok: ${m.year||"?"} • Czas: ${m.duration||"?"} min</div>
-            <div class="flex mt-3">
-              ${unlockHTML}
-              ${wishlistHTML}
-            </div>
+          <div class="flex">
+            ${me ? `<button class="btn secondary" onclick="UI.onToggleWishlist(${m.id})">Chcę obejrzeć</button>` : ""}
           </div>
         </div>
+        <img class="mt-4" src="${m.thumb}" style="width:100%;max-height:360px;object-fit:cover;border-radius:14px"/>
+        <div class="mt-4"><p>${escapeHtml(m.description||"")}</p></div>
 
+        <div class="mt-4">
+          ${me ? (canWatch ? `<a class="btn" href="#" onclick="UI.show('watch',{id:${m.id}})">Oglądaj</a>` :
+            `<button class="btn" onclick="UI.unlock(${m.id})">Odblokuj za punkty</button> <span class="small">Masz: <span id="myPoints">…</span> pkt</span>`) :
+            `<a class="btn" href="#" onclick="UI.show('login')">Zaloguj, aby oglądać</a>`}
+        </div>
+
+        <hr class="mt-8">
         <section class="mt-4">
           <h3>Oceny</h3>
-          <div class="flex">
-            <strong>${avg}</strong>
-            <span class="small">(${count} ocen)</span>
+          <div class="flex" style="gap:16px;align-items:center">
+            <div>Średnia: <strong>${avg?avg:'-'}</strong>/10 (${ratings.length || 0} ocen)</div>
+            ${me ? `
+              <form class="flex" onsubmit="event.preventDefault(); UI.rate(${m.id}, this.score.value)">
+                <select name="score">
+                  ${Array.from({length:10},(_,i)=>i+1).map(i=>`<option value="${i}" ${youRated&&youRated.score===i?'selected':''}>${i}</option>`).join('')}
+                </select>
+                <button class="btn secondary">Oceń</button>
+              </form>
+            ` : ""}
           </div>
-          ${rateHTML}
         </section>
 
         <section class="mt-4">
           <h3>Komentarze</h3>
-          ${commentHTML}
-          ${commentsHTML}
+          ${me ? `
+            <form onsubmit="event.preventDefault(); UI.comment(${m.id}, this.text.value); this.reset();">
+              <textarea name="text" rows="3" placeholder="Napisz komentarz..."></textarea>
+              <button class="btn mt-2">Dodaj</button>
+            </form>` : `<div class="alert">Zaloguj się, aby dodać komentarz.</div>`}
+          <div class="mt-4" id="commentsBox">
+            ${comments.map(c=>`
+              <div class="card p">
+                <div class="small"><b>${escapeHtml(c.profiles?.username || 'Użytkownik')}</b> • ${new Date(c.created_at).toLocaleString()}</div>
+                <div class="mt-2">${escapeHtml(c.text)}</div>
+              </div>`).join('')}
+          </div>
         </section>
       `;
+
+      // jeśli trzeba, doładuj punkty
+      if(me && m.points_required){
+        const pts = await getPoints(me.id);
+        const el = document.getElementById("myPoints"); if(el) el.textContent = pts;
+      }
     }
 
     // WATCH
     else if(view==="watch"){
-      const m = await getMovie(params.id);
       if(!me) return UI.show("login");
-      const unlocked = await getUnlocked(me.id);
-      const cost = m.points_required || 0;
-      if(cost > 0 && !unlocked.has(m.id)){
-        toast("Musisz kupić ten film.");
-        return UI.show("movie", { id: m.id });
-      }
-      await addHistory(me.id, m.id);
+      const id = Number(params.id);
+      const m = await getMovie(id);
+      const unlocked = await isUnlocked(me.id, id);
+      if(!unlocked && (m.points_required||0)>0){ return UI.show("movie",{id}); }
+      await addWatch(me.id, id);
       app.innerHTML = `
-        <h2 class="mt-4">${escapeHtml(m.title)}</h2>
-        <div class="video-container">
-          ${m.iframe}
+        <div class="flex" style="justify-content:space-between;align-items:center">
+          <h1>Odtwarzacz: ${escapeHtml(m.title)}</h1>
+          <a class="btn secondary" href="#" onclick="UI.show('movie',{id:${m.id}})">← Powrót</a>
         </div>
-        <button class="btn mt-3" onclick="UI.show('movie',{id:${m.id}})">Wróć do opisu</button>
+        <div class="video-container mt-4"><iframe src="${m.iframe}" allowfullscreen></iframe></div>
+        <div class="small mt-2">Jakość, głośność i prędkość ustawia hosting iframe.</div>
       `;
     }
 
-    // ME (profil)
-    else if(view==="me"){
-      if(!me) return UI.show("login");
-      const pts = await getPoints(me.id);
-      const wish = await getWishlist(me.id);
-      const wishMovies = await Promise.all([...wish].map(id=>getMovie(id).catch(()=>null)));
-      const validWish = wishMovies.filter(Boolean);
-      const ratingsMap = await UI._avgRatingsMap(validWish.map(m=>m.id));
+    // LOGIN/REGISTER/PROFILE usunięte - tylko filmy
 
-      app.innerHTML = `
-        <h2 class="mt-4">Mój profil</h2>
-        <div class="card p">
-          <p><strong>Nazwa:</strong> ${escapeHtml(me.username||me.email)}</p>
-          <p><strong>E-mail:</strong> ${escapeHtml(me.email)}</p>
-          <p><strong>Punkty:</strong> ${pts}</p>
-        </div>
+    // TOP usunięte - tylko filmy
 
-        <section class="mt-4">
-          <h3>Edytuj nazwę</h3>
-          <form onsubmit="event.preventDefault(); UI.saveBio(this.username.value)">
-            <input name="username" placeholder="Nazwa użytkownika" value="${escapeHtml(me.username||"")}" />
-            <button class="btn mt-2">Zapisz</button>
-          </form>
-        </section>
-
-        <section class="mt-4">
-          <h3>Zdobądź punkty</h3>
-          <button class="btn" onclick="UI.earnAd()">Obejrzyj reklamę (+50 pkt)</button>
-        </section>
-
-        <section class="mt-4">
-          <h3>Użyj kodu</h3>
-          <form onsubmit="event.preventDefault(); UI.redeem(this.code.value); this.reset();">
-            <input name="code" placeholder="Kod" />
-            <button class="btn mt-2">Aktywuj</button>
-          </form>
-        </section>
-
-        <section class="mt-4">
-          <h3>Moja lista</h3>
-          <div class="grid">${validWish.map(m=>UI.card(m, ratingsMap.get(m.id))).join("") || '<div class="small">Brak filmów.</div>'}</div>
-        </section>
-      `;
-    }
-
-    // LOGIN
-    else if(view==="login"){
-      app.innerHTML = `
-        <h2 class="mt-4">Logowanie</h2>
-        <form onsubmit="event.preventDefault(); Auth.login(this.email.value, this.password.value)">
-          <input type="email" name="email" placeholder="E-mail" required />
-          <input type="password" name="password" placeholder="Hasło" required />
-          <button class="btn mt-2">Zaloguj</button>
-        </form>
-        <p class="small mt-2">Nie masz konta? <a href="#" onclick="UI.show('register')">Zarejestruj się</a></p>
-      `;
-    }
-
-    // REGISTER
-    else if(view==="register"){
-      app.innerHTML = `
-        <h2 class="mt-4">Rejestracja</h2>
-        <form onsubmit="event.preventDefault(); Auth.register(this.username.value, this.email.value, this.password.value)">
-          <input name="username" placeholder="Nazwa użytkownika" required />
-          <input type="email" name="email" placeholder="E-mail" required />
-          <input type="password" name="password" placeholder="Hasło" required />
-          <button class="btn mt-2">Zarejestruj</button>
-        </form>
-        <p class="small mt-2">Masz konto? <a href="#" onclick="UI.show('login')">Zaloguj się</a></p>
-      `;
-    }
-
-    // ADMIN
     else if(view==="admin"){
-      if(!me || !me.is_admin) return UI.show("home");
-      const movies = await getMovies();
-      const cats = await getCategories();
+      if(!(me && me.is_admin)){ app.innerHTML = "<div class='alert'>Brak dostępu.</div>"; return; }
+      const [cats, movies] = await Promise.all([getCategories(), getMovies()]);
       app.innerHTML = `
-        <h2 class="mt-4">Panel admina</h2>
+        <h1>Panel admina</h1>
+        <div class="grid" style="grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card p">
+            <h3>Dodaj film</h3>
+            <form onsubmit="event.preventDefault(); UI.addMovie(this)">
+              <label>Tytuł</label><input name="title" required>
+              <label>Opis</label><textarea name="description"></textarea>
+              <label>Miniatura (URL)</label><input name="thumb" required>
+              <label>Iframe src (URL hostingu)</label><input name="iframe" required placeholder="https://...">
+              <div class="row">
+                <div>
+                  <label>Kategoria</label>
+                  <select name="category_id">${cats.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("")}</select>
+                </div>
+                <div><label>Rok</label><input type="number" name="year"></div>
+              </div>
+              <div class="row">
+                <div><label>Długość (min)</label><input type="number" name="duration"></div>
+                <div><label>Punkty wymagane</label><input type="number" name="points_required" value="0"></div>
+              </div>
+              <button class="btn mt-2">Dodaj</button>
+            </form>
+          </div>
 
-        <section class="mt-4">
-          <h3>Dodaj film</h3>
-          <form onsubmit="event.preventDefault(); UI.addMovie(this)">
-            <input name="title" placeholder="Tytuł" required />
-            <textarea name="description" placeholder="Opis" rows="3"></textarea>
-            <input name="thumb" placeholder="URL miniatury" />
-            <textarea name="iframe" placeholder="Kod iframe" rows="3"></textarea>
-            <select name="category_id">
-              <option value="">Kategoria</option>
-              ${cats.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("")}
-            </select>
-            <input type="number" name="year" placeholder="Rok" />
-            <input type="number" name="duration" placeholder="Czas (min)" />
-            <input type="number" name="points_required" placeholder="Punkty (0=darmowy)" />
-            <button class="btn mt-2">Dodaj</button>
-          </form>
-        </section>
-
-        <section class="mt-4">
-          <h3>Filmy</h3>
-          ${movies.map(m=>`
-            <div class="card p mt-2 flex" style="justify-content:space-between;">
-              <span>${escapeHtml(m.title)}</span>
-              <button class="btn secondary" onclick="UI.deleteMovie(${m.id})">Usuń</button>
+          <div class="card p">
+            <h3>Kategorie</h3>
+            <form class="flex" onsubmit="event.preventDefault(); UI.addCategory(this.name.value); this.reset();">
+              <input name="name" placeholder="Nazwa kategorii">
+              <button class="btn secondary">Dodaj</button>
+            </form>
+            <div class="mt-2">
+              ${cats.map(c=>`<span class="badge" style="margin-right:6px">${escapeHtml(c.name)} <a href="#" onclick="UI.delCategory(${c.id})" class="small">×</a></span>`).join(" ")}
             </div>
-          `).join("")}
-        </section>
+          </div>
 
-        <section class="mt-4">
-          <h3>Kategorie</h3>
-          <form onsubmit="event.preventDefault(); UI.addCategory(this.name.value); this.reset();">
-            <input name="name" placeholder="Nazwa kategorii" required />
-            <button class="btn mt-2">Dodaj</button>
-          </form>
-          ${cats.map(c=>`
-            <div class="card p mt-2 flex" style="justify-content:space-between;">
-              <span>${escapeHtml(c.name)}</span>
-              <button class="btn secondary" onclick="UI.delCategory(${c.id})">Usuń</button>
-            </div>
-          `).join("")}
-        </section>
+          <div class="card p" style="grid-column:1/3">
+            <h3>Lista filmów</h3>
+            <table style="width:100%;border-collapse:collapse">
+              <tr><th style="text-align:left">Tytuł</th><th>Punkty</th><th></th></tr>
+              ${movies.map(m=>`
+                <tr>
+                  <td><a href="#" onclick="UI.show('movie',{id:${m.id}})">${escapeHtml(m.title)}</a></td>
+                  <td>${m.points_required||0}</td>
+                  <td><button class="btn secondary" onclick="UI.deleteMovie(${m.id})">Usuń</button></td>
+                </tr>`).join("")}
+            </table>
+          </div>
+        </div>
       `;
     }
-  },
-
-  filters(cats){
-    return `<div class="flex mt-4">
-      <select onchange="UI.search('', { category_id: this.value||undefined })">
-        <option value="">Wszystkie kategorie</option>
-        ${cats.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("")}
-      </select>
-    </div>`;
   },
 
   async _avgRatingsMap(movieIds){
     const map = new Map();
-    for(const id of movieIds){
-      const ratings = await getRatingsFor(id);
-      if(ratings.length){
-        const avg = ratings.reduce((a,b)=>a+b.score,0) / ratings.length;
-        map.set(id, avg);
-      }
-    }
+    if(!movieIds.length) return map;
+    const { data, error } = await db.from("ratings").select("movie_id, score").in("movie_id", movieIds);
+    if(error) return map;
+    const by = {};
+    (data||[]).forEach(r=>{
+      by[r.movie_id] ||= [];
+      by[r.movie_id].push(r.score);
+    });
+    movieIds.forEach(id=>{
+      const arr = by[id]||[];
+      map.set(id, arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length) : null);
+    });
     return map;
+  },
+
+  filters(categories){
+    return `
+    <section class="section mt-8">
+      <h2>Filtruj</h2>
+      <form class="form" onsubmit="event.preventDefault(); UI.search(this.q.value, {
+        category_id:this.cat.value||null, year:this.year.value||null,
+        min_duration:this.len.value||null, sort:this.sort.value
+      })">
+        <div class="row">
+          <div><label>Kategoria</label>
+            <select name="cat"><option value="">—</option>${categories.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("")}</select>
+          </div>
+          <div><label>Rok</label><input type="number" name="year"></div>
+        </div>
+        <div class="row">
+          <div><label>Min. długość (min)</label><input type="number" name="len"></div>
+          <div><label>Sortowanie</label>
+            <select name="sort">
+              <option value="new">Najnowsze</option>
+            </select>
+          </div>
+        </div>
+        <label>Szukaj</label><input type="text" name="q" placeholder="Tytuł...">
+        <button class="btn mt-4">Szukaj</button>
+      </form>
+    </section>`;
   },
 
   // <-- ZAMIANA: tutaj zmieniłem linki aby ustawiały #hash wygenerowany z tytułu
