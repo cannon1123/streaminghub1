@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StreamingHub - AI Asystent Filmowy</title>
+  <style>
+    :root {
+      --bg: #0b0d10;
+      --card: #151922;
+      --text: #e3e7ee;
+      --muted: #a8bfe2;
+      --brand: #4f7cff;
+      --border: #232a37;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    header {
+      text-align: center;
+      padding: 24px 0;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .brand { font-size: 1.8rem; font-weight: 800; color: var(--brand); }
+    .subtitle { color: var(--muted); margin-top: 8px; }
+    .chat-container {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    #chat-messages {
+      height: 500px;
+      overflow-y: auto;
+      padding: 16px;
+      background: #0e1218;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .message {
+      padding: 14px 18px;
+      border-radius: 12px;
+      max-width: 80%;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .message.ai {
+      background: linear-gradient(135deg, #8b5cf6, #6366f1);
+      align-self: flex-start;
+      color: #fff;
+    }
+    .message.user {
+      background: linear-gradient(135deg, #10b981, #059669);
+      align-self: flex-end;
+      color: #fff;
+    }
+    .message.system {
+      background: var(--border);
+      align-self: center;
+      font-size: 0.9rem;
+      color: var(--muted);
+      max-width: 90%;
+      text-align: center;
+    }
+    .message.recommendation {
+      background: rgba(79, 124, 255, 0.15);
+      border-left: 4px solid var(--brand);
+      align-self: flex-start;
+      color: var(--text);
+    }
+    .movie-card {
+      background: rgba(21, 25, 34, 0.8);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin: 8px 0;
+      font-size: 0.9rem;
+    }
+    .movie-title { font-weight: 600; color: var(--brand); }
+    .movie-info { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+    .typing { display: none; align-self: flex-start; padding: 12px 18px; background: var(--border); border-radius: 12px; color: var(--muted); }
+    .typing.active { display: block; }
+    .input-group { display: flex; gap: 12px; }
+    #user-input {
+      flex: 1;
+      padding: 14px 18px;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      background: #0e1218;
+      color: var(--text);
+      font-size: 1rem;
+      transition: border 0.3s;
+    }
+    #user-input:focus { outline: none; border-color: var(--brand); }
+    #send-btn {
+      padding: 14px 28px;
+      background: var(--brand);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #send-btn:hover { background: #3d62d9; }
+    #send-btn:disabled { background: var(--border); cursor: not-allowed; }
+    @media(max-width: 600px) {
+      .container { padding: 12px; }
+      #chat-messages { height: 400px; }
+      .message { max-width: 95%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">🎬 StreamingHub AI</div>
+      <div class="subtitle">Twój osobisty asystent filmowy</div>
+    </header>
+    <div class="chat-container">
+      <div id="chat-messages">
+        <div class="message system">Ładowanie asystenta AI...</div>
+      </div>
+      <div class="typing" id="typing-indicator">AI pisze...</div>
+      <div class="input-group">
+        <input type="text" id="user-input" placeholder="Napisz swoją odpowiedź..." disabled />
+        <button id="send-btn" disabled>Wyślij</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const chatMessages = document.getElementById('chat-messages');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const typingIndicator = document.getElementById('typing-indicator');
+
+    let conversationHistory = [];
+    let collectedPreferences = {
+      genres: [],
+      year: null,
+      duration: null,
+      keywords: []
+    };
+    let questionsAsked = 0;
+    const maxQuestions = 4;
+
+    function addMessage(content, type = 'ai') {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${type}`;
+      msgDiv.innerHTML = content;
+      chatMessages.appendChild(msgDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function showTyping(show) {
+      typingIndicator.classList.toggle('active', show);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function toggleInput(enabled) {
+      userInput.disabled = !enabled;
+      sendBtn.disabled = !enabled;
+    }
+
+    // <CHANGE> Nowy system prompta do GPT - skupiony na rekomendacjach z bazy
+    function buildSystemPrompt() {
+      return `Jesteś AI asystentem filmowym dla serwisu StreamingHub. Twoja rola to:
+1. Zadawać pytania o preferencje filmów użytkownika (dopytywać się na co ma ochotę i typowe pytania proste aby znaleźć dobry film dla tej osoby) 
+2. NIGDY nie opuszczać tematu filmów - zawsze kieruj rozmowę do filmów, pytania inne pisz że nie możesz podać tej informacji
+3. Zawsze wspominać że jesteś zaprogramowany dla StreamingHub
+4. Po zebraniu wystarczających informacji - prosić o sformułowanie rekomendacji
+
+Pytania jakie powinieneś zadać:
+- Jaki gatunek filmowy preferujesz? (daj przykłady)
+- Z którego okresu lubisz filmy? (nowe, starsze klasyki, brak preferencji)
+- Jak długo chcesz by film trwał? (długi, krótki, bez znaczenia)
+- Jaki nastrój? (motywujący, rozrywkowy, mroczny, itp)
+- inne pytania od ciebie które pozwolą ci ustalić odpowiedni film
+Zbierz co najmniej 3 preferencje przed rekomendacją.`;
+    }
+
+    async function sendToGPT(userMessage) {
+      try {
+        // <CHANGE> Wysyłanie do OpenAI/innego API z systemem promptem
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [
+              { role: 'system', content: buildSystemPrompt() },
+              ...conversationHistory,
+              { role: 'user', content: userMessage }
+            ]
+          })
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const data = await response.json();
+        const aiResponse = data.choices[0].message.content;
+        
+        conversationHistory.push({ role: 'user', content: userMessage });
+        conversationHistory.push({ role: 'assistant', content: aiResponse });
+        questionsAsked++;
+
+        // <CHANGE> Sprawdzenie czy zebrano wystarczające preferencje
+        const shouldGetRecommendations = questionsAsked >= maxQuestions || 
+          aiResponse.toLowerCase().includes('rekomenduj') ||
+          aiResponse.toLowerCase().includes('znalazł');
+
+        return {
+          response: aiResponse,
+          readyForRecommendations: shouldGetRecommendations
+        };
+      } catch (error) {
+        console.error('Błąd GPT:', error);
+        return {
+          response: `Przepraszam, problem z połączeniem. Spróbuj ponownie: ${error.message}`,
+          readyForRecommendations: false
+        };
+      }
+    }
+
+    async function getRecommendations() {
+      try {
+        showTyping(true);
+        
+        // <CHANGE> Pobieranie rekomendacji z backendu - wysyłanie historii do analizy
+        const response = await fetch('/api/recommendations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            conversationHistory: conversationHistory,
+            preferences: collectedPreferences
+          })
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const data = await response.json();
+        showTyping(false);
+
+        // <CHANGE> Formatowanie rekomendacji z danymi filmów z bazy
+        if (data.movies && data.movies.length > 0) {
+          let recommendationHTML = '<strong>🎬 Rekomenduję dla Ciebie:</strong><br>';
+          data.movies.forEach(movie => {
+            recommendationHTML += `
+              <div class="movie-card">
+                <div class="movie-title">${movie.title}</div>
+                <div class="movie-info">
+                  ${movie.year ? `Rok: ${movie.year} | ` : ''}
+                  ${movie.duration ? `Czas: ${movie.duration} min` : ''}
+                  <br>${movie.description || 'Brak opisu'}
+                </div>
+              </div>
+            `;
+          });
+          recommendationHTML += `<br><em style="color: var(--muted);">Wszystkie filmy dostępne na StreamingHub!</em>`;
+          addMessage(recommendationHTML, 'recommendation');
+        } else {
+          addMessage('Nie znaleźliśmy filmów pasujących do Twoich preferencji. Spróbuj inne kryteria!', 'system');
+        }
+
+        addMessage('Chcesz więcej rekomendacji? Powiedz mi co jeszcze Ciebie interesuje! 🎥', 'ai');
+        questionsAsked = 0;
+        conversationHistory = [];
+        toggleInput(true);
+      } catch (error) {
+        console.error('Błąd rekomendacji:', error);
+        showTyping(false);
+        addMessage(`Błąd: ${error.message}`, 'system');
+        toggleInput(true);
+      }
+    }
+
+    async function handleSend() {
+      const message = userInput.value.trim();
+      if (!message) return;
+
+      addMessage(message, 'user');
+      userInput.value = '';
+      toggleInput(false);
+      showTyping(true);
+
+      const result = await sendToGPT(message);
+      showTyping(false);
+      addMessage(result.response, 'ai');
+
+      if (result.readyForRecommendations) {
+        addMessage('⏳ Szukam idealnych filmów dla Ciebie z bazy StreamingHub...', 'system');
+        await getRecommendations();
+      } else {
+        toggleInput(true);
+      }
+    }
+
+    async function init() {
+      chatMessages.innerHTML = '';
+      const greeting = `Cześć! 🎬 Jestem asystentem AI StreamingHub. Pomogę Ci znaleźć idealny film do obejrzenia. Zanim zaprezentuję rekomendacje, muszę poznać Twoje preferencje. Zaczynamy? 🍿`;
+      addMessage(greeting, 'ai');
+      toggleInput(true);
+      userInput.focus();
+    }
+
+    sendBtn.addEventListener('click', handleSend);
+    userInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !sendBtn.disabled) handleSend();
+    });
+
+    init();
+  </script>
+</body>
+</html>
