@@ -86,7 +86,29 @@
       color:var(--muted);
       font-size:0.9rem;
     }
-  </style>
+  
+
+/* === MOBILE RESPONSYWNOŚĆ (dodane) === */
+@media (max-width: 900px) {
+  .nav { flex-direction: column; gap: 10px; }
+  .menu { flex-wrap: wrap; justify-content: center; }
+  .auth-box { padding: 24px; }
+}
+
+@media (max-width: 600px) {
+  h2 { font-size: 1.3rem; }
+  input, button { font-size: 14px; padding: 9px 12px; }
+  .auth-box { max-width: 90%; padding: 22px; }
+}
+
+@media (max-width: 400px) {
+  .nav { padding: 8px; }
+  .menu a { font-size: 13px; }
+  .auth-box { padding: 18px; }
+  footer { font-size: 12px; }
+}
+
+</style>
 </head>
 <body>
 
