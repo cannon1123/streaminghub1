@@ -1,468 +1,532 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AI Film Finder — test</title>
-  <style>
-    :root{
-      --bg:#0b0d10; --card:#151922; --text:#e3e7ee; --muted:#a8bfe2; --brand:#4f7cff; --border:#232a37;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto;}
-    .wrap{max-width:980px;margin:20px auto;padding:16px;}
-    header{display:flex;align-items:center;gap:16px;margin-bottom:14px}
-    .logo{font-size:20px;font-weight:800;color:var(--brand)}
-    .lead{color:var(--muted);font-size:14px}
-    .card{background:var(--card);border-radius:14px;padding:18px;box-shadow:0 6px 30px rgba(0,0,0,0.5)}
-    #chat{height:520px;overflow:auto;padding:12px;border-radius:10px;background:#0e1218;border:1px solid var(--border);display:flex;flex-direction:column;gap:12px}
-    .msg{max-width:82%;padding:12px 16px;border-radius:12px;line-height:1.4;word-break:break-word}
-    .ai{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;align-self:flex-start}
-    .user{background:linear-gradient(135deg,#10b981,#059669);color:white;align-self:flex-end}
-    .sys{background:transparent;border:1px dashed var(--border);color:var(--muted);align-self:center}
-    .typing{font-size:13px;color:var(--muted);padding:8px}
-    .controls{display:flex;gap:10px;margin-top:12px}
-    input[type="text"]{flex:1;padding:12px;border-radius:10px;border:1px solid var(--border);background:#0e1218;color:var(--text)}
-    button{padding:12px 18px;border-radius:10px;border:none;background:var(--brand);color:#fff;font-weight:600;cursor:pointer}
-    button:disabled{opacity:0.5;cursor:not-allowed}
-    .rec-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
-    .rec{display:flex;gap:12px;padding:10px;border-radius:10px;background:rgba(255,255,255,0.02);align-items:flex-start}
-    .rec img{width:92px;height:56px;object-fit:cover;border-radius:6px}
-    .rec .meta{flex:1}
-    .rec .title{font-weight:700}
-    .meta .desc{font-size:13px;color:var(--muted);margin-top:6px}
-    .small{font-size:12px;color:var(--muted)}
-    @media(max-width:640px){
-      #chat{height:420px}
-      .rec img{width:80px;height:50px}
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>StreamingHub AI — Asystent Filmowy (test)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0d10;
+    --panel:#0f1216;
+    --card:#0b0d10;
+    --accent:#6b5ef8;
+    --accent-2:#4f7cff;
+    --muted:#9aa7be;
+    --text:#e6eef8;
+    --border:#1f2430;
+    --input:#0e1114;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:#09090b;
+    color:var(--text);
+    font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+
+  .page {
+    max-width:980px;
+    margin:28px auto;
+    padding:0 20px 60px;
+  }
+
+  header {
+    text-align:center;
+    margin-bottom:18px;
+  }
+  .brand {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    color: var(--accent-2);
+    font-weight:800;
+    font-size:22px;
+  }
+  .subtitle { color:var(--muted); font-size:13px; margin-top:6px; }
+
+  .divider { height:1px; background:rgba(255,255,255,0.04); margin:20px 0; border-radius:2px; }
+
+  .panel {
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+    border-radius:14px;
+    padding:18px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.02);
+  }
+
+  /* Chat area */
+  .chat {
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.003));
+    border-radius:12px;
+    padding:18px;
+    height:520px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    border:1px solid rgba(255,255,255,0.02);
+    overflow:hidden;
+  }
+  .messages {
+    flex:1;
+    overflow:auto;
+    padding-right:6px;
+  }
+
+  .bubble {
+    display:inline-block;
+    padding:12px 16px;
+    border-radius:14px;
+    max-width:75%;
+    line-height:1.4;
+    margin-bottom:12px;
+    word-break:break-word;
+  }
+  .ai {
+    background: linear-gradient(90deg, #8b5cf6, #6b5ef8);
+    color:white;
+    align-self:flex-start;
+    border-bottom-left-radius:6px;
+  }
+  .user {
+    background: linear-gradient(90deg, #10b981, #059669);
+    color:white;
+    align-self:flex-end;
+    border-bottom-right-radius:6px;
+  }
+  .system {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:1px solid rgba(255,255,255,0.03);
+    color:var(--muted);
+    align-self:center;
+    padding:10px 12px;
+    border-radius:10px;
+    max-width:90%;
+  }
+
+  .input-row {
+    display:flex;
+    gap:12px;
+    align-items:center;
+    margin-top:6px;
+  }
+  .text-input {
+    flex:1;
+    background:var(--input);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:12px 16px;
+    border-radius:12px;
+    outline:none;
+    font-size:14px;
+  }
+  .text-input:focus { box-shadow: 0 0 0 3px rgba(79,124,255,0.12); border-color:var(--accent-2); }
+
+  .btn {
+    background: linear-gradient(90deg,var(--accent),var(--accent-2));
+    color:white;
+    border:none;
+    padding:10px 16px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:700;
+  }
+  .btn.secondary {
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.04);
+    color:var(--muted);
+    padding:8px 12px;
+    font-weight:600;
+  }
+
+  .note { font-size:13px; color:var(--muted); margin-top:8px; }
+
+  /* Recommendation item */
+  .rec-list { display:flex; flex-direction:column; gap:10px; margin-top:6px; }
+  .rec {
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    background: rgba(255,255,255,0.02);
+    padding:10px;
+    border-radius:10px;
+  }
+  .rec img { width:118px; height:66px; object-fit:cover; border-radius:8px; }
+  .rec .meta { flex:1; }
+  .rec .title { font-weight:700; }
+  .rec .desc { color:var(--muted); margin-top:6px; font-size:13px; }
+
+  /* small screens */
+  @media (max-width:700px) {
+    .chat { height:420px; padding:12px; }
+    .rec img { width:94px; height:54px; }
+  }
+</style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="page">
     <header>
-      <div>
-        <div class="logo">🎬 AI Film Finder</div>
-        <div class="lead">Bot zadaje przyjemne pytania i wyszukuje filmy z Twojej bazy Supabase</div>
-      </div>
-      <div style="margin-left:auto;text-align:right">
-        <div class="small">Tryb testowy — frontend używa ANON KEY</div>
-      </div>
+      <div class="brand">🎬 StreamingHub AI</div>
+      <div class="subtitle">Twój osobisty asystent filmowy</div>
     </header>
 
-    <div class="card">
-      <div id="chat" aria-live="polite">
-        <div class="msg sys">Ładowanie... łączenie z Supabase</div>
-      </div>
+    <div class="divider"></div>
 
-      <div class="typing" id="typing" style="display:none">AI pisze...</div>
+    <div class="panel">
+      <div class="chat" role="region" aria-label="Chat z asystentem">
+        <div class="messages" id="messages" aria-live="polite">
+          <!-- start message -->
+          <div class="bubble ai" id="welcome-bubble">Cześć Użytkowniku! 🎬 Szukasz czegoś dobrego do obejrzenia?</div>
+        </div>
 
-      <div class="controls">
-        <input id="input" type="text" placeholder="Napisz odpowiedź (użyj '-' jeśli nie wiesz)" autocomplete="off" />
-        <button id="send">Wyślij</button>
+        <div class="input-row" style="margin-top:8px">
+          <input id="user-input" class="text-input" placeholder="Napisz swoją odpowiedź..." aria-label="Wiadomość użytkownika" />
+          <button id="send-btn" class="btn">Wyślij</button>
+          <button id="openai-toggle" class="btn secondary" title="Włącz prawdziwe ChatGPT (opcjonalnie)">Włącz ChatGPT</button>
+        </div>
+
+        <div class="note">Tryb testowy: używany jest <strong>anon</strong> Supabase i symulowane AI. Możesz w każdej chwili kliknąć "Włącz ChatGPT" i wkleić swój OpenAI API key — wtedy odpowiedzi wygeneruje prawdziwe ChatGPT.</div>
       </div>
-      <div style="margin-top:10px" class="small">Możesz odpowiadać krótkimi zdaniami lub pojedynczym wyrazem. Bot akceptuje "-" jako "nie wiem".</div>
     </div>
   </div>
 
-  <script type="module">
-    // =========================
-    // Konfiguracja Supabase (wklejone z Twojego inputu)
-    // =========================
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+<script type="module">
+/*
+  Uwaga:
+  - Plik działa bez klucza OpenAI (symulacja). Jeśli chcesz w przyszłości korzystać z prawdziwego ChatGPT,
+    kliknij "Włącz ChatGPT" i wklej klucz (sk-...).
+  - Supabase anon key, które podałeś wcześniej, zostało umieszczone poniżej.
+    To OK do testów lokalnych, lecz nie publikuj w produkcji.
+*/
 
-    const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
+// ------------------ KONFIGURACJA SUPABASE (anon key - tylko do testów) ------------------
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
 
-    // =========================
-    // UI refs
-    // =========================
-    const chat = document.getElementById('chat');
-    const input = document.getElementById('input');
-    const send = document.getElementById('send');
-    const typing = document.getElementById('typing');
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
 
-    // =========================
-    // Stan konwersacji (frontend-only)
-    // conversationHistory = [{role:'assistant'|'user', content:''}, ...]
-    // preferences: zbierane pola
-    // =========================
-    let conversationHistory = [];
-    let preferences = { category: null, mood: null, yearFrom: null, yearTo: null, durationMax: null, keywords: [] };
-    let categoriesMap = {}; // name -> id (pobrane z supabase)
-    let awaiting = false;
+// ------------------ ELEMENTY UI ------------------
+const messagesEl = document.getElementById('messages');
+const userInput = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+const openaiToggle = document.getElementById('openai-toggle');
 
-    // Helper: dodaj wiadomość
-    function addMessage(text, who='ai', html=false){
-      const d = document.createElement('div');
-      d.className = 'msg ' + (who==='ai'?'ai': who==='user'?'user':'sys');
-      d.innerHTML = html ? text : escapeHtml(text);
-      chat.appendChild(d);
-      chat.scrollTop = chat.scrollHeight;
-    }
-    function escapeHtml(t){ return String(t).replace(/[&<>"']/g, s=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[s])); }
-    function setTyping(v){ typing.style.display = v ? 'block' : 'none'; }
+// ------------------ STAN APLIKACJI ------------------
+let conversationHistory = []; // przechowujemy rozmowę lokalnie
+let preferences = { category:null, mood:null, yearFrom:null, yearTo:null, durationMax:null, keywords:[] };
+let useRealOpenAI = false;
+let openaiKey = ''; // wkleisz klucz po kliknięciu "Włącz ChatGPT"
+let lastCandidates = []; // przechowamy ostatnie wyniki z Supabase (kontekst dla AI)
 
-    // =========================
-    // Inicjalizacja: pobierz mapę kategorii (name->id) i rozpocznij dialog
-    // =========================
-    async function init(){
-      addMessage('Łączę się z bazą i ładuję kategorie...', 'sys');
-      try {
-        const { data, error } = await supabase.from('categories').select('id,name');
-        if (error) throw error;
-        (data||[]).forEach(c => categoriesMap[c.name.toLowerCase()] = c.id);
-        chat.innerHTML = ''; // wyczyść loading
-        startConversation();
-      } catch (err) {
-        chat.innerHTML = '';
-        addMessage('Błąd połączenia z Supabase: ' + (err.message || err), 'sys');
-        console.error(err);
+// ------------------ Pomocnicze funkcje UI ------------------
+function addBubble(text, kind='ai', html=false) {
+  const d = document.createElement('div');
+  d.className = 'bubble ' + (kind === 'ai' ? 'ai' : kind === 'user' ? 'user' : 'system');
+  d.innerHTML = html ? text : escapeHtml(text);
+  messagesEl.appendChild(d);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return d;
+}
+function escapeHtml(t){ return String(t).replace(/[&<>"']/g, s=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[s])); }
+
+// ------------------ LOGIKA PYTAŃ (przyjemne, krótkie) ------------------
+const QUESTIONS = [
+  'Jakiego rodzaju filmów szukasz? (np. "komedia", "thriller", "romans" lub "-" jeśli nie wiesz)',
+  'Jaki nastrój preferujesz? (np. "lekki", "mroczny", "romantyczny" lub "-")',
+  'Masz preferencję co do roku produkcji? (np. "ostatnie 10 lat", rok "2010" lub "-")',
+  'Wolisz krótsze filmy (~<90 min) czy dłuższe (>120 min)? (albo "-")',
+  'Podaj kilka słów kluczowych, które chciałbyś zobaczyć w opisie (np. "podróż", "kosmos", "mafia") lub "-"'
+];
+let questionIndex = 0;
+
+function startConversation(){
+  conversationHistory = [];
+  preferences = { category:null, mood:null, yearFrom:null, yearTo:null, durationMax:null, keywords:[] };
+  questionIndex = 0;
+  // replace welcome bubble
+  messagesEl.innerHTML = '';
+  addBubble('Cześć Użytkowniku! 🎬 Szukasz czegoś dobrego do obejrzenia?', 'ai');
+  setTimeout(()=> addBubble(QUESTIONS[questionIndex], 'ai'), 300);
+}
+startConversation();
+
+// ------------------ Interpretacja odpowiedzi użytkownika (prosty parser) ------------------
+function interpretAnswer(ans){
+  const a = (ans||'').trim();
+  if (!a || a === '-') return { consumed:false };
+  const low = a.toLowerCase();
+
+  // categories
+  const basicCats = ['komedia','thriller','dramat','akcja','fantasy','sci-fi','scifi','science fiction','romans','horror','animacja','dokument'];
+  for (const c of basicCats) if (low.includes(c)) return { consumed:true, field:'category', value:c.includes('scifi')||c.includes('science') ? 'sci-fi' : c.replace('science fiction','sci-fi') };
+
+  // mood
+  if (low.includes('luz') || low.includes('lekki') || low.includes('relax')) return { consumed:true, field:'mood', value:'light' };
+  if (low.includes('mrocz') || low.includes('cięż') || low.includes('poważ')) return { consumed:true, field:'mood', value:'dark' };
+  if (low.includes('romant')) return { consumed:true, field:'mood', value:'romantic' };
+
+  // year
+  const years = [...low.matchAll(/(19|20)\d{2}/g)].map(m=>parseInt(m[0]));
+  if (years.length===1) return { consumed:true, field:'yearFrom', value:years[0], extra:{yearTo:years[0]} };
+  if (years.length>=2) return { consumed:true, field:'yearFrom', value:Math.min(...years), extra:{yearTo:Math.max(...years)} };
+  const lastX = low.match(/ostatnie\s+(\d{1,2})\s+lat/);
+  if (lastX){ const x=parseInt(lastX[1]); const thisYear=(new Date()).getFullYear(); return { consumed:true, field:'yearFrom', value:thisYear-x, extra:{yearTo:thisYear} }; }
+  const lata = low.match(/lata\s+(\d{2})/);
+  if (lata){ const a2=parseInt(lata[1]); const from = 1900 + a2; return { consumed:true, field:'yearFrom', value:from, extra:{yearTo:from+9} }; }
+
+  // duration
+  if (low.includes('krót') || low.includes('<90') || low.includes('~<90')) return { consumed:true, field:'durationMax', value:90 };
+  if (low.includes('dł') || low.includes('>120')) return { consumed:true, field:'durationMax', value:180 };
+
+  // keywords (comma separated or multiple words)
+  const tokens = low.split(/[,;\/]+/).map(s=>s.trim()).filter(Boolean);
+  if (tokens.length>1){ const kws = tokens.flatMap(t=>t.split(/\s+/)).filter(w=>w.length>2); return { consumed:true, field:'keywords', value:kws.slice(0,8) }; }
+  if (a.length>2) return { consumed:true, field:'keywords', value:[low] };
+
+  return { consumed:false };
+}
+
+// ------------------ Czy mamy wystarczająco informacji? ------------------
+function isPreferencesComplete(pref){
+  return (!!pref.category) || (!!pref.mood) || (pref.keywords && pref.keywords.length>0);
+}
+
+// ------------------ Obsługa przycisku wysyłki ------------------
+sendBtn.addEventListener('click', onSend);
+userInput.addEventListener('keypress', e => { if (e.key === 'Enter') onSend(); });
+
+async function onSend(){
+  const text = userInput.value.trim();
+  if (!text) return;
+  addBubble(text, 'user');
+  conversationHistory.push({ role:'user', content:text });
+  userInput.value = '';
+  userInput.disabled = true;
+  sendBtn.disabled = true;
+
+  // special commands
+  const low = text.toLowerCase();
+  if (low === 'reset') { startConversation(); userInput.disabled=false; sendBtn.disabled=false; return; }
+  if ((low === 'tak' || low === 'pokaż' || low === 'ok') && isPreferencesComplete(preferences)) {
+    // user confirmed -> fetch recommendations
+    await fetchAndDisplayRecommendations();
+    userInput.disabled=false; sendBtn.disabled=false;
+    return;
+  }
+
+  // interpret answer
+  const res = interpretAnswer(text);
+  if (res.consumed){
+    const f = res.field;
+    if (f === 'category') preferences.category = res.value;
+    if (f === 'mood') preferences.mood = res.value;
+    if (f === 'yearFrom') { preferences.yearFrom = res.value; if (res.extra && res.extra.yearTo) preferences.yearTo = res.extra.yearTo; }
+    if (f === 'durationMax') preferences.durationMax = res.value;
+    if (f === 'keywords') preferences.keywords = Array.from(new Set([...(preferences.keywords||[]), ...res.value])).slice(0,12);
+    addBubble('Super — zapisałem to.', 'ai');
+  } else {
+    addBubble('Spoko, rozumiem. :)', 'ai');
+  }
+
+  // if enough -> ask to confirm
+  if (isPreferencesComplete(preferences)) {
+    addBubble('Mam już wystarczająco informacji. Napisz "tak" aby zobaczyć TOP 5 filmów, albo podaj coś jeszcze, jeśli chcesz doprecyzować.', 'ai');
+    userInput.disabled=false; sendBtn.disabled=false;
+    userInput.focus();
+    return;
+  }
+
+  // else -> next question
+  questionIndex = Math.min(questionIndex + 1, QUESTIONS.length-1);
+  addBubble(QUESTIONS[questionIndex], 'ai');
+  userInput.disabled=false; sendBtn.disabled=false;
+  userInput.focus();
+}
+
+// ------------------ Pobierz filmy z Supabase (kandydaci) ------------------
+async function loadCandidates(){
+  // pobieramy kandydatów z tabeli movies (limit 200) z podstawowymi filtrami
+  try {
+    let q = supabase.from('movies').select('id,title,description,thumb,year,duration,category_id').limit(200);
+    if (preferences.durationMax) q = q.lte('duration', preferences.durationMax);
+    if (preferences.yearFrom) q = q.gte('year', preferences.yearFrom);
+    if (preferences.yearTo) q = q.lte('year', preferences.yearTo);
+    // if category is textual, try match by category name
+    if (preferences.category) {
+      // try find category id
+      const catResp = await supabase.from('categories').select('id,name').ilike('name', `%${preferences.category}%`).limit(1);
+      if (!catResp.error && catResp.data && catResp.data.length>0) {
+        q = q.eq('category_id', catResp.data[0].id);
       }
     }
+    const { data, error } = await q;
+    if (error) throw error;
+    lastCandidates = data || [];
+    return lastCandidates;
+  } catch (err) {
+    console.error('Supabase fetch error', err);
+    addBubble('Błąd połączenia z bazą. Spróbuj później.', 'system');
+    return [];
+  }
+}
 
-    // =========================
-    // Sekwencja pytań AI (logika lokalna)
-    // - proste przyjemne pytania
-    // - akceptuje "-" jako "nie wiem"
-    // - gdy wystarczają prefy -> wyszukaj rekomendacje
-    // =========================
-    const QUESTIONS = [
-      'Cześć! 😊 Jakiego rodzaju filmów szukasz? (np. "komedia", "thriller", "romans" lub "-")',
-      'Jaki nastrój preferujesz? (np. "lekki", "mroczny", "romantyczny" lub "-")',
-      'Masz preferencję co do roku produkcji? (np. "ostatnie 10 lat", "lata 90-te", rok "2010" lub "-")',
-      'Wolisz krótsze filmy (~<90 min) czy dłuższe (>120 min)? (albo "-" jeśli nie wiesz)',
-      'Podaj kilka słów kluczowych, które chciałbyś zobaczyć w opisie (np. "podróż", "kosmos", "mafia") lub "-" jeśli brak.'
-    ];
+// ------------------ Scoring lokalny (fallback) ------------------
+function scoreCandidates(candidates){
+  const keys = (preferences.keywords||[]).map(k=>k.toLowerCase()).filter(Boolean);
+  return candidates.map(m => {
+    const text = ((m.title||'') + ' ' + (m.description||'') + ' ' + (m.year||'')).toLowerCase();
+    let score = 0;
+    for (const k of keys) if (text.includes(k)) score += 3;
+    if (preferences.category && String(m.category_id) && preferences.category) score += (String(m.category_id) ? 1 : 0);
+    if (preferences.mood === 'light' && /fun|comedy|humor|light|romantic|komedi/i.test(text)) score += 2;
+    if (preferences.mood === 'dark' && /dark|thrill|horror|murder|mrocz|tragic|thriller/i.test(text)) score += 2;
+    if (preferences.yearFrom && m.year && m.year >= preferences.yearFrom) score += 1;
+    return { ...m, score };
+  }).sort((a,b) => (b.score - a.score) || ((b.year||0) - (a.year||0)));
+}
 
-    let questionIndex = 0;
+// ------------------ Wyślij kontekst do OpenAI (jeśli włączone) ------------------
+async function callOpenAI(systemPrompt, userPrompt, moviesForContext = []) {
+  // Requires openaiKey to be set
+  if (!openaiKey) throw new Error('No OpenAI key set');
 
-    function startConversation(){
-      conversationHistory = [];
-      preferences = { category: null, mood: null, yearFrom: null, yearTo: null, durationMax: null, keywords: [] };
-      questionIndex = 0;
-      addMessage(QUESTIONS[questionIndex], 'ai');
-      awaiting = true;
-      input.disabled = false; input.focus();
+  // Przygotuj skróconą listę filmów (limit 30) z krótkimi opisami, aby nie przekroczyć limitów
+  const slice = moviesForContext.slice(0, 30).map(m => ({
+    title: m.title || 'Untitled',
+    year: m.year || '',
+    duration: m.duration || '',
+    description: (m.description || '').slice(0, 600),
+  }));
+  // Zbuduj messages
+  const messages = [
+    { role:'system', content: systemPrompt },
+    { role:'user', content: userPrompt + "\n\nDostępne filmy (skrót):\n" + slice.map((f,i)=>`${i+1}. ${f.title} (${f.year}) — ${f.description.slice(0,150)}`).join("\n") }
+  ];
+
+  // Wywołanie API OpenAI Chat Completions (model: gpt-3.5-turbo)
+  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    method:'POST',
+    headers: {
+      'Content-Type':'application/json',
+      'Authorization':'Bearer ' + openaiKey
+    },
+    body: JSON.stringify({
+      model: 'gpt-3.5-turbo',
+      messages: messages,
+      max_tokens: 600,
+      temperature: 0.7
+    })
+  });
+
+  if (!resp.ok) {
+    const txt = await resp.text();
+    throw new Error('OpenAI error: ' + resp.status + ' ' + txt);
+  }
+  const data = await resp.json();
+  const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+  return content || '';
+}
+
+// ------------------ Główna funkcja: pobierz rekomendacje i wyświetl TOP5 ------------------
+async function fetchAndDisplayRecommendations(){
+  addBubble('Szukam filmów pasujących do Twoich preferencji...', 'ai');
+
+  const candidates = await loadCandidates();
+  if (!candidates || candidates.length === 0) { addBubble('Brak filmów w bazie dopasowanych do kryteriów.', 'ai'); return; }
+
+  if (useRealOpenAI && openaiKey) {
+    // Zbuduj prompt dla ChatGPT: ma wybrać top5 i zwrócić ładny opis + ewentualne follow-up pytania
+    const sys = `Jesteś asystentem pomagającym użytkownikowi dobrać filmy. Masz listę filmów z bazy (tytuł, rok, opis). 
+Twoim zadaniem: dobierać TOP 5 najbardziej pasujących filmów do preferencji użytkownika, krótko (2-3 zdania) opisać dlaczego każdy pasuje, a na końcu zasugerować ewentualne pytania follow-up jeśli wynik nie jest do końca dopasowany. 
+Zwróć wynik w czytelnym formacie.`;
+    const userPrompt = `Preferencje użytkownika: ${JSON.stringify(preferences)}.\nWybierz top 5 filmów i przedstaw je. Jeżeli żadne filmy nie są trafne, zasugeruj co użytkownik może doprecyzować.`;
+
+    try {
+      const aiText = await callOpenAI(sys, userPrompt, candidates);
+      // Wyświetl odpowiedź (HTML-safe)
+      addBubble(aiText.replace(/\n/g,'<br>'), 'ai', true);
+    } catch (err) {
+      console.error(err);
+      addBubble('Błąd przy łączeniu z OpenAI: ' + (err.message || err), 'system');
+      // fallback: local scoring
+      const scored = scoreCandidates(candidates);
+      displayTopLocal(scored);
     }
+  } else {
+    // Symulacja / fallback: scoring lokalny i wyświetlenie top 5 + krótkie opisy z opisów
+    const scored = scoreCandidates(candidates);
+    displayTopLocal(scored);
+  }
+}
 
-    // =========================
-    // Parsowanie prostych odpowiedzi do preferences
-    // =========================
-    function interpretAnswer(ans){
-      const a = (ans||'').trim();
-      if (!a || a === '-') return { consumed: false }; // nie-dostarczone info
-      const low = a.toLowerCase();
+// ------------------ Lokalna prezentacja TOP5 (fallback / symulacja) ------------------
+function displayTopLocal(scoredCandidates){
+  const top = scoredCandidates.slice(0,5);
+  if (!top || top.length===0) { addBubble('Nie znalazłem dopasowań. Spróbuj zmienić preferencje.', 'ai'); return; }
 
-      // 1) category
-      // sprawdź czy w odpowiedzi jest jakaś znana kategoria (mapa kategorii + lista podstawowych)
-      const basicCats = ['komedia','thriller','dramat','akcja','fantasy','sci-fi','scifi','science fiction','romans','horror','animacja','dokument','dokumentalny'];
-      for (const c of basicCats){
-        if (low.includes(c)) {
-          return { consumed:true, field:'category', value: c.includes('scifi')||c.includes('science') ? 'sci-fi' : c.replace('science fiction','sci-fi') };
-        }
-      }
+  // zbuduj html
+  let html = '<div><strong>Top 5 dopasowanych filmów:</strong><div class="rec-list">';
+  for (const m of top) {
+    const desc = m.description ? (m.description.length>180 ? (m.description.slice(0,177)+'...') : m.description) : '';
+    const thumb = m.thumb ? `<img src="${escapeHtml(m.thumb)}" alt="${escapeHtml(m.title)}" onerror="this.style.display=\\'none\\'">` : `<div style="width:118px;height:66px;border-radius:8px;background:rgba(255,255,255,0.02)"></div>`;
+    html += `<div class="rec">${thumb}<div class="meta"><div class="title">${escapeHtml(m.title)} ${m.year?('('+m.year+')'):''}</div><div class="desc">${escapeHtml(desc)}</div></div></div>`;
+  }
+  html += '</div></div>';
+  addBubble(html, 'ai', true);
 
-      // 2) mood
-      if (low.includes('luz') || low.includes('lekki') || low.includes('relax') || low.includes('lekka')) return { consumed:true, field:'mood', value:'light' };
-      if (low.includes('mrocz') || low.includes('cięż') || low.includes('poważ') || low.includes('dark')) return { consumed:true, field:'mood', value:'dark' };
-      if (low.includes('romant')) return { consumed:true, field:'mood', value:'romantic' };
+  // follow up suggestion
+  addBubble('Jeśli to nie to, napisz np. inny gatunek, nastrój lub dokładniejsze słowa kluczowe — chętnie doprecyzuję!', 'ai');
+}
 
-      // 3) year
-      // obsłuż 'ostatnie X lat', 'lata 90', '1999', '2000-2010'
-      const years = [...low.matchAll(/(19|20)\d{2}/g)].map(m=>parseInt(m[0]));
-      if (years.length===1) return { consumed:true, field:'yearFrom', value: years[0], extra:{yearTo:years[0]} };
-      if (years.length>=2) return { consumed:true, field:'yearFrom', value: Math.min(...years), extra:{yearTo:Math.max(...years)} };
-      const lastX = low.match(/ostatnie\s+(\d{1,2})\s+lat/);
-      if (lastX) {
-        const x = parseInt(lastX[1]);
-        const thisYear = (new Date()).getFullYear();
-        return { consumed:true, field:'yearFrom', value: thisYear - x, extra:{yearTo:thisYear} };
-      }
-      const lata = low.match(/lata\s+(\d{2})\-?(\d{2})?/); // 'lata 90' or 'lata 90-00'
-      if (lata) {
-        const a = parseInt(lata[1]);
-        let from = (a<=30)? (1900 + a) : (1900 + a); // conservative
-        if (lata[2]) {
-          const b = parseInt(lata[2]);
-          const to = (b < 100) ? (1900 + b) : b;
-          return { consumed:true, field:'yearFrom', value: from, extra: { yearTo: to } };
-        }
-        // lata 90 -> 1990-1999
-        return { consumed:true, field:'yearFrom', value: from, extra:{ yearTo: from+9 } };
-      }
-
-      // 4) duration
-      if (low.includes('krót') || low.includes('<90') || low.includes('< 90') || low.includes('~<90')) return { consumed:true, field:'durationMax', value:90 };
-      if (low.includes('dł') || low.includes('>120') || low.includes('> 120')) return { consumed:true, field:'durationMax', value:180 };
-
-      // 5) keywords: jeśli zawiera przecinek lub kilka słów, treat as keywords
-      const tokens = low.split(/[,;\/]+/).map(s=>s.trim()).filter(Boolean);
-      if (tokens.length>1) {
-        const kws = tokens.flatMap(t => t.split(/\s+/)).filter(w=>w.length>2);
-        return { consumed:true, field:'keywords', value:kws.slice(0,8) };
-      }
-
-      // jeśli pojedyncze słowo >2 znaki -> treat as keyword
-      if (a.length>2) return { consumed:true, field:'keywords', value:[low] };
-
-      return { consumed:false };
+// ------------------ Obsługa przycisku włączenia OpenAI (opcjonalne) ------------------
+openaiToggle.addEventListener('click', async () => {
+  if (!useRealOpenAI) {
+    // pop-up prompt to paste key (user doesn't want to now, but we allow later)
+    const k = prompt('Jeśli chcesz korzystać z prawdziwego ChatGPT wklej swój OpenAI API key (zacznij od "sk-...").\nPozostaw puste, aby pozostać w trybie testowym.');
+    if (k && k.trim().length>0) {
+      openaiKey = k.trim();
+      useRealOpenAI = true;
+      openaiToggle.innerText = 'ChatGPT: WŁ. (kliknij, aby zmienić)';
+      openaiToggle.style.borderColor = 'rgba(79,124,255,0.4)';
+      addBubble('ChatGPT włączony — teraz odpowiedzi będą generowane przez OpenAI.', 'system');
+    } else {
+      alert('Pozostajesz w trybie testowym (symulacja).');
     }
-
-    // =========================
-    // Główna obsługa wysyłki
-    // =========================
-    send.addEventListener('click', onSend);
-    input.addEventListener('keypress', e => { if (e.key==='Enter') onSend(); });
-
-    async function onSend(){
-      if (awaiting===false) return;
-      const text = input.value.trim();
-      if (!text) return;
-      addMessage(text, 'user');
-      conversationHistory.push({ role:'user', content:text });
-      input.value = '';
-      input.disabled = true;
-      setTyping(true);
-
-      // spróbuj zinterpretować
-      const result = interpretAnswer(text);
-      let aiReply = '';
-
-      if (result.consumed){
-        // zapisz pref
-        const f = result.field;
-        if (f === 'category') {
-          // spróbuj znaleźć category id z categoriesMap (najpierw exact, potem ilike)
-          const catName = result.value.toLowerCase();
-          preferences.category = catName;
-        } else if (f === 'mood') {
-          preferences.mood = result.value;
-        } else if (f === 'yearFrom') {
-          preferences.yearFrom = result.value;
-          if (result.extra && result.extra.yearTo) preferences.yearTo = result.extra.yearTo;
-        } else if (f === 'durationMax') {
-          preferences.durationMax = result.value;
-        } else if (f === 'keywords') {
-          // dopisz słowa kluczowe unikalnie
-          const kw = result.value.map(k=>k.toLowerCase());
-          preferences.keywords = Array.from(new Set([...(preferences.keywords||[]), ...kw])).slice(0,12);
-        }
-        aiReply = 'Super — zapisałem to.';
-      } else {
-        aiReply = 'W porządku, rozumiem — przejdźmy dalej.';
-      }
-
-      // pokaż odpowiedź AI i zdecyduj co dalej
-      addMessage(aiReply, 'ai');
-
-      // czy mamy wystarczająco informacji?
-      const ready = isPreferencesComplete(preferences);
-
-      // jeśli ready -> zapytaj o potwierdzenie lub od razu szukaj
-      if (ready) {
-        // zapytaj czy użytkownik chce TOP5 teraz
-        addMessage('Mam wystarczająco informacji. Chcesz, żebym teraz pokazał TOP 5 filmów? Napisz "tak" aby potwierdzić lub podaj więcej preferencji.', 'ai');
-        input.disabled = false;
-        input.focus();
-        setTyping(false);
-        return;
-      } else {
-        // przejdź do następnego pytania
-        questionIndex = Math.min(questionIndex + 1, QUESTIONS.length - 1);
-        // jeśli użytk wpisał "-" to po prostu idziemy do następnego
-        addMessage(QUESTIONS[questionIndex], 'ai');
-        input.disabled = false;
-        input.focus();
-        setTyping(false);
-      }
+  } else {
+    // oferuj reset / wyłączenie
+    const conf = confirm('Czy wyłączyć integrację z OpenAI i wrócić do trybu testowego?');
+    if (conf) {
+      useRealOpenAI = false;
+      openaiKey = '';
+      openaiToggle.innerText = 'Włącz ChatGPT';
+      addBubble('ChatGPT wyłączony — pracujemy w trybie testowym.', 'system');
     }
+  }
+});
 
-    function isPreferencesComplete(p){
-      // kryterium minimalne: category OR mood OR keywords -> enough
-      return (!!p.category) || (!!p.mood) || (p.keywords && p.keywords.length>0);
+// ------------------ Dodatkowe skróty: wpis "tak" uruchamia rekomendacje (wewnętrzne) ------------------
+userInput.addEventListener('keydown', async (e) => {
+  if (e.key === 'Enter') {
+    const txt = userInput.value.trim().toLowerCase();
+    if (txt === 'tak' || txt === 'ok' || txt === 'pokaż') {
+      addBubble(userInput.value.trim(), 'user');
+      userInput.value = '';
+      userInput.disabled = true;
+      sendBtn.disabled = true;
+      await fetchAndDisplayRecommendations();
+      userInput.disabled=false; sendBtn.disabled=false;
+      return;
     }
+  }
+});
 
-    // =========================
-    // Jeśli użytkownik potwierdzi "tak" -> fetchRecommendations()
-    // =========================
-    // Intercept input to detect "tak" (or "nie"/"zmień") quick actions
-    input.addEventListener('input', (e) => {
-      const v = e.target.value.trim().toLowerCase();
-      if (v === 'tak' || v === 'pokaż' || v === 'ok') {
-        // disable typing to avoid immediate send by enter; user can press send
-      }
-    });
+// ------------------ Accessibility: focus input on load ------------------
+window.addEventListener('load', () => { userInput.focus(); });
 
-    // Przyciski ułatwiające (opcjonalnie) - gdy wyświetlimy TOP5 dodamy 'Nie, inne' button jako follow-up
-
-    // =========================
-    // Funkcja wyszukiwania filmów w Supabase i render TOP 5
-    // =========================
-    async function fetchRecommendations(){
-      setTyping(true);
-      addMessage('Szukam filmów pasujących do Twoich preferencji...', 'ai');
-
-      try {
-        // zbuduj query początkowe
-        // jeśli mamy category jako tekst, spróbuj dopasować do categoriesMap, a potem użyć category_id
-        let categoryId = null;
-        if (preferences.category) {
-          // spróbuj znaleźć dokładne dopasowanie (nazwa w categoriesMap) lub ilike
-          const lower = preferences.category.toLowerCase();
-          if (categoriesMap[lower]) categoryId = categoriesMap[lower];
-          else {
-            // pobierz kategorię ilike
-            const { data: catData, error: catErr } = await supabase.from('categories').select('id,name').ilike('name', `%${preferences.category}%`).limit(1);
-            if (!catErr && catData && catData.length>0) categoryId = catData[0].id;
-          }
-        }
-
-        // Najpierw pobierz kandydatów (limit 200) z podstawowym filtrem
-        let q = supabase.from('movies').select('id,title,description,thumb,year,duration,category_id').limit(200);
-
-        if (categoryId) q = q.eq('category_id', categoryId);
-        if (preferences.durationMax) q = q.lte('duration', preferences.durationMax);
-        if (preferences.yearFrom) q = q.gte('year', preferences.yearFrom);
-        if (preferences.yearTo) q = q.lte('year', preferences.yearTo);
-
-        const { data, error } = await q;
-        if (error) throw error;
-
-        let candidates = data || [];
-
-        // prosty scoring po słowach kluczowych i mood
-        const keys = (preferences.keywords || []).map(k => k.toLowerCase()).filter(Boolean);
-        candidates = candidates.map(m => {
-          const text = ((m.title||'') + ' ' + (m.description||'') + ' ' + (m.year||'')).toLowerCase();
-          let score = 0;
-          // keyword matches
-          for (const k of keys) if (text.includes(k)) score += 3;
-          // category presence adds bonus if we didn't filter by it (helps boost)
-          if (preferences.category && String(m.category_id) === String(categoryId)) score += 2;
-          // mood heuristics: search words in description/title
-          if (preferences.mood === 'light' && /fun|comedy|humor|light|romantic|feel good|romans|komedi/i.test(text)) score += 2;
-          if (preferences.mood === 'dark' && /dark|thrill|horror|murder|mrocz|czarny|tragic|thriller/i.test(text)) score += 2;
-          if (preferences.mood === 'romantic' && /romant|love|miłość|romance|romans/i.test(text)) score += 2;
-          // recent year preference
-          if (preferences.yearFrom && m.year && m.year >= preferences.yearFrom) score += 1;
-          return { ...m, score };
-        });
-
-        // jeśli nie ma keywords -> fallback sort by year desc
-        if (keys.length === 0) {
-          candidates.sort((a,b) => (b.year||0) - (a.year||0));
-        } else {
-          candidates.sort((a,b) => (b.score - a.score) || ((b.year||0) - (a.year||0)));
-        }
-
-        // odfiltruj słabe wyniki jeśli score == 0 i mieliśmy keywords (żeby nie pokazywać losowych)
-        if (keys.length>0) candidates = candidates.filter(c => c.score>0);
-
-        if (!candidates || candidates.length===0) {
-          addMessage('Niestety nie znalazłem niczego dokładnie pasującego. Spróbuj podać inne słowa kluczowe lub kategorię.', 'ai');
-          setTyping(false);
-          input.disabled = false;
-          input.focus();
-          return;
-        }
-
-        // top 5
-        const top = candidates.slice(0,5);
-        // zbuduj HTML listy rekomendacji
-        let html = '<div><strong>Top 5 dopasowanych filmów:</strong><div class="rec-list">';
-        for (const m of top){
-          const desc = m.description ? (m.description.length>180 ? (m.description.slice(0,177)+'...') : m.description) : '';
-          const thumb = m.thumb ? `<img src="${escapeHtml(m.thumb)}" alt="${escapeHtml(m.title)}" onerror="this.style.display=\\'none\\'">` : '';
-          html += `<div class="rec">${thumb}<div class="meta"><div class="title">${escapeHtml(m.title)} ${m.year?('('+m.year+')'):''}</div><div class="desc">${escapeHtml(desc)}</div></div></div>`;
-        }
-        html += '</div></div>';
-        addMessage(html, 'ai', true);
-
-        // Dodaj przycisk "Nie, inne" i "Pokaż więcej" pod listą (zrobione jako sys message z instrukcją)
-        const btnContainer = document.createElement('div');
-        btnContainer.className = 'msg sys';
-        btnContainer.style.marginTop = '8px';
-        btnContainer.innerHTML = `<div style="display:flex;gap:8px"><button id="btn-more">Pokaż więcej</button><button id="btn-other">Nie, inne</button></div>`;
-        chat.appendChild(btnContainer);
-        chat.scrollTop = chat.scrollHeight;
-
-        // obsługa przycisków
-        document.getElementById('btn-more').addEventListener('click', () => {
-          // pokaż kolejne 5
-          showMoreCandidates(candidates, 5);
-        });
-        document.getElementById('btn-other').addEventListener('click', () => {
-          addMessage('Ok — co zmienić? Napisz np. inny gatunek, nastrój lub słowa kluczowe.', 'ai');
-          input.disabled = false;
-          input.focus();
-        });
-
-        setTyping(false);
-        input.disabled = false;
-        input.focus();
-      } catch (err){
-        console.error(err);
-        addMessage('Błąd przy pobieraniu rekomendacji: ' + (err.message || err), 'sys');
-        setTyping(false);
-        input.disabled = false;
-        input.focus();
-      }
-    }
-
-    // pokaz kolejne N kandydatów (pagination client-side)
-    function showMoreCandidates(list, n){
-      // find how many rec items currently shown
-      const shown = chat.querySelectorAll('.rec').length;
-      const more = list.slice(shown, shown + n);
-      if (!more || more.length===0) {
-        addMessage('Brak kolejnych wyników.', 'ai');
-        return;
-      }
-      // dodaj HTML dla każdego
-      const container = document.createElement('div');
-      container.className = 'msg ai';
-      container.innerHTML = '<div class="rec-list">' + more.map(m => {
-        const desc = m.description ? (m.description.length>180 ? (m.description.slice(0,177)+'...') : m.description) : '';
-        const thumb = m.thumb ? `<img src="${escapeHtml(m.thumb)}" alt="${escapeHtml(m.title)}" onerror="this.style.display=\\'none\\'">` : '';
-        return `<div class="rec">${thumb}<div class="meta"><div class="title">${escapeHtml(m.title)} ${m.year?('('+m.year+')'):''}</div><div class="desc">${escapeHtml(desc)}</div></div></div>`;
-      }).join('') + '</div>';
-      chat.appendChild(container);
-      chat.scrollTop = chat.scrollHeight;
-    }
-
-    // =========================
-    // Shortcut: jeżeli użytkzyk wpisze 'tak' -> uruchom fetchRecommendations
-    // =========================
-    input.addEventListener('keydown', async (e) => {
-      if (e.key === 'Enter') {
-        const txt = input.value.trim().toLowerCase();
-        if (txt === 'tak' || txt === 'ok' || txt === 'pokaż') {
-          // treat as confirm and fetch
-          addMessage(input.value.trim(), 'user');
-          input.value = '';
-          input.disabled = true;
-          await fetchRecommendations();
-          return;
-        }
-        // jeżeli użytkownik wpisze 'reset' -> restart conversation
-        if (txt === 'reset') {
-          addMessage('reset', 'user');
-          input.value = '';
-          startConversation();
-          return;
-        }
-        // normal flow handled by click handler
-      }
-    });
-
-    // =========================
-    // Start
-    // =========================
-    init();
-
-  </script>
+// ------------------ Koniec skryptu ------------------
+</script>
 </body>
 </html>
