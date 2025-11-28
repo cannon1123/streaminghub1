@@ -1,532 +1,344 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>StreamingHub AI — Asystent Filmowy (test)</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StreamingHub — AI Chat</title>
+
 <style>
-  :root{
-    --bg:#0b0d10;
-    --panel:#0f1216;
-    --card:#0b0d10;
-    --accent:#6b5ef8;
-    --accent-2:#4f7cff;
-    --muted:#9aa7be;
-    --text:#e6eef8;
-    --border:#1f2430;
-    --input:#0e1114;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0;
-    background:#09090b;
-    color:var(--text);
-    font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  }
+    body {
+        margin: 0;
+        background-color: #0b0d10;
+        font-family: Inter, sans-serif;
+        color: #fff;
+        overflow: hidden;
+    }
 
-  .page {
-    max-width:980px;
-    margin:28px auto;
-    padding:0 20px 60px;
-  }
+    .chat-wrapper {
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        padding-top: 20px;
+    }
 
-  header {
-    text-align:center;
-    margin-bottom:18px;
-  }
-  .brand {
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:12px;
-    color: var(--accent-2);
-    font-weight:800;
-    font-size:22px;
-  }
-  .subtitle { color:var(--muted); font-size:13px; margin-top:6px; }
+    .chat-container {
+        width: 95%;
+        max-width: 820px;
+        height: 88vh;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 18px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+    }
 
-  .divider { height:1px; background:rgba(255,255,255,0.04); margin:20px 0; border-radius:2px; }
+    .chat-header {
+        padding: 18px;
+        font-size: 20px;
+        font-weight: 700;
+        background: rgba(255,255,255,0.04);
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
 
-  .panel {
-    background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
-    border-radius:14px;
-    padding:18px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-    border: 1px solid rgba(255,255,255,0.02);
-  }
+    .messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+    }
 
-  /* Chat area */
-  .chat {
-    background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.003));
-    border-radius:12px;
-    padding:18px;
-    height:520px;
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-    border:1px solid rgba(255,255,255,0.02);
-    overflow:hidden;
-  }
-  .messages {
-    flex:1;
-    overflow:auto;
-    padding-right:6px;
-  }
+    .bubble {
+        max-width: 78%;
+        margin-bottom: 14px;
+        padding: 12px 16px;
+        border-radius: 14px;
+        line-height: 1.45;
+        font-size: 15px;
+        word-wrap: break-word;
+    }
 
-  .bubble {
-    display:inline-block;
-    padding:12px 16px;
-    border-radius:14px;
-    max-width:75%;
-    line-height:1.4;
-    margin-bottom:12px;
-    word-break:break-word;
-  }
-  .ai {
-    background: linear-gradient(90deg, #8b5cf6, #6b5ef8);
-    color:white;
-    align-self:flex-start;
-    border-bottom-left-radius:6px;
-  }
-  .user {
-    background: linear-gradient(90deg, #10b981, #059669);
-    color:white;
-    align-self:flex-end;
-    border-bottom-right-radius:6px;
-  }
-  .system {
-    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-    border:1px solid rgba(255,255,255,0.03);
-    color:var(--muted);
-    align-self:center;
-    padding:10px 12px;
-    border-radius:10px;
-    max-width:90%;
-  }
+    .ai {
+        background: #1a1d23;
+        align-self: flex-start;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
 
-  .input-row {
-    display:flex;
-    gap:12px;
-    align-items:center;
-    margin-top:6px;
-  }
-  .text-input {
-    flex:1;
-    background:var(--input);
-    border:1px solid var(--border);
-    color:var(--text);
-    padding:12px 16px;
-    border-radius:12px;
-    outline:none;
-    font-size:14px;
-  }
-  .text-input:focus { box-shadow: 0 0 0 3px rgba(79,124,255,0.12); border-color:var(--accent-2); }
+    .user {
+        background: #4f7cff;
+        align-self: flex-end;
+    }
 
-  .btn {
-    background: linear-gradient(90deg,var(--accent),var(--accent-2));
-    color:white;
-    border:none;
-    padding:10px 16px;
-    border-radius:10px;
-    cursor:pointer;
-    font-weight:700;
-  }
-  .btn.secondary {
-    background:transparent;
-    border:1px solid rgba(255,255,255,0.04);
-    color:var(--muted);
-    padding:8px 12px;
-    font-weight:600;
-  }
+    .input-area {
+        padding: 14px;
+        display: flex;
+        gap: 10px;
+        border-top: 1px solid rgba(255,255,255,0.05);
+        background: rgba(255,255,255,0.02);
+    }
 
-  .note { font-size:13px; color:var(--muted); margin-top:8px; }
+    .input-area input {
+        flex: 1;
+        padding: 12px 15px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.05);
+        color: #fff;
+        outline: none;
+        font-size: 15px;
+    }
 
-  /* Recommendation item */
-  .rec-list { display:flex; flex-direction:column; gap:10px; margin-top:6px; }
-  .rec {
-    display:flex;
-    gap:12px;
-    align-items:flex-start;
-    background: rgba(255,255,255,0.02);
-    padding:10px;
-    border-radius:10px;
-  }
-  .rec img { width:118px; height:66px; object-fit:cover; border-radius:8px; }
-  .rec .meta { flex:1; }
-  .rec .title { font-weight:700; }
-  .rec .desc { color:var(--muted); margin-top:6px; font-size:13px; }
+    .input-area button {
+        padding: 12px 18px;
+        background: #4f7cff;
+        border: none;
+        border-radius: 12px;
+        font-size: 15px;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+    }
 
-  /* small screens */
-  @media (max-width:700px) {
-    .chat { height:420px; padding:12px; }
-    .rec img { width:94px; height:54px; }
-  }
+    .rec-box {
+        display: flex;
+        gap: 12px;
+        background: rgba(255,255,255,0.04);
+        padding: 10px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .rec-box img {
+        width: 130px;
+        height: 74px;
+        object-fit: cover;
+        border-radius: 10px;
+    }
+
+    .rec-meta {
+        flex: 1;
+    }
+
+    .rec-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+
+    .rec-desc {
+        font-size: 14px;
+        opacity: 0.8;
+    }
+
 </style>
 </head>
+
 <body>
-  <div class="page">
-    <header>
-      <div class="brand">🎬 StreamingHub AI</div>
-      <div class="subtitle">Twój osobisty asystent filmowy</div>
-    </header>
 
-    <div class="divider"></div>
+<div class="chat-wrapper">
+    <div class="chat-container">
+        
+        <div class="chat-header">🎬 StreamingHub — Asystent Filmowy</div>
 
-    <div class="panel">
-      <div class="chat" role="region" aria-label="Chat z asystentem">
-        <div class="messages" id="messages" aria-live="polite">
-          <!-- start message -->
-          <div class="bubble ai" id="welcome-bubble">Cześć Użytkowniku! 🎬 Szukasz czegoś dobrego do obejrzenia?</div>
+        <div class="messages" id="messages">
+            <div class="bubble ai">
+                Cześć! 👋 Jestem tu, aby pomóc Ci wybrać idealny film.  
+                Odpowiadaj swobodnie, możesz użyć "-" jeśli czegoś nie wiesz.
+            </div>
         </div>
 
-        <div class="input-row" style="margin-top:8px">
-          <input id="user-input" class="text-input" placeholder="Napisz swoją odpowiedź..." aria-label="Wiadomość użytkownika" />
-          <button id="send-btn" class="btn">Wyślij</button>
-          <button id="openai-toggle" class="btn secondary" title="Włącz prawdziwe ChatGPT (opcjonalnie)">Włącz ChatGPT</button>
+        <div class="input-area">
+            <input id="user-input" placeholder="Napisz wiadomość..." />
+            <button id="send-btn">Wyślij</button>
         </div>
-
-        <div class="note">Tryb testowy: używany jest <strong>anon</strong> Supabase i symulowane AI. Możesz w każdej chwili kliknąć "Włącz ChatGPT" i wkleić swój OpenAI API key — wtedy odpowiedzi wygeneruje prawdziwe ChatGPT.</div>
-      </div>
     </div>
-  </div>
+</div>
 
 <script type="module">
-/*
-  Uwaga:
-  - Plik działa bez klucza OpenAI (symulacja). Jeśli chcesz w przyszłości korzystać z prawdziwego ChatGPT,
-    kliknij "Włącz ChatGPT" i wklej klucz (sk-...).
-  - Supabase anon key, które podałeś wcześniej, zostało umieszczone poniżej.
-    To OK do testów lokalnych, lecz nie publikuj w produkcji.
-*/
 
-// ------------------ KONFIGURACJA SUPABASE (anon key - tylko do testów) ------------------
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+/* ▼▼▼ UZUPEŁNIASZ TYLKO TO ▼▼▼ */
+const OPENAI_API_KEY = "";
 
 const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
+const SUPABASE_ANON_KEY = "eyJhbGc...Twój klucz anon";
+/* ▲▲▲ NIC WIĘCEJ NIE ZMIENIASZ ▲▲▲ */
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
 
-// ------------------ ELEMENTY UI ------------------
-const messagesEl = document.getElementById('messages');
-const userInput = document.getElementById('user-input');
-const sendBtn = document.getElementById('send-btn');
-const openaiToggle = document.getElementById('openai-toggle');
+// --------------------- SUPABASE -------------------------
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ------------------ STAN APLIKACJI ------------------
-let conversationHistory = []; // przechowujemy rozmowę lokalnie
-let preferences = { category:null, mood:null, yearFrom:null, yearTo:null, durationMax:null, keywords:[] };
-let useRealOpenAI = false;
-let openaiKey = ''; // wkleisz klucz po kliknięciu "Włącz ChatGPT"
-let lastCandidates = []; // przechowamy ostatnie wyniki z Supabase (kontekst dla AI)
 
-// ------------------ Pomocnicze funkcje UI ------------------
-function addBubble(text, kind='ai', html=false) {
-  const d = document.createElement('div');
-  d.className = 'bubble ' + (kind === 'ai' ? 'ai' : kind === 'user' ? 'user' : 'system');
-  d.innerHTML = html ? text : escapeHtml(text);
-  messagesEl.appendChild(d);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
-  return d;
+// --------------------- ELEMENTY -------------------------
+const messages = document.getElementById("messages");
+const input = document.getElementById("user-input");
+const sendBtn = document.getElementById("send-btn");
+
+function addBubble(text, type="ai", html=false) {
+    const div = document.createElement("div");
+    div.className = "bubble " + type;
+    div.innerHTML = html ? text : text.replace(/\n/g,"<br>");
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
 }
-function escapeHtml(t){ return String(t).replace(/[&<>"']/g, s=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[s])); }
 
-// ------------------ LOGIKA PYTAŃ (przyjemne, krótkie) ------------------
+
+// --------------------- PYTANIA -------------------------
 const QUESTIONS = [
-  'Jakiego rodzaju filmów szukasz? (np. "komedia", "thriller", "romans" lub "-" jeśli nie wiesz)',
-  'Jaki nastrój preferujesz? (np. "lekki", "mroczny", "romantyczny" lub "-")',
-  'Masz preferencję co do roku produkcji? (np. "ostatnie 10 lat", rok "2010" lub "-")',
-  'Wolisz krótsze filmy (~<90 min) czy dłuższe (>120 min)? (albo "-")',
-  'Podaj kilka słów kluczowych, które chciałbyś zobaczyć w opisie (np. "podróż", "kosmos", "mafia") lub "-"'
+    "Jaki gatunek preferujesz? (komedia, akcja, thriller...)",
+    "Jaki nastrój filmu Ci odpowiada? (lekki, mroczny...)",
+    "Z jakich lat? (np. ostatnie 10 lat albo '-')",
+    "Jak długa może być produkcja? (<90 min, dłuższa, brak preferencji)",
+    "Jakie słowa-klucze powinien zawierać opis filmu?"
 ];
-let questionIndex = 0;
 
-function startConversation(){
-  conversationHistory = [];
-  preferences = { category:null, mood:null, yearFrom:null, yearTo:null, durationMax:null, keywords:[] };
-  questionIndex = 0;
-  // replace welcome bubble
-  messagesEl.innerHTML = '';
-  addBubble('Cześć Użytkowniku! 🎬 Szukasz czegoś dobrego do obejrzenia?', 'ai');
-  setTimeout(()=> addBubble(QUESTIONS[questionIndex], 'ai'), 300);
-}
-startConversation();
+let qIndex = 0;
+let prefs = {};
 
-// ------------------ Interpretacja odpowiedzi użytkownika (prosty parser) ------------------
-function interpretAnswer(ans){
-  const a = (ans||'').trim();
-  if (!a || a === '-') return { consumed:false };
-  const low = a.toLowerCase();
+addBubble(QUESTIONS[0]);
 
-  // categories
-  const basicCats = ['komedia','thriller','dramat','akcja','fantasy','sci-fi','scifi','science fiction','romans','horror','animacja','dokument'];
-  for (const c of basicCats) if (low.includes(c)) return { consumed:true, field:'category', value:c.includes('scifi')||c.includes('science') ? 'sci-fi' : c.replace('science fiction','sci-fi') };
 
-  // mood
-  if (low.includes('luz') || low.includes('lekki') || low.includes('relax')) return { consumed:true, field:'mood', value:'light' };
-  if (low.includes('mrocz') || low.includes('cięż') || low.includes('poważ')) return { consumed:true, field:'mood', value:'dark' };
-  if (low.includes('romant')) return { consumed:true, field:'mood', value:'romantic' };
+// --------------------- OPENAI — GPT-4o -------------------------
+async function callOpenAI(messages) {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+            model: "gpt-4o",
+            messages,
+            temperature: 0.6
+        })
+    });
 
-  // year
-  const years = [...low.matchAll(/(19|20)\d{2}/g)].map(m=>parseInt(m[0]));
-  if (years.length===1) return { consumed:true, field:'yearFrom', value:years[0], extra:{yearTo:years[0]} };
-  if (years.length>=2) return { consumed:true, field:'yearFrom', value:Math.min(...years), extra:{yearTo:Math.max(...years)} };
-  const lastX = low.match(/ostatnie\s+(\d{1,2})\s+lat/);
-  if (lastX){ const x=parseInt(lastX[1]); const thisYear=(new Date()).getFullYear(); return { consumed:true, field:'yearFrom', value:thisYear-x, extra:{yearTo:thisYear} }; }
-  const lata = low.match(/lata\s+(\d{2})/);
-  if (lata){ const a2=parseInt(lata[1]); const from = 1900 + a2; return { consumed:true, field:'yearFrom', value:from, extra:{yearTo:from+9} }; }
-
-  // duration
-  if (low.includes('krót') || low.includes('<90') || low.includes('~<90')) return { consumed:true, field:'durationMax', value:90 };
-  if (low.includes('dł') || low.includes('>120')) return { consumed:true, field:'durationMax', value:180 };
-
-  // keywords (comma separated or multiple words)
-  const tokens = low.split(/[,;\/]+/).map(s=>s.trim()).filter(Boolean);
-  if (tokens.length>1){ const kws = tokens.flatMap(t=>t.split(/\s+/)).filter(w=>w.length>2); return { consumed:true, field:'keywords', value:kws.slice(0,8) }; }
-  if (a.length>2) return { consumed:true, field:'keywords', value:[low] };
-
-  return { consumed:false };
+    const data = await res.json();
+    return data.choices[0].message.content;
 }
 
-// ------------------ Czy mamy wystarczająco informacji? ------------------
-function isPreferencesComplete(pref){
-  return (!!pref.category) || (!!pref.mood) || (pref.keywords && pref.keywords.length>0);
+
+// --------------------- SUPABASE — pobierz filmy -------------------------
+async function loadMovies() {
+    const { data } = await supabase
+        .from("movies")
+        .select("id,title,description,thumb,year,duration,category_id")
+        .limit(200);
+
+    const { data: cat } = await supabase
+        .from("categories")
+        .select("id,name");
+
+    return data.map(m => ({
+        ...m,
+        category: cat.find(c => c.id === m.category_id)?.name || null
+    }));
 }
 
-// ------------------ Obsługa przycisku wysyłki ------------------
-sendBtn.addEventListener('click', onSend);
-userInput.addEventListener('keypress', e => { if (e.key === 'Enter') onSend(); });
 
-async function onSend(){
-  const text = userInput.value.trim();
-  if (!text) return;
-  addBubble(text, 'user');
-  conversationHistory.push({ role:'user', content:text });
-  userInput.value = '';
-  userInput.disabled = true;
-  sendBtn.disabled = true;
+// --------------------- REKOMENDACJE -------------------------
+async function generateRecommendations() {
 
-  // special commands
-  const low = text.toLowerCase();
-  if (low === 'reset') { startConversation(); userInput.disabled=false; sendBtn.disabled=false; return; }
-  if ((low === 'tak' || low === 'pokaż' || low === 'ok') && isPreferencesComplete(preferences)) {
-    // user confirmed -> fetch recommendations
-    await fetchAndDisplayRecommendations();
-    userInput.disabled=false; sendBtn.disabled=false;
-    return;
-  }
+    addBubble("Szukam najlepszych propozycji… 🎬");
 
-  // interpret answer
-  const res = interpretAnswer(text);
-  if (res.consumed){
-    const f = res.field;
-    if (f === 'category') preferences.category = res.value;
-    if (f === 'mood') preferences.mood = res.value;
-    if (f === 'yearFrom') { preferences.yearFrom = res.value; if (res.extra && res.extra.yearTo) preferences.yearTo = res.extra.yearTo; }
-    if (f === 'durationMax') preferences.durationMax = res.value;
-    if (f === 'keywords') preferences.keywords = Array.from(new Set([...(preferences.keywords||[]), ...res.value])).slice(0,12);
-    addBubble('Super — zapisałem to.', 'ai');
-  } else {
-    addBubble('Spoko, rozumiem. :)', 'ai');
-  }
+    const movies = await loadMovies();
 
-  // if enough -> ask to confirm
-  if (isPreferencesComplete(preferences)) {
-    addBubble('Mam już wystarczająco informacji. Napisz "tak" aby zobaczyć TOP 5 filmów, albo podaj coś jeszcze, jeśli chcesz doprecyzować.', 'ai');
-    userInput.disabled=false; sendBtn.disabled=false;
-    userInput.focus();
-    return;
-  }
+    const context = movies
+        .slice(0, 60)
+        .map(m => `Tytuł: ${m.title} (${m.year})\nOpis: ${m.description}\nGatunek: ${m.category}\nDługość: ${m.duration} min`)
+        .join("\n\n");
 
-  // else -> next question
-  questionIndex = Math.min(questionIndex + 1, QUESTIONS.length-1);
-  addBubble(QUESTIONS[questionIndex], 'ai');
-  userInput.disabled=false; sendBtn.disabled=false;
-  userInput.focus();
+    const aiResponse = await callOpenAI([
+        {
+            role: "system",
+            content: `
+Jesteś inteligentnym asystentem filmowym. 
+Na podstawie preferencji użytkownika i listy filmów wybierasz TOP 5.
+Dla każdego filmu podaj:
+• tytuł
+• rok
+• krótki opis rekomendacji
+• krótki opis dlaczego pasuje
+Zwróć odpowiedź w czytelnym tekście.
+Nic nie wymyślaj — korzystaj TYLKO z podanych filmów.`
+        },
+        {
+            role: "user",
+            content: `
+Preferencje użytkownika:
+${JSON.stringify(prefs, null, 2)}
+
+Lista filmów:
+${context}
+
+Wygeneruj TOP 5 najlepiej dopasowanych filmów.`
+        }
+    ]);
+
+    renderRecommendations(aiResponse, movies);
 }
 
-// ------------------ Pobierz filmy z Supabase (kandydaci) ------------------
-async function loadCandidates(){
-  // pobieramy kandydatów z tabeli movies (limit 200) z podstawowymi filtrami
-  try {
-    let q = supabase.from('movies').select('id,title,description,thumb,year,duration,category_id').limit(200);
-    if (preferences.durationMax) q = q.lte('duration', preferences.durationMax);
-    if (preferences.yearFrom) q = q.gte('year', preferences.yearFrom);
-    if (preferences.yearTo) q = q.lte('year', preferences.yearTo);
-    // if category is textual, try match by category name
-    if (preferences.category) {
-      // try find category id
-      const catResp = await supabase.from('categories').select('id,name').ilike('name', `%${preferences.category}%`).limit(1);
-      if (!catResp.error && catResp.data && catResp.data.length>0) {
-        q = q.eq('category_id', catResp.data[0].id);
-      }
+
+// --------------------- RENDER REKOMENDACJI -------------------------
+function renderRecommendations(text, movies) {
+
+    const blocks = text.split("\n\n").slice(0, 5);
+
+    for (let b of blocks) {
+        const titleMatch = b.match(/Tytuł:\s*(.+)/i);
+        if (!titleMatch) continue;
+        const title = titleMatch[1].trim();
+
+        const movie = movies.find(m => m.title.toLowerCase() === title.toLowerCase());
+        if (!movie) continue;
+
+        const box = `
+        <div class="rec-box">
+            <img src="${movie.thumb || ""}">
+            <div class="rec-meta">
+                <div class="rec-title">${movie.title} (${movie.year})</div>
+                <div class="rec-desc">${movie.description}</div>
+            </div>
+        </div>`;
+
+        addBubble(box, "ai", true);
     }
-    const { data, error } = await q;
-    if (error) throw error;
-    lastCandidates = data || [];
-    return lastCandidates;
-  } catch (err) {
-    console.error('Supabase fetch error', err);
-    addBubble('Błąd połączenia z bazą. Spróbuj później.', 'system');
-    return [];
-  }
+
+    addBubble("Jeśli to nie to, napisz czego brakuje a dobiorę lepiej!");
 }
 
-// ------------------ Scoring lokalny (fallback) ------------------
-function scoreCandidates(candidates){
-  const keys = (preferences.keywords||[]).map(k=>k.toLowerCase()).filter(Boolean);
-  return candidates.map(m => {
-    const text = ((m.title||'') + ' ' + (m.description||'') + ' ' + (m.year||'')).toLowerCase();
-    let score = 0;
-    for (const k of keys) if (text.includes(k)) score += 3;
-    if (preferences.category && String(m.category_id) && preferences.category) score += (String(m.category_id) ? 1 : 0);
-    if (preferences.mood === 'light' && /fun|comedy|humor|light|romantic|komedi/i.test(text)) score += 2;
-    if (preferences.mood === 'dark' && /dark|thrill|horror|murder|mrocz|tragic|thriller/i.test(text)) score += 2;
-    if (preferences.yearFrom && m.year && m.year >= preferences.yearFrom) score += 1;
-    return { ...m, score };
-  }).sort((a,b) => (b.score - a.score) || ((b.year||0) - (a.year||0)));
-}
 
-// ------------------ Wyślij kontekst do OpenAI (jeśli włączone) ------------------
-async function callOpenAI(systemPrompt, userPrompt, moviesForContext = []) {
-  // Requires openaiKey to be set
-  if (!openaiKey) throw new Error('No OpenAI key set');
+// --------------------- OBSŁUGA WIADOMOŚCI -------------------------
+sendBtn.onclick = handleSend;
+input.onkeypress = e => e.key === "Enter" && handleSend();
 
-  // Przygotuj skróconą listę filmów (limit 30) z krótkimi opisami, aby nie przekroczyć limitów
-  const slice = moviesForContext.slice(0, 30).map(m => ({
-    title: m.title || 'Untitled',
-    year: m.year || '',
-    duration: m.duration || '',
-    description: (m.description || '').slice(0, 600),
-  }));
-  // Zbuduj messages
-  const messages = [
-    { role:'system', content: systemPrompt },
-    { role:'user', content: userPrompt + "\n\nDostępne filmy (skrót):\n" + slice.map((f,i)=>`${i+1}. ${f.title} (${f.year}) — ${f.description.slice(0,150)}`).join("\n") }
-  ];
+async function handleSend() {
+    const msg = input.value.trim();
+    if (!msg) return;
 
-  // Wywołanie API OpenAI Chat Completions (model: gpt-3.5-turbo)
-  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-    method:'POST',
-    headers: {
-      'Content-Type':'application/json',
-      'Authorization':'Bearer ' + openaiKey
-    },
-    body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: messages,
-      max_tokens: 600,
-      temperature: 0.7
-    })
-  });
+    addBubble(msg, "user");
+    input.value = "";
 
-  if (!resp.ok) {
-    const txt = await resp.text();
-    throw new Error('OpenAI error: ' + resp.status + ' ' + txt);
-  }
-  const data = await resp.json();
-  const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-  return content || '';
-}
+    // zapisujemy odpowiedź
+    prefs[qIndex] = msg;
 
-// ------------------ Główna funkcja: pobierz rekomendacje i wyświetl TOP5 ------------------
-async function fetchAndDisplayRecommendations(){
-  addBubble('Szukam filmów pasujących do Twoich preferencji...', 'ai');
+    // przechodzimy dalej
+    qIndex++;
 
-  const candidates = await loadCandidates();
-  if (!candidates || candidates.length === 0) { addBubble('Brak filmów w bazie dopasowanych do kryteriów.', 'ai'); return; }
-
-  if (useRealOpenAI && openaiKey) {
-    // Zbuduj prompt dla ChatGPT: ma wybrać top5 i zwrócić ładny opis + ewentualne follow-up pytania
-    const sys = `Jesteś asystentem pomagającym użytkownikowi dobrać filmy. Masz listę filmów z bazy (tytuł, rok, opis). 
-Twoim zadaniem: dobierać TOP 5 najbardziej pasujących filmów do preferencji użytkownika, krótko (2-3 zdania) opisać dlaczego każdy pasuje, a na końcu zasugerować ewentualne pytania follow-up jeśli wynik nie jest do końca dopasowany. 
-Zwróć wynik w czytelnym formacie.`;
-    const userPrompt = `Preferencje użytkownika: ${JSON.stringify(preferences)}.\nWybierz top 5 filmów i przedstaw je. Jeżeli żadne filmy nie są trafne, zasugeruj co użytkownik może doprecyzować.`;
-
-    try {
-      const aiText = await callOpenAI(sys, userPrompt, candidates);
-      // Wyświetl odpowiedź (HTML-safe)
-      addBubble(aiText.replace(/\n/g,'<br>'), 'ai', true);
-    } catch (err) {
-      console.error(err);
-      addBubble('Błąd przy łączeniu z OpenAI: ' + (err.message || err), 'system');
-      // fallback: local scoring
-      const scored = scoreCandidates(candidates);
-      displayTopLocal(scored);
+    // jeśli skończyliśmy pytania → rekomendacje
+    if (qIndex >= QUESTIONS.length) {
+        generateRecommendations();
+        return;
     }
-  } else {
-    // Symulacja / fallback: scoring lokalny i wyświetlenie top 5 + krótkie opisy z opisów
-    const scored = scoreCandidates(candidates);
-    displayTopLocal(scored);
-  }
+
+    addBubble(QUESTIONS[qIndex]);
 }
 
-// ------------------ Lokalna prezentacja TOP5 (fallback / symulacja) ------------------
-function displayTopLocal(scoredCandidates){
-  const top = scoredCandidates.slice(0,5);
-  if (!top || top.length===0) { addBubble('Nie znalazłem dopasowań. Spróbuj zmienić preferencje.', 'ai'); return; }
-
-  // zbuduj html
-  let html = '<div><strong>Top 5 dopasowanych filmów:</strong><div class="rec-list">';
-  for (const m of top) {
-    const desc = m.description ? (m.description.length>180 ? (m.description.slice(0,177)+'...') : m.description) : '';
-    const thumb = m.thumb ? `<img src="${escapeHtml(m.thumb)}" alt="${escapeHtml(m.title)}" onerror="this.style.display=\\'none\\'">` : `<div style="width:118px;height:66px;border-radius:8px;background:rgba(255,255,255,0.02)"></div>`;
-    html += `<div class="rec">${thumb}<div class="meta"><div class="title">${escapeHtml(m.title)} ${m.year?('('+m.year+')'):''}</div><div class="desc">${escapeHtml(desc)}</div></div></div>`;
-  }
-  html += '</div></div>';
-  addBubble(html, 'ai', true);
-
-  // follow up suggestion
-  addBubble('Jeśli to nie to, napisz np. inny gatunek, nastrój lub dokładniejsze słowa kluczowe — chętnie doprecyzuję!', 'ai');
-}
-
-// ------------------ Obsługa przycisku włączenia OpenAI (opcjonalne) ------------------
-openaiToggle.addEventListener('click', async () => {
-  if (!useRealOpenAI) {
-    // pop-up prompt to paste key (user doesn't want to now, but we allow later)
-    const k = prompt('Jeśli chcesz korzystać z prawdziwego ChatGPT wklej swój OpenAI API key (zacznij od "sk-...").\nPozostaw puste, aby pozostać w trybie testowym.');
-    if (k && k.trim().length>0) {
-      openaiKey = k.trim();
-      useRealOpenAI = true;
-      openaiToggle.innerText = 'ChatGPT: WŁ. (kliknij, aby zmienić)';
-      openaiToggle.style.borderColor = 'rgba(79,124,255,0.4)';
-      addBubble('ChatGPT włączony — teraz odpowiedzi będą generowane przez OpenAI.', 'system');
-    } else {
-      alert('Pozostajesz w trybie testowym (symulacja).');
-    }
-  } else {
-    // oferuj reset / wyłączenie
-    const conf = confirm('Czy wyłączyć integrację z OpenAI i wrócić do trybu testowego?');
-    if (conf) {
-      useRealOpenAI = false;
-      openaiKey = '';
-      openaiToggle.innerText = 'Włącz ChatGPT';
-      addBubble('ChatGPT wyłączony — pracujemy w trybie testowym.', 'system');
-    }
-  }
-});
-
-// ------------------ Dodatkowe skróty: wpis "tak" uruchamia rekomendacje (wewnętrzne) ------------------
-userInput.addEventListener('keydown', async (e) => {
-  if (e.key === 'Enter') {
-    const txt = userInput.value.trim().toLowerCase();
-    if (txt === 'tak' || txt === 'ok' || txt === 'pokaż') {
-      addBubble(userInput.value.trim(), 'user');
-      userInput.value = '';
-      userInput.disabled = true;
-      sendBtn.disabled = true;
-      await fetchAndDisplayRecommendations();
-      userInput.disabled=false; sendBtn.disabled=false;
-      return;
-    }
-  }
-});
-
-// ------------------ Accessibility: focus input on load ------------------
-window.addEventListener('load', () => { userInput.focus(); });
-
-// ------------------ Koniec skryptu ------------------
 </script>
+
 </body>
 </html>
