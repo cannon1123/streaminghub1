@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TOP • StreamingHub</title>
+<style>
+:root {
+  --bg:#0b0d10; 
+  --card:#151922; 
+  --text:#e3e7ee; 
+  --muted:#a8bfe2;
+  --brand:#4f7cff; 
+  --border:#232a37; 
+  --danger:#c24b4b;
+}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:ui-sans-serif,system-ui;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  padding:16px;
+}
+header{
+  position:sticky;
+  top:0;
+  background:rgba(11,13,16,.85);
+  backdrop-filter:blur(6px);
+  z-index:20;
+}
+.nav{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  padding:12px 16px;
+}
+.menu a,.menu button{
+  color:var(--muted);
+  padding:8px 10px;
+  background:none;
+  border:none;
+  cursor:pointer;
+}
+.menu a.active{
+  color:#fff;
+}
+.item{
+  background:#0e1218;
+  border:1px solid var(--border);
+  padding:12px;
+  border-radius:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:10px;
+}
+.rank{
+  font-size:18px;
+  font-weight:700;
+  margin-right:10px;
+  color:var(--brand);
+}
+.username{
+  font-weight:600;
+}
+.btn{
+  background:var(--brand);
+  padding:6px 10px;
+  border-radius:8px;
+  border:none;
+  color:#fff;
+  cursor:pointer;
+}
+.btn.secondary{
+  background:#2a3446;
+}
+.toggle-box{
+  margin-top:15px;
+  padding:10px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:#0e1218;
+}
+.event-box{
+  margin-top:20px;
+  padding:15px;
+  border-radius:10px;
+  background:#11151c;
+  border:1px solid var(--border);
+}
+.event-title{
+  font-size:20px;
+  font-weight:700;
+}
+.countdown{
+  color:var(--brand);
+  margin-top:5px;
+}
+.modal {
+  position: fixed;
+  left: 0; top: 0; right:0; bottom:0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2,4,6,0.6);
+  z-index:1000;
+}
+.modal-card {
+  background: #0e1218;
+  border:1px solid var(--border);
+  padding:16px;
+  border-radius:10px;
+  width: 90%;
+  max-width:600px;
+}
+.small{
+  color:var(--muted);
+  font-size:13px;
+}
+.admin-actions{
+  margin-top:10px;
+  display:flex;
+  gap:8px;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header>
+  <div class="nav container">
+    <a class="brand" href="filmy.html">🎬 StreamingHub</a>
+    <nav class="menu" style="margin-left:auto">
+      <a href="filmy.html">Filmy</a>
+      <a href="seriale.html">Seriale</a>
+      <a href="top.html" class="active">TOP</a>
+      <a href="moja-biblioteka.html">Moja biblioteka</a>
+      <button onclick="logout()" class="btn secondary">Wyloguj</button>
+    </nav>
+  </div>
+</header>
+
+<main class="container" id="app">
+<h1>🏆 TOP użytkowników</h1>
+
+<!-- EVENT -->
+<div id="eventBox" class="event-box">
+  <div class="event-title">⏳ Obecny event</div>
+  <div id="eventContent" class="small">Ładowanie...</div>
+  <div id="countdown" class="countdown"></div>
+  <div class="admin-actions" id="adminActions" style="display:none">
+    <button class="btn secondary" id="seeWinnersBtn" onclick="showWinners()">Zobacz wygranych</button>
+    <button class="btn" id="finalizeBtn" onclick="finalizeCurrentEvent()">Finalizuj event</button>
+  </div>
+</div>
+
+<!-- HIDE FROM TOP -->
+<div class="toggle-box">
+  <label>
+    <input type="checkbox" id="hideToggle" onchange="toggleHide()">
+    Nie pokazuj mnie w rankingach
+  </label>
+</div>
+
+<!-- TABS -->
+<div id="tabs" style="margin-top:20px;">
+  <button class="btn" onclick="showTab('unlocks')">🔓 Odblokowane filmy</button>
+  <button class="btn" onclick="showTab('episodes')">📺 Obejrzane odcinki</button>
+  <button class="btn" onclick="showTab('points')">💰 Punkty</button>
+  <button class="btn" onclick="showTab('friends')">👥 Znajomi</button>
+  <button class="btn" onclick="showTab('visits')">👁 Odwiedziny stron</button>
+</div>
+
+<div id="content" style="margin-top:14px"></div>
+</main>
+
+<!-- Modal -->
+<div id="modalRoot" style="display:none"></div>
+
+<script>
+/* ---------------------- SUPABASE INIT ---------------------- */
+const db = supabase.createClient(
+  "https://jjmnacolebxsifmnmqks.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0"
+);
+
+let user = null;
+let currentEvent = null;
+let countdownInterval = null;
+
+(async () => {
+  const { data:{ session }} = await db.auth.getSession();
+  if(!session){ location.href="login.html"; return; }
+  user = session.user;
+
+  await loadHideToggle();
+  await loadEvent();
+
+  showTab('unlocks');
+})();
+
+async function logout(){
+  await db.auth.signOut();
+  location.href="login.html";
+}
+
+/* ---------------------- HIDE FROM TOP ---------------------- */
+async function loadHideToggle(){
+  const { data } = await db
+    .from("profiles")
+    .select("hide_from_top")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  document.getElementById("hideToggle").checked = data?.hide_from_top || false;
+}
+
+async function toggleHide(){
+  const value = document.getElementById("hideToggle").checked;
+  await db.from("profiles").update({ hide_from_top: value }).eq("id", user.id);
+  showTab(document.getElementById("content").dataset.tab);
+}
+
+/* ---------------------- EVENT SYSTEM ---------------------- */
+async function loadEvent(){
+  const nowISO = new Date().toISOString();
+
+  const { data } = await db
+    .from("events")
+    .select("*")
+    .lte("starts_at", nowISO)
+    .gt("ends_at", nowISO)
+    .order("id",{ascending:false})
+    .limit(1);
+
+  const box = document.getElementById("eventContent");
+  const timer = document.getElementById("countdown");
+  const adminActionBox = document.getElementById("adminActions");
+
+  if(!data || data.length===0){
+    const { data: lastEv } = await db
+      .from("events")
+      .select("*")
+      .order("id",{ascending:false})
+      .limit(1);
+
+    if(!lastEv || lastEv.length===0){
+      box.innerHTML = "<p>Brak eventów.</p>";
+      timer.innerHTML = "";
+      currentEvent = null;
+      return;
+    }
+
+    const ev = lastEv[0];
+    currentEvent = ev;
+
+    box.innerHTML = `
+      <b>Nazwa:</b> ${ev.name}<br>
+      <b>Opis:</b> ${ev.description || '-'}<br>
+      <b>Nagroda:</b> ${ev.reward || 'brak'}<br>
+      <b>Kategoria:</b> ${ev.category}<br>
+    `;
+    timer.innerHTML = "⛔ Event zakończony";
+
+    adminActionBox.style.display = "none";
+    return;
+  }
+
+  const ev = data[0];
+  currentEvent = ev;
+
+  box.innerHTML = `
+    <b>Nazwa:</b> ${ev.name}<br>
+    <b>Opis:</b> ${ev.description || '-'}<br>
+    <b>Nagroda:</b> ${ev.reward || 'brak'}<br>
+    <b>Kategoria:</b> ${ev.category}<br>
+    <b>Wygrywa:</b> ${ev.winners_limit || 1} osób
+  `;
+
+  const { data:profile } = await db
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  document.getElementById("adminActions").style.display = profile?.is_admin ? "flex" : "none";
+
+  clearInterval(countdownInterval);
+
+  function updateTimer(){
+    const end = new Date(ev.ends_at).getTime();
+    const now = Date.now();
+    const diff = end - now;
+    if(diff <= 0){ 
+      timer.innerHTML = "⛔ Event zakończony!";
+      return;
+    }
+
+    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const m = Math.floor((diff / (1000 * 60)) % 60);
+    const s = Math.floor((diff / 1000) % 60);
+    timer.innerHTML = `⏰ Do końca: ${d}d ${h}h ${m}m ${s}s`;
+  }
+
+  updateTimer();
+  countdownInterval = setInterval(updateTimer,1000);
+}
+
+/* ---------------------- TABS ---------------------- */
+async function showTab(tab){
+  const area = document.getElementById("content");
+  area.dataset.tab = tab;
+  area.innerHTML = "<p>Ładowanie...</p>";
+
+  if(tab==="unlocks") loadUnlocks();
+  if(tab==="episodes") loadEpisodes();
+  if(tab==="points") loadPoints();
+  if(tab==="friends") loadFriends();
+  if(tab==="visits") loadVisits();
+}
+
+/* ---------------------- HELPERS ---------------------- */
+function sinceClauseTimestamp(){
+  return currentEvent?.starts_at || null;
+}
+
+async function getVisibleProfilesMap(ids){
+  if(!ids.length) return new Map();
+
+  const { data } = await db
+    .from("profiles")
+    .select("id, username")
+    .eq("hide_from_top", false)
+    .in("id", ids);
+
+  const map = new Map();
+  (data || []).forEach(p=>map.set(p.id,p));
+  return map;
+}
+
+/* ---------------------- UNLOCKS ---------------------- */
+async function loadUnlocks(){
+  const since = sinceClauseTimestamp();
+  let q = db.from("unlocks").select("user_id");
+  if(since) q = q.gte("created_at", since);
+  const { data } = await q;
+
+  const counts = {};
+  (data||[]).forEach(r => counts[r.user_id]=(counts[r.user_id]||0)+1);
+
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,50);
+  const map = await getVisibleProfilesMap(sorted.map(x=>x[0]));
+  const filtered = sorted.filter(([id]) => map.has(id));
+
+  render(filtered, r => `${r[1]} odblokowanych`);
+}
+
+/* ---------------------- EPISODES ---------------------- */
+async function loadEpisodes(){
+  const since = sinceClauseTimestamp();
+  let q = db.from("watch_history").select("user_id, watched_at");
+  if(since) q = q.gte("watched_at", since);
+
+  const { data } = await q;
+  const counts = {};
+  (data||[]).forEach(r => counts[r.user_id]=(counts[r.user_id]||0)+1);
+
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,50);
+  const map = await getVisibleProfilesMap(sorted.map(x=>x[0]));
+  const filtered = sorted.filter(([id]) => map.has(id));
+
+  render(filtered, r=> `${r[1]} odcinków`);
+}
+
+/* ---------------------- POINTS ---------------------- */
+async function loadPoints(){
+  const since = sinceClauseTimestamp();
+
+  if(since){
+    const { data } = await db.from("points_log").select("user_id, change").gte("created_at", since);
+    const sums = {};
+    (data||[]).forEach(r => sums[r.user_id]=(sums[r.user_id]||0)+(r.change||0));
+
+    const arr = Object.entries(sums).sort((a,b)=>b[1]-a[1]);
+    const map = await getVisibleProfilesMap(arr.map(x=>x[0]));
+    const filtered = arr.filter(([id])=>map.has(id)).slice(0,50);
+
+    const final = filtered.map(([id,score])=>[id, score, map.get(id).username]);
+    renderFixed(final, r=>`${r[1]} pkt`, r=>r[2]);
+  } else {
+    const { data } = await db
+      .from("profiles")
+      .select("id, username, points")
+      .eq("hide_from_top", false)
+      .order("points",{ascending:false})
+      .limit(50);
+
+    const arr = (data||[]).map(d=>[d.id, d.points, d.username]);
+    renderFixed(arr, r=>`${r[1]} pkt`, r=>r[2]);
+  }
+}
+
+/* ---------------------- FRIENDS ---------------------- */
+async function loadFriends(){
+  const since = sinceClauseTimestamp();
+  let q = db.from("friends").select("user_id, created_at");
+  if(since) q = q.gte("created_at", since);
+  const { data } = await q;
+
+  const counts = {};
+  (data||[]).forEach(r => counts[r.user_id]=(counts[r.user_id]||0)+1);
+
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,50);
+  const map = await getVisibleProfilesMap(sorted.map(x=>x[0]));
+  const filtered = sorted.filter(([id])=>map.has(id));
+
+  render(filtered, r=>`${r[1]} znajomych`);
+}
+
+/* ---------------------- VISITS ---------------------- */
+async function loadVisits(){
+  const since = sinceClauseTimestamp();
+  let q = db.from("page_visits").select("user_id, visited_at");
+  if(since) q = q.gte("visited_at", since);
+
+  const { data } = await q;
+  const counts = {};
+  (data||[]).forEach(r => counts[r.user_id]=(counts[r.user_id]||0)+1);
+
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,50);
+  const map = await getVisibleProfilesMap(sorted.map(x=>x[0]));
+  const filtered = sorted.filter(([id])=>map.has(id));
+
+  render(filtered, r=>`${r[1]} odwiedzin`);
+}
+
+/* ---------------------- RENDER FUNCTIONS ---------------------- */
+async function render(list, label){
+  const ids = list.map(r=>r[0]);
+  const { data } = await db.from("profiles").select("id,username").in("id", ids);
+  const map = new Map();
+  (data||[]).forEach(p=>map.set(p.id,p.username));
+
+  let html = "";
+  let rank = 1;
+  for(const [uid,count] of list){
+    html += `
+      <div class="item">
+        <div>
+          <span class="rank">#${rank}</span>
+          <span class="username">${map.get(uid)}</span>
+        </div>
+        <div>${label([uid,count])}</div>
+      </div>
+    `;
+    rank++;
+  }
+
+  document.getElementById("content").innerHTML = html || "<p>Brak danych</p>";
+}
+
+async function renderFixed(list, label, userGetter){
+  let html = "";
+  let rank = 1;
+
+  for(const row of list){
+    html += `
+      <div class="item">
+        <div>
+          <span class="rank">#${rank}</span>
+          <span class="username">${userGetter(row)}</span>
+        </div>
+        <div>${label(row)}</div>
+      </div>
+    `;
+    rank++;
+  }
+
+  document.getElementById("content").innerHTML = html || "<p>Brak danych</p>";
+}
+
+/* ---------------------- EVENT WINNERS + FINALIZE ---------------------- */
+async function computeWinnersForEvent(ev){
+  const cat = ev.category;
+  const since = ev.starts_at;
+  const limit = ev.winners_limit || 1;
+
+  if(cat==="unlocks"){
+    let q = db.from("unlocks").select("user_id");
+    if(since) q = q.gte("created_at", since);
+    const { data } = await q;
+    const counts = {};
+    (data||[]).forEach(r=>counts[r.user_id]=(counts[r.user_id]||0)+1);
+    return Object.entries(counts)
+      .map(([u,c])=>({user_id:u,score:c}))
+      .sort((a,b)=>b.score-a.score)
+      .slice(0,limit);
+  }
+
+  if(cat==="episodes"){
+    let q = db.from("watch_history").select("user_id, watched_at");
+    if(since) q = q.gte("watched_at", since);
+    const { data } = await q;
+    const counts = {};
+    (data||[]).forEach(r=>counts[r.user_id]=(counts[r.user_id]||0)+1);
+    return Object.entries(counts)
+      .map(([u,c])=>({user_id:u,score:c}))
+      .sort((a,b)=>b.score-a.score)
+      .slice(0,limit);
+  }
+
+  if(cat==="points"){
+    if(since){
+      const { data } = await db.from("points_log").select("user_id, change").gte("created_at", since);
+      const sums = {};
+      (data||[]).forEach(r=>sums[r.user_id]=(sums[r.user_id]||0)+r.change);
+      return Object.entries(sums)
+        .map(([u,c])=>({user_id:u,score:c}))
+        .sort((a,b)=>b.score-a.score)
+        .slice(0,limit);
+    } else {
+      const { data } = await db.from("profiles").select("id, points");
+      return (data||[])
+        .map(p=>({user_id:p.id,score:p.points}))
+        .sort((a,b)=>b.score-a.score)
+        .slice(0,limit);
+    }
+  }
+
+  if(cat==="friends"){
+    let q = db.from("friends").select("user_id, created_at");
+    if(since) q = q.gte("created_at", since);
+    const { data } = await q;
+    const counts = {};
+    (data||[]).forEach(r=>counts[r.user_id]=(counts[r.user_id]||0)+1);
+    return Object.entries(counts)
+      .map(([u,c])=>({user_id:u,score:c}))
+      .sort((a,b)=>b.score-a.score)
+      .slice(0,limit);
+  }
+
+  if(cat==="visits"){
+    let q = db.from("page_visits").select("user_id, visited_at");
+    if(since) q = q.gte("visited_at", since);
+    const { data } = await q;
+    const counts = {};
+    (data||[]).forEach(r=>counts[r.user_id]=(counts[r.user_id]||0)+1);
+    return Object.entries(counts)
+      .map(([u,c])=>({user_id:u,score:c}))
+      .sort((a,b)=>b.score-a-score)
+      .slice(0,limit);
+  }
+}
+
+async function finalizeCurrentEvent(){
+  if(!currentEvent){ alert("Brak aktywnego eventu."); return; }
+
+  if(!confirm("Sfinalizować event i zapisać zwycięzców?")) return;
+
+  const ev = currentEvent;
+  const winners = await computeWinnersForEvent(ev);
+
+  const rows = winners.map(w=>({event_id: ev.id, user_id: w.user_id, score: w.score}));
+  if(rows.length) await db.from("event_results").insert(rows);
+
+  alert("Event sfinalizowany!");
+  await loadEvent();
+}
+
+async function showWinners(){
+  let ev = currentEvent;
+
+  if(!ev){
+    const { data } = await db.from("events").select("*").order("id",{ascending:false}).limit(1);
+    if(!data.length){ alert("Brak eventów."); return; }
+    ev = data[0];
+  }
+
+  const { data } = await db
+    .from("event_results")
+    .select("user_id, score, profiles:profiles(username)")
+    .eq("event_id", ev.id);
+
+  let html = `
+    <div class="modal" onclick="closeModal()">
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <h3>Wygrani — ${ev.name}</h3>
+        <div style="margin-top:12px;">`;
+
+  if(!data || data.length===0){
+    html += "<p>Brak zwycięzców.</p>";
+  } else {
+    data.forEach(w=>{
+      html += `
+        <div class="item">
+          <div class="username">${w.profiles.username}</div>
+          <div>${w.score}</div>
+        </div>`;
+    });
+  }
+
+  html += `
+        </div>
+        <div style="margin-top:16px; text-align:right;">
+          <button class="btn secondary" onclick="closeModal()">Zamknij</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const root = document.getElementById("modalRoot");
+  root.innerHTML = html;
+  root.style.display = "block";
+}
+
+function closeModal(){
+  const root = document.getElementById("modalRoot");
+  root.style.display = "none";
+  root.innerHTML = "";
+}
+</script>
+</body>
+</html>
