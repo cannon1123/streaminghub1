@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TOP • StreamingHub</title>
+<style>
+:root {
+  --bg: #0b0d10;
+  --card: #151922;
+  --text: #e3e7ee;
+  --muted: #a8bfe2;
+  --brand: #4f7cff; /* Główny kolor niebieski */
+  --border: #232a37;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Roboto;
+  line-height: 1.4;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+.menu button.btn.secondary {
+margin-left: 0;
+}
+/* ---------------- HEADER ---------------- */
+header {
+  position: sticky;
+  top: 0;
+  background: rgba(11,13,16,0.9);
+  backdrop-filter: blur(6px);
+  z-index: 20;
+}
+
+.nav {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  flex-wrap: nowrap;
+}
+
+.brand {
+  margin-right: auto;       
+  font-weight: 800;
+}
+
+.menu {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-left: 0;
+  align-items: center;
+}
+
+.menu a, .menu button {
+  padding: 8px 10px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.menu a.active {
+  color: #fff;
+}
+
+/* ---------------- ITEMY RANKINGU ---------------- */
+.item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 14px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.rank {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--brand);
+  margin-right: 10px;
+}
+
+.username {
+  font-weight: 600;
+}
+
+.btn {
+  background: var(--brand);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.btn.secondary {
+  background: #2a3446;
+}
+
+/* BOXY */
+.event-box, .toggle-box {
+  background: #11151c;
+  border: 1px solid var(--border);
+  padding: 14px;
+  border-radius: 12px;
+  margin-top: 18px;
+}
+
+.small { color: var(--muted); font-size: 13px; }
+
+/* Licznik - ZMIANA KOLORU NA NIEBIESKI */
+#countdown {
+  color: var(--brand); 
+  font-weight: 700;    
+  font-size: 1.1rem;   
+  margin-top: 8px;     
+}
+
+/* MODAL */
+.modal {
+  position: fixed;
+  left: 0; top: 0; right:0; bottom:0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2,4,6,0.6);
+  z-index: 1000;
+}
+
+.modal-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow: auto;
+}
+.admin-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+/* ------------- RESPONSYWNOŚĆ ------------- */
+@media (max-width: 900px) {
+  .nav { 
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .menu { justify-content: center; }
+  .container { padding: 12px; }
+
+  .item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 600px) {
+  h1, h2, h3 { font-size: 1.2rem; }
+  .btn { padding: 10px 12px; font-size: 14px; }
+
+  .item {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .rank { font-size: 16px; }
+}
+
+@media (max-width: 400px) {
+  .nav { padding: 8px; }
+
+  .menu a, .menu button { font-size: 13px; }
+
+  .item {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .rank { font-size: 15px; }
+}
+.chat-widget-modal {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    width: 350px; /* Szerokość widżetu */
+    max-width: 90%;
+    height: 500px; /* Wysokość widżetu */
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-widget-header {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+}
+
+.chat-widget-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.chat-widget-close {
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.2rem;
+}
+/* Style dla globalnego przycisku chatu w nawigacji */
+#chatIndicator {
+    position: relative;
+    display: none; /* Domyślnie ukryty, pokazujemy w JS */
+}
+#newMessageExclamation {
+    position: absolute;
+    top: -5px;
+    right: 5px;
+    color: red;
+    font-weight: bold;
+    font-size: 1.2em;
+    display: none;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header>
+  <div class="nav container">
+    <a class="brand" href="/filmy/">🎬 StreamingHub</a>
+    <nav class="menu">
+      <a href="/filmy/">Filmy</a>
+      <a href="/seriale/">Seriale</a>
+      <a href="/top/" class="active">TOP</a>
+      <a href="/moja-biblioteka/">Moja biblioteka</a>
+      <nav class="menu">
+  <a href="#" onclick="openChatWidget(event)" id="chatIndicator">
+    <span id="chatIcon">💬 Chat</span>
+    <span id="newMessageExclamation" style="display:none;">!</span>
+  </a>
+      <button onclick="logout()" class="btn secondary">Wyloguj</button>
+    </nav>
+  </div>
+</header>
+
+<main class="container" id="app">
+<h1>🏆 TOP użytkowników</h1>
+
+<div id="eventBox" class="event-box">
+  <div class="event-title">⏳ Obecny event</div>
+  <div id="eventContent" class="small">Ładowanie...</div>
+  <div id="countdown"></div>
+  <div class="admin-actions" id="adminActions" style="display:none">
+    <button class="btn secondary" id="seeWinnersBtn" onclick="showWinners()">Zobacz wygranych</button>
+    <button class="btn secondary" id="configRewardsBtn" onclick="openRewardsConfig()">Konfiguruj auto-nagrody</button>
+    <button class="btn" id="finalizeBtn" onclick="finalizeCurrentEvent()">Finalizuj event</button>
+  </div>
+</div>
+
+<div class="toggle-box">
+  <label>
+    <input type="checkbox" id="hideToggle" onchange="toggleHide()">
+    Nie pokazuj mnie w rankingach
+  </label>
+</div>
+
+<div id="tabs" style="margin-top:20px;">
+  <button class="btn" onclick="showTab('unlocks')">🔓 Odblokowane filmy</button>
+  <button class="btn" onclick="showTab('episodes')">📺 Obejrzane odcinki</button>
+  <button class="btn" onclick="showTab('points')">💰 Punkty</button>
+  <button class="btn" onclick="showTab('friends')">👥 Znajomi</button>
+  <button class="btn" onclick="showTab('visits')">👁 Odwiedziny stron</button>
+</div>
+
+<div id="content" style="margin-top:14px"></div>
+</main>
+
+<div id="modalRoot" style="display:none"></div>
+
+<script>
+/* ---------------------- SUPABASE INIT ---------------------- */
+const db = supabase.createClient(
+  "https://jjmnacolebxsifmnmqks.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0"
+);
+
+let user = null;
+let currentEvent = null;
+let countdownInterval = null;
+
+/* ------------- POPRAWIONA FUNKCJA DO PARSOWANIA DAT ------------- */
+/**
+ * Konwertuje timestamp z Supabase na milisekundy (epoch time).
+ */
+function parseSupabaseTs(ts){
+  if(!ts) return NaN;
+  if(typeof ts === 'number') return Number(ts);
+  let s = String(ts).trim();
+
+  // 1. Format z +00:00 lub +01:00 (z przestrzenią)
+  if(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)?([+-]\d{2}:?\d{2})$/.test(s)){
+    s = s.replace(" ", "T");
+  }
+  // 2. Format bez strefy (z przestrzeniami) → dodaj Z (zakładamy UTC)
+  else if(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)?$/.test(s)){
+    s = s.replace(" ", "T") + "Z";
+  }
+  // 3. Format bez strefy (z T) → dodaj Z
+  else if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?$/.test(s)){
+    s = s + "Z";
+  }
+
+  const result = Date.parse(s);
+  return isNaN(result) ? NaN : result;
+}
+
+/* ---------------------- BOOT ---------------------- */
+(async () => {
+  const { data:{ session }} = await db.auth.getSession();
+  if(!session){ location.href="login.html"; return; }
+  user = session.user;
+
+  await Promise.all([
+    loadHideToggle(),
+    loadEvent()
+  ]);
+
+  showTab('unlocks');
+})();
+
+async function logout(){
+  await db.auth.signOut();
+  location.href="login.html";
+}
+
+/* ---------------------- HIDE FROM TOP ---------------------- */
+async function loadHideToggle(){
+  const { data } = await db
+    .from("profiles")
+    .select("hide_from_top")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  document.getElementById("hideToggle").checked = data?.hide_from_top || false;
+}
+
+async function toggleHide(){
+  const value = document.getElementById("hideToggle").checked;
+  await db.from("profiles").update({ hide_from_top: value }).eq("id", user.id);
+  showTab(document.getElementById("content").dataset.tab || 'unlocks');
+}
+
+/* ---------------------- EVENT SYSTEM ---------------------- */
+async function loadEvent(){
+  const { data } = await db
+    .from("events")
+    .select("*")
+    .order("id",{ascending:false})
+    .limit(1);
+
+  const box = document.getElementById("eventContent");
+  const timer = document.getElementById("countdown");
+  const adminActionBox = document.getElementById("adminActions");
+  
+  if(countdownInterval) clearInterval(countdownInterval);
+  adminActionBox.style.display = "none";
+  currentEvent = null;
+
+  if(!data || data.length===0){
+    box.innerHTML = "<p>Brak eventów.</p>";
+    timer.innerHTML = "";
+    return;
+  }
+
+  const ev = data[0];
+  currentEvent = ev;
+  
+  const endMs = parseSupabaseTs(ev.ends_at);
+  const nowMs = Date.now();
+
+  if(isNaN(endMs)) {
+      timer.innerHTML = "⛔ Błąd daty eventu (Brak lub zły format daty ZAKOŃCZENIA ENDS_AT)";
+      return;
+  }
+  
+  let startMs = parseSupabaseTs(ev.starts_at);
+  if (isNaN(startMs)) {
+      // Ustawienie na 0, aby event był aktywny od początku czasu, jeśli starts_at jest NULL
+      startMs = 0; 
+  }
+
+  box.innerHTML = `
+    <b>Nazwa:</b> ${ev.name}<br>
+    <b>Opis:</b> ${ev.description || '-'}<br>
+    <b>Nagroda (opis):</b> ${ev.reward || 'brak'}<br>
+    <b>Kategoria:</b> ${ev.category}<br>
+    <b>Wygrywa:</b> ${ev.winners_limit || 1} osób
+  `;
+
+  if (endMs <= nowMs) {
+      timer.innerHTML = "⛔ Event zakończony";
+      
+      const { data:profile } = await db
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const { data:results } = await db
+        .from("event_results")
+        .select("id")
+        .eq("event_id", ev.id)
+        .limit(1);
+
+      const finalized = results && results.length>0;
+
+      adminActionBox.style.display = (profile?.is_admin && !finalized) ? "flex" : "none";
+      
+  } else if (startMs > nowMs) {
+      timer.innerHTML = `⏳ Event rozpocznie się: ${new Date(startMs).toLocaleDateString()}`;
+      
+  } else {
+      const { data:profile } = await db
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      adminActionBox.style.display = profile?.is_admin ? "flex" : "none";
+      
+      function updateTimer(){
+          const now = Date.now();
+          const diff = endMs - now;
+          
+          if(diff <= 0){
+              timer.innerHTML = "⛔ Event zakończony!";
+              clearInterval(countdownInterval);
+              setTimeout(()=>{ loadEvent().catch(console.error); }, 1000); 
+              return;
+          }
+
+          const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+          const m = Math.floor((diff / (1000 * 60)) % 60);
+          const s = Math.floor((diff / 1000) % 60);
+          timer.innerHTML = `⏰ Do końca: ${d}d ${h}h ${m}m ${s}s`;
+      }
+      
+      updateTimer();
+      countdownInterval = setInterval(updateTimer,1000);
+  }
+}
+
+/* ---------------------- TABS ---------------------- */
+async function showTab(tab){
+  const area = document.getElementById("content");
+  area.dataset.tab = tab;
+  area.innerHTML = "<p>Ładowanie...</p>";
+
+  if(tab==="unlocks") loadUnlocks();
+  if(tab==="episodes") loadEpisodes();
+  if(tab==="points") loadPoints();
+  if(tab==="friends") loadFriends();
+  if(tab==="visits") loadVisits();
+}
+
+/* ---------------------- HELPERS ---------------------- */
+function sinceClauseTimestamp(){
+  return currentEvent?.starts_at || null;
+}
+
+async function getVisibleProfilesMap(ids){
+  if(!ids || ids.length===0) return new Map();
+
+  const { data } = await db
+    .from("profiles")
+    .select("id, username")
+    .eq("hide_from_top", false)
+    .in("id", ids);
+
+  const map = new Map();
+  (data || []).forEach(p=>map.set(p.id,p));
+  return map;
+}
+
+/* ---------------------- UNLOCKS ---------------------- */
+async function loadUnlocks(){
+  const since = sinceClauseTimestamp();
+  let q = db.from("unlocks").select("user_id");
+  if(since) q = q.gte("created_at", since);
+  const { data } = await q;
+
+  const counts = {};
+  (data||[]).forEach(r => counts[r.user_id]=(counts[r.user_id]||0)+1);
+
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,50);
+  const map = await getVisibleProfilesMap(sorted.map(x=>x[0]));
+  const filtered = sorted.filter(([id]) => map.has(id));
+
+  render(filtered, r => `${r[1]} odblokowanych`);
+}
+
+/* ---------------------- EPISODES ---------------------- */
+async function loadEpisodes(){
+  const since = sinceClauseTimestamp();
+  let q = db.from("watch_history").select("user_id, watched_at");
+  if(since) q = q.gte("watched_at", since);
+
+  const { data } = await q;
+  const counts = {};
+  (data||[]).forEach(r => counts[r.user_id]=(counts[r.user_id]||0)+1);
+
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,50);
+  const map = await getVisibleProfilesMap(sorted.map(x=>x[0]));
+  const filtered = sorted.filter(([id]) => map.has(id));
+
+  render(filtered, r=> `${r[1]} odcinków`);
+}
+/* ---------------------- POINTS ---------------------- */
+async function loadPoints(){
+  const since = sinceClauseTimestamp();
+
+  if(since){
+    const { data } = await db.from("points_log").select("user_id, change").gte("created_at", since);
+    const sums = {};
+    (data||[]).forEach(r => sums[r.user_id]=(sums[r.user_id]||0)+(r.change||0));
+
+    const arr = Object.entries(sums).sort((a,b)=>b[1]-a[1]);
+    const map = await getVisibleProfilesMap(arr.map(x=>x[0]));
+    const filtered = arr.filter(([id])=>map.has(id)).slice(0,50);
+
+    const final = filtered.map(([id,score])=>[id, score]);
+    render(final, r=>`${r[1]} pkt`); 
+  } else {
+    const { data } = await db
+      .from("profiles")
+      .select("id, username, points")
+      .eq("hide_from_top", false)
+      .order("points",{ascending:false})
+      .limit(50);
+
+    const arr = (data||[]).map(d=>[d.id, d.points, d.username]);
+    renderFixed(arr, r=>`${r[1]} pkt`, r=>r[2]);
+  }
+}
+
+/* ---------------------- FRIENDS ---------------------- */
+async function loadFriends(){
+  const since = sinceClauseTimestamp();
+  let q = db.from("friends").select("user_id, created_at");
+  if(since) q = q.gte("created_at", since);
+  const { data } = await q;
+
+  const counts = {};
+  (data||[]).forEach(r => counts[r.user_id]=(counts[r.user_id]||0)+1);
+
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,50);
+  const map = await getVisibleProfilesMap(sorted.map(x=>x[0]));
+  const filtered = sorted.filter(([id])=>map.has(id));
+
+  render(filtered, r=>`${r[1]} znajomych`);
+}
+
+/* ---------------------- VISITS ---------------------- */
+async function loadVisits(){
+  const since = sinceClauseTimestamp();
+  let q = db.from("page_visits").select("user_id, visited_at");
+  if(since) q = q.gte("visited_at", since);
+
+  const { data } = await q;
+  const counts = {};
+  (data||[]).forEach(r => counts[r.user_id]=(counts[r.user_id]||0)+1);
+
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,50);
+  const map = await getVisibleProfilesMap(sorted.map(x=>x[0]));
+  const filtered = sorted.filter(([id])=>map.has(id));
+
+  render(filtered, r=>`${r[1]} odwiedzin`);
+}
+
+/* ---------------------- RENDER FUNCTIONS ---------------------- */
+async function render(list, label){
+  const ids = list.map(r=>r[0]);
+  const { data } = await db.from("profiles").select("id,username").in("id", ids);
+  const map = new Map();
+  (data||[]).forEach(p=>map.set(p.id,p.username));
+
+  let html = "";
+  let rank = 1;
+  for(const [uid,count] of list){
+    const username = map.get(uid);
+    if(username){ 
+      html += `
+        <div class="item">
+          <div>
+            <span class="rank">#${rank}</span>
+            <span class="username">${username}</span>
+          </div>
+          <div>${label([uid,count])}</div>
+        </div>
+      `;
+      rank++;
+    }
+  }
+
+  document.getElementById("content").innerHTML = html || "<p>Brak danych</p>";
+}
+
+async function renderFixed(list, label, userGetter){
+  let html = "";
+  let rank = 1;
+
+  for(const row of list){
+    html += `
+      <div class="item">
+        <div>
+          <span class="rank">#${rank}</span>
+          <span class="username">${userGetter(row)}</span>
+        </div>
+        <div>${label(row)}</div>
+      </div>
+    `;
+    rank++;
+  }
+
+  document.getElementById("content").innerHTML = html || "<p>Brak danych</p>";
+}
+
+/* ---------------------- EVENT WINNERS + FINALIZE ---------------------- */
+async function computeWinnersForEvent(ev){
+  const cat = ev.category;
+  const since = ev.starts_at;
+  const limit = ev.winners_limit || 1;
+  let allData = [];
+  
+  if(cat==="unlocks"){
+    let q = db.from("unlocks").select("user_id");
+    if(since) q = q.gte("created_at", since);
+    const { data } = await q;
+    allData = data;
+  }
+  if(cat==="episodes"){
+    let q = db.from("watch_history").select("user_id, watched_at");
+    if(since) q = q.gte("watched_at", since);
+    const { data } = await q;
+    allData = data;
+  }
+  if(cat==="friends"){
+    let q = db.from("friends").select("user_id, created_at");
+    if(since) q = q.gte("created_at", since);
+    const { data } = await q;
+    allData = data;
+  }
+  if(cat==="visits"){
+    let q = db.from("page_visits").select("user_id, visited_at");
+    if(since) q = q.gte("visited_at", since);
+    const { data } = await q;
+    allData = data;
+  }
+
+  if(cat==="unlocks" || cat==="episodes" || cat==="friends" || cat==="visits"){
+    const counts = {};
+    (allData||[]).forEach(r=>counts[r.user_id]=(counts[r.user_id]||0)+1);
+    const sorted = Object.entries(counts)
+      .map(([u,c])=>({user_id:u,score:c}))
+      .sort((a,b)=>b.score-a.score);
+      
+    const map = await getVisibleProfilesMap(sorted.map(x=>x.user_id));
+    return sorted.filter(r => map.has(r.user_id)).slice(0,limit);
+  }
+
+  if(cat==="points"){
+    let sortedPoints = [];
+    if(since){
+      const { data } = await db.from("points_log").select("user_id, change").gte("created_at", since);
+      const sums = {};
+      (data||[]).forEach(r=>sums[r.user_id]=(sums[r.user_id]||0)+r.change);
+      sortedPoints = Object.entries(sums)
+        .map(([u,c])=>({user_id:u,score:c}))
+        .sort((a,b)=>b.score-a.score);
+    } else {
+      const { data } = await db.from("profiles").select("id, points");
+      sortedPoints = (data||[])
+        .map(p=>({user_id:p.id,score:p.points}))
+        .sort((a,b)=>b.score-a.score);
+    }
+    
+    const map = await getVisibleProfilesMap(sortedPoints.map(x=>x.user_id));
+    return sortedPoints.filter(r => map.has(r.user_id)).slice(0,limit);
+  }
+
+  return [];
+}
+
+async function finalizeCurrentEvent(){
+  if(!currentEvent){ alert("Brak eventu do sfinalizowania."); return; }
+  
+  const endMs = parseSupabaseTs(currentEvent.ends_at);
+  if(endMs > Date.now()){
+    alert("Event nie został jeszcze zakończony. Odczekaj do końca.");
+    return;
+  }
+
+  if(!confirm("Sfinalizować event i zapisać zwycięzców? Tej operacji nie można cofnąć!")) return;
+
+  const ev = currentEvent;
+  const winners = await computeWinnersForEvent(ev);
+
+  if(!winners || winners.length===0){
+    alert("Brak zwycięzców do zapisania.");
+    return;
+  }
+
+  const rows = winners.map(w=>({event_id: ev.id, user_id: w.user_id, score: w.score}));
+  const { error: insertErr } = await db.from("event_results").insert(rows);
+  if(insertErr){ 
+      if(insertErr.code === "23505"){ 
+        alert("Event został już wcześniej sfinalizowany!");
+        return;
+      }
+      console.error(insertErr); 
+      alert("Błąd zapisu wyników."); 
+      return; 
+  }
+
+  if(ev.auto_award){
+    let autoRewards = ev.auto_rewards || {};
+    if(typeof autoRewards === "string"){
+      try { autoRewards = JSON.parse(autoRewards); } catch(e){ autoRewards = {}; }
+    }
+
+    const { data: savedResults } = await db.from("event_results").select("*").eq("event_id", ev.id).order("id",{ascending:true});
+
+    for(let i=0; i<winners.length; i++){
+      const pos = i+1;
+      const rewardDef = autoRewards[pos] || null;
+      const winner = winners[i];
+      const saved = savedResults && savedResults[i];
+
+      if(rewardDef && rewardDef.type === "points" && rewardDef.amount && saved){
+        const points = Number(rewardDef.amount) || 0;
+        
+        const { data:profile } = await db.from("profiles").select("points").eq("id", winner.user_id).maybeSingle();
+        const currentPoints = profile?.points || 0;
+        const newPoints = currentPoints + points;
+        await db.from("profiles").update({ points: newPoints }).eq("id", winner.user_id);
+
+        await db.from("points_log").insert({ user_id: winner.user_id, change: points, reason: `Nagroda event: ${ev.name}` });
+
+        await db.from("event_results").update({ reward: `${points} pkt` }).eq("id", saved.id);
+      } else if(rewardDef && rewardDef.type === "premium" && saved){
+        await db.from("event_results").update({ reward: `premium (${rewardDef.days || 'N/A'} dni) - ręcznie` }).eq("id", saved.id);
+      } else if(saved) {
+        await db.from("event_results").update({ reward: null }).eq("id", saved.id);
+      }
+    }
+  }
+
+  alert("Event sfinalizowany i zwycięzcy zapisani!");
+  await loadEvent();
+}
+
+/* ---------------------- WINNERS MODAL ---------------------- */
+async function showWinners(){
+  let ev = currentEvent;
+
+  if(!ev){
+    const { data } = await db.from("events").select("*").order("id",{ascending:false}).limit(1);
+    if(!data || data.length===0){ alert("Brak eventów."); return; }
+    ev = data[0];
+  }
+
+  const { data } = await db
+    .from("event_results")
+    .select("id, user_id, score, reward, profiles:profiles(username)")
+    .eq("event_id", ev.id)
+    .order("id", { ascending: true });
+
+  let html = `
+    <div class="modal" onclick="closeModal()">
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <h3>Wygrani — ${ev.name}</h3>
+        <div style="margin-top:12px;">`;
+
+  if(!data || data.length===0){
+    const endMs = parseSupabaseTs(ev.ends_at);
+    if(endMs <= Date.now()){
+        html += "<p>Brak zapisanych zwycięzców. Poniżej podgląd potencjalnych wyników:</p>";
+        const potentialWinners = await computeWinnersForEvent(ev);
+        const winnersIds = potentialWinners.map(w => w.user_id);
+        const { data: profilesData } = await db.from("profiles").select("id, username").in("id", winnersIds);
+        const userMap = new Map();
+        (profilesData || []).forEach(p=>userMap.set(p.id, p.username));
+        
+        if(potentialWinners.length > 0){
+          let rank = 1;
+          potentialWinners.forEach(w=>{
+             html += `
+              <div class="item">
+                <div>
+                  <span class="rank">#${rank}</span>
+                  <div class="username">${userMap.get(w.user_id) || w.user_id}</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="small">Wynik: ${w.score}</div>
+                  <div><b>(Podgląd)</b></div>
+                </div>
+              </div>`;
+            rank++;
+          });
+        } else {
+          html += "<p>Brak danych do podglądu wyników.</p>";
+        }
+    } else {
+        html += "<p>Brak zapisanych zwycięzców.</p>";
+    }
+    
+  } else {
+    let rank = 1;
+    data.forEach(w=>{
+      html += `
+        <div class="item">
+          <div>
+            <span class="rank">#${rank}</span>
+            <div class="username">${w.profiles?.username || w.user_id}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="small">Wynik: ${w.score}</div>
+            <div><b>${w.reward || "-"}</b></div>
+          </div>
+        </div>`;
+      rank++;
+    });
+  }
+
+  html += `
+        </div>
+        <div style="margin-top:16px; text-align:right;">
+          <button class="btn secondary" onclick="closeModal()">Zamknij</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const root = document.getElementById("modalRoot");
+  root.innerHTML = html;
+  root.style.display = "block";
+}
+
+function closeModal(){
+  const root = document.getElementById("modalRoot");
+  root.style.display = "none";
+  root.innerHTML = "";
+}
+
+/* ---------------------- AUTO-REWARDS CONFIG ---------------------- */
+async function openRewardsConfig(){
+  if(!currentEvent){ alert("Brak eventu do konfiguracji."); return; }
+
+  const { data:evData } = await db.from("events").select("*").eq("id", currentEvent.id).maybeSingle();
+  const ev = evData || currentEvent;
+
+  let autoRewards = ev.auto_rewards || {};
+  if(typeof autoRewards === "string"){
+    try { autoRewards = JSON.parse(autoRewards); } catch(e){ autoRewards = {}; }
+  }
+
+  const winnersCount = ev.winners_limit || 1;
+
+  let html = `
+    <div class="modal" onclick="closeModal()">
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <h3>Konfiguracja auto-nagród — ${ev.name}</h3>
+        <div class="note small">Obsługiwane: <b>punkty</b>. Premium pomijam zgodnie z ustaleniami.</div>
+        <div style="margin-top:12px;">
+          <div class="form-row" style="display:flex; align-items:center; gap:10px;">
+            <label class="small">Liczba zwycięzców:</label>
+            <input id="cfgWinners" class="input" type="number" min="1" value="${winnersCount}" style="width:80px"/>
+            <button class="btn secondary" onclick="rebuildPositionsInputs(Number(document.getElementById('cfgWinners').value), JSON.parse(document.getElementById('rewardsStorage').value))">Zmień</button>
+          </div>
+
+          <input type="hidden" id="rewardsStorage" value='${JSON.stringify(autoRewards)}'>
+
+          <div id="positionsContainer" style="margin-top:12px;">`;
+
+  for(let i=1; i<=winnersCount; i++){
+    const def = autoRewards[i] || {};
+    const amount = def.type === "points" ? (def.amount || "") : "";
+    html += `
+      <div class="form-row" style="display:flex; align-items:center; gap:10px;">
+        <div style="width:50px;"><b>#${i}</b></div>
+        <input id="amt_${i}" class="input" type="number" placeholder="ilość pkt" value="${amount}" style="width:120px"/>
+        <div class="small">(puste = brak nagrody)</div>
+      </div>`;
+  }
+
+  html += `
+          </div>
+
+          <div style="margin-top:16px; text-align:right;">
+            <button class="btn secondary" onclick="closeModal()">Anuluj</button>
+            <button class="btn" onclick="saveAutoRewards(${ev.id})">Zapisz</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const root = document.getElementById("modalRoot");
+  root.innerHTML = html;
+  root.style.display = "block";
+}
+
+function rebuildPositionsInputs(count, existing){
+  existing = existing || {};
+  const container = document.getElementById("positionsContainer");
+  
+  if(!container) return;
+  
+  const currentRewards = {};
+  const maxExisting = Number(document.getElementById("rewardsStorage").value) ? Object.keys(JSON.parse(document.getElementById("rewardsStorage").value)).reduce((max, key) => Math.max(max, parseInt(key)), 0) : 0;
+  
+  for(let i=1; i<=maxExisting; i++){
+      const amtEl = document.getElementById(`amt_${i}`);
+      const amt = amtEl ? Number(amtEl.value) : 0;
+      if(amt && !isNaN(amt) && amt>0){
+        currentRewards[i] = { type: "points", amount: amt };
+      }
+  }
+  
+  const mergedRewards = {...existing, ...currentRewards};
+  document.getElementById("rewardsStorage").value = JSON.stringify(mergedRewards);
+  
+  container.innerHTML = "";
+  
+  for(let i=1;i<=count;i++){
+    const def = mergedRewards[i] || {};
+    const amount = def.type === "points" ? (def.amount || "") : "";
+    const row = document.createElement("div");
+    row.className = "form-row";
+    row.style.cssText = "display:flex; align-items:center; gap:10px;"; 
+    row.innerHTML = `
+      <div style="width:50px;"><b>#${i}</b></div>
+      <input id="amt_${i}" class="input" type="number" placeholder="ilość pkt" value="${amount}" style="width:120px"/>
+      <div class="small">(puste = brak nagrody)</div>
+    `;
+    container.appendChild(row);
+  }
+  
+  document.getElementById("cfgWinners").value = count;
+}
+
+async function saveAutoRewards(eventId){
+  const cnt = Math.max(1, Number(document.getElementById("cfgWinners").value) || 1);
+  const rewards = {};
+
+  for(let i=1;i<=cnt;i++){
+    const amtEl = document.getElementById(`amt_${i}`);
+    const amt = amtEl ? Number(amtEl.value) : 0;
+    if(amt && !isNaN(amt) && amt>0){
+      rewards[i] = { type: "points", amount: amt };
+    }
+  }
+
+  const auto_award_flag = Object.keys(rewards).length>0;
+
+  const { error } = await db.from("events").update({
+    winners_limit: cnt,
+    auto_award: auto_award_flag,
+    auto_rewards: rewards
+  }).eq("id", eventId);
+
+  if(error){ console.error(error); alert("Błąd zapisu konfiguracji."); return; }
+
+  alert("Konfiguracja zapisana.");
+  closeModal();
+  await loadEvent();
+}
+
+/* ---------------------- FIXES ---------------------- */
+async function refreshAll(){
+  await loadEvent();
+  showTab(document.getElementById("content").dataset.tab || 'unlocks');
+}
+/* ---------------------- BOOT (Zmodyfikowane) ---------------------- */
+(async () => {
+  const { data:{ session }} = await db.auth.getSession();
+  if(!session){ location.href="login.html"; return; }
+  user = session.user;
+
+  // Wczytanie profilu dla is_admin
+  const { data: profileData } = await db
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  user.is_admin = profileData?.is_admin || false; // Ustawienie is_admin
+
+  await Promise.all([
+    loadHideToggle(),
+    loadEvent(),
+    loadChatIndicator() // Nowa funkcja do ładowania wskaźnika
+  ]);
+
+  showTab('unlocks');
+})();
+
+// ... (Pozostałe funkcje) ...
+
+/* ---------------------- ADMIN CHAT INDICATOR + WIDGET ---------------------- */
+
+// Ta funkcja symuluje treść podstrony chat/index.html
+function getChatPageContent() {
+    // W prawdziwej aplikacji załadowałbyś tu listę konwersacji i logikę czatu
+    const isAdmin = user.is_admin ? "ADMINISTRATOR" : "UŻYTKOWNIK";
+    return `
+        <div style="padding: 10px; font-size: 14px;">
+            <p>Witaj, ${isAdmin}.</p>
+            <p><b>[Symulacja widoku Czatu]</b></p>
+            <p>Tutaj pojawiłaby się lista otwartych konwersacji (tabela 'conversations').</p>
+            <p>Gdybyś był adminem, zobaczyłbyś wszystkie wątki użytkowników. Jeśli jesteś użytkownikiem, tylko swój.</p>
+            <p>Kliknięcie na wątek otworzyłoby historię wiadomości (tabela 'conversation_messages').</p>
+            <hr style="border-color: var(--border);">
+            <p class="small" style="color:var(--muted)">Uwaga: Aby widżet działał, musisz stworzyć rzeczywisty plik <code>chat/index.html</code> i funkcję do pobierania jego treści (np. za pomocą fetch) lub całkowicie zaimplementować UI czatu w tym kodzie.</p>
+        </div>
+    `;
+}
+
+async function loadChatIndicator() {
+    const chatIndicator = document.getElementById("chatIndicator");
+    const exclamation = document.getElementById("newMessageExclamation");
+
+    // Wyszukaj otwarte konwersacje związane z użytkownikiem (jako user lub admin)
+    const { data: conversations } = await db
+        .from("conversations")
+        .select("id, user_id, conversation_messages(sender_id)")
+        .or(`user_id.eq.${user.id},admin_id.eq.${user.id}`)
+        .eq("status", "open");
+        
+    if (!conversations || conversations.length === 0) {
+        // Pokaż przycisk dla admina nawet jeśli nie ma wątków (dla dostępu)
+        if (user.is_admin) {
+            chatIndicator.style.display = "flex";
+        }
+        return;
+    }
+    
+    chatIndicator.style.display = "flex";
+    let hasNewMessage = false;
+
+    for(const conv of conversations){
+        const lastMessage = conv.conversation_messages.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at))[0];
+        
+        // Logika new message:
+        // 1. Jeśli admin: Nowa wiadomość to ta, którą wysłał USER
+        if (user.is_admin && lastMessage && lastMessage.sender_id === conv.user_id) {
+            hasNewMessage = true;
+            break;
+        } 
+        // 2. Jeśli user: Nowa wiadomość to ta, którą wysłał ADMIN (zakładamy admina jako każdego, kto nie jest userem)
+        else if (!user.is_admin && lastMessage && lastMessage.sender_id !== user.id) {
+            hasNewMessage = true;
+            break;
+        }
+    }
+
+    exclamation.style.display = hasNewMessage ? "inline" : "none";
+}
+
+function openChatWidget(event) {
+    if(event) event.preventDefault(); // Zatrzymaj domyślną akcję linku
+    
+    const root = document.getElementById("modalRoot");
+    const existingWidget = document.getElementById("chatWidget");
+
+    if (existingWidget) {
+        // Jeśli już otwarte, zamknij
+        closeModal();
+        return;
+    }
+
+    // Tworzenie struktury widżetu (modala stylizowanego na widżet)
+    root.innerHTML = `
+        <div id="chatWidget" class="chat-widget-modal">
+            <div class="chat-widget-header">
+                <span>💬 Centrum Wsparcia</span>
+                <button class="chat-widget-close" onclick="closeModal()">✖</button>
+            </div>
+            <div class="chat-widget-content">
+                ${getChatPageContent()}
+            </div>
+        </div>
+    `;
+    root.style.display = "block";
+    
+    // Po otwarciu symulujemy, że admin zobaczył wiadomość i wyłączamy wykrzyknik
+    document.getElementById("newMessageExclamation").style.display = "none";
+}
+
+function closeModal(){
+  const root = document.getElementById("modalRoot");
+  root.style.display = "none";
+  root.innerHTML = "";
+  // Odświeżenie wskaźnika po zamknięciu
+  loadChatIndicator().catch(console.error); 
+}
+
+// ... (Pozostałe funkcje loadUnlocks, loadEpisodes, render, itp.) ...
+
+// Zaktualizowana funkcja startAdminChat, aby otwierała nowy widżet
+async function startAdminChat(winnerId, eventId, winnerName) {
+    if (!user.is_admin) {
+        alert("Brak uprawnień administratora.");
+        return;
+    }
+
+    // 1. Sprawdzenie, czy konwersacja już istnieje
+    const { data: existingConv } = await db
+        .from("conversations")
+        .select("id")
+        .eq("user_id", winnerId)
+        .eq("event_id", eventId)
+        .limit(1);
+
+    if (existingConv && existingConv.length > 0) {
+        alert(`Istniejąca konwersacja (#${existingConv[0].id}) z ${winnerName} została otwarta. (Otwieranie widżetu)`);
+        openChatWidget(); 
+        return;
+    }
+
+    // 2. Utworzenie nowej konwersacji
+    if (!confirm(`Rozpocząć nową konwersację z ${winnerName} dotyczącą eventu?`)) return;
+
+    const { data: newConv, error: createError } = await db
+        .from("conversations")
+        .insert({
+            user_id: winnerId,
+            admin_id: user.id, 
+            event_id: eventId,
+            status: 'open'
+        })
+        .select("id")
+        .single();
+
+    if (createError) {
+        console.error(createError);
+        alert("Błąd tworzenia konwersacji.");
+        return;
+    }
+
+    alert(`Nowa konwersacja (#${newConv.id}) z ${winnerName} została utworzona. (Otwieranie widżetu)`);
+    await loadChatIndicator(); 
+    openChatWidget();
+}
+</script>
+
+</body>
+</html>
