@@ -93,10 +93,10 @@
     <a class="brand" href="index.html">🎬 <span>StreamingHub</span></a>
     <input type="search" id="globalSearch" placeholder="Szukaj seriali..." />
     <nav class="menu" id="menu">
-      <a href="/filmy/">Filmy</a>
-      <a href="/seriale/" style="color:#fff;">Seriale</a>
-      <a href="/top/">top</a>
-      <a href="/moja-biblioteka/">Moja biblioteka</a>
+      <a href="filmy.html">Filmy</a>
+      <a href="seriale.html" style="color:#fff;">Seriale</a>
+      <a href="top.html">top</a>
+      <a href="moja-biblioteka.html">Moja biblioteka</a>
       <div id="authBtns"></div>
     </nav>
   </div>
@@ -167,8 +167,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ---------- Konfiguracja Supabase ---------- */
-const SUPABASE_URL = env.SUPABASE_URL;
-const SUPABASE_KEY = env.SUPABASE_ANON_KEY;
+const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ---------- Helpery ---------- */
@@ -577,9 +577,6 @@ async function saveEpisodeHistory(seriesId, episodeId) {
     console.error("❌ saveEpisodeHistory błąd:", err);
   }
 }
-fetch("https://restless-scene-39de.tomaszjasinski60.workers.dev/data")
-  .then(res => res.json())
-  .then(data => console.log(data));
 </script>
 
 
