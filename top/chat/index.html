@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat • StreamingHub</title>
+<style>
+:root {
+  --bg: #0b0d10;
+  --card: #151922;
+  --card-light: #1c222c;
+  --text: #e3e7ee;
+  --muted: #a8bfe2;
+  --brand: #4f7cff; /* Główny kolor niebieski */
+  --border: #232a37;
+  --user-chat: #34495e; /* Tło wiadomości odebranych */
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Roboto;
+  line-height: 1.4;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+  flex-grow: 1;
+  display: flex;
+}
+
+/* ---------------- HEADER ---------------- */
+header {
+  background: rgba(11,13,16,0.9);
+  backdrop-filter: blur(6px);
+  z-index: 20;
+  border-bottom: 1px solid var(--border);
+}
+
+.nav {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  flex-wrap: nowrap;
+}
+
+.brand {
+  margin-right: auto;       
+  font-weight: 800;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.menu a {
+  padding: 8px 10px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.menu a.active {
+  color: #fff;
+}
+
+/* ---------------- CHAT LAYOUT ---------------- */
+.chat-layout {
+  display: flex;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+/* Domyślny styl dla admina (lista i widok) */
+.conversation-list-panel {
+  width: 300px;
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow-y: auto;
+  max-height: calc(100vh - 80px); 
+}
+
+.chat-view-panel {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 300px; /* Minimalna szerokość, gdy lista jest ukryta */
+}
+
+/* ---------------- KONWERSACJE ---------------- */
+.conversation-item {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  position: relative;
+}
+
+.conversation-item:hover {
+  background: var(--card-light);
+}
+
+.conversation-item.active {
+  background: var(--card-light);
+  border-left: 3px solid var(--brand);
+  padding-left: 9px; 
+}
+
+.conversation-item-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.conv-username {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conv-event {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.new-message-indicator {
+  color: red;
+  font-weight: bold;
+}
+
+/* ---------------- WIADOMOŚCI ---------------- */
+.chat-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  background: var(--card-light);
+}
+
+.messages-container {
+  flex-grow: 1;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.message {
+  margin-bottom: 10px;
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 18px;
+  word-wrap: break-word;
+}
+
+.message.sent {
+  align-self: flex-end;
+  background-color: var(--brand);
+  color: #fff;
+  border-bottom-right-radius: 2px;
+}
+
+.message.received {
+  align-self: flex-start;
+  background-color: var(--user-chat); 
+  color: var(--text);
+  border-bottom-left-radius: 2px;
+}
+
+.message-sender {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 4px;
+}
+
+.message.received .message-sender {
+  color: var(--muted);
+}
+
+.chat-input-area {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+}
+
+.chat-input-area input {
+  flex-grow: 1;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.chat-input-area button {
+  background: var(--brand);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+/* ---------------- RESPONSYWNOŚĆ ---------------- */
+/* Ukryj listę dla użytkownika nie-admina na mobile */
+@media (max-width: 768px) {
+  .chat-layout {
+    flex-direction: column;
+  }
+  
+  .conversation-list-panel {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 40vh;
+  }
+  
+  .container {
+    padding: 8px;
+  }
+}
+
+.status-info {
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header>
+  <div class="nav container">
+    <a class="brand" href="/filmy/">🎬 StreamingHub</a>
+    <nav class="menu">
+      <a href="/filmy/">Filmy</a>
+      <a href="/seriale/">Seriale</a>
+      <a href="/top/">TOP</a>
+      <a href="/moja-biblioteka/">Moja biblioteka</a>
+      <a href="/top/chat/" class="active">Chat</a>
+      </nav>
+  </div>
+</header>
+
+<main class="container" id="app">
+  <div class="chat-layout">
+    <div id="conversationListPanel" class="conversation-list-panel">
+      <div class="chat-header">Konwersacje</div>
+      <div id="conversationsList">
+        <p class="status-info">Ładowanie...</p>
+      </div>
+    </div>
+    
+    <div class="chat-view-panel">
+      <div id="chatHeader" class="chat-header">Wybierz konwersację</div>
+      
+      <div id="messagesContainer" class="messages-container">
+        <p class="status-info">Wybierz konwersację z listy, aby wyświetlić wiadomości.</p>
+      </div>
+      
+      <div id="chatInputArea" class="chat-input-area" style="display:none;">
+        <input type="text" id="messageInput" placeholder="Napisz wiadomość...">
+        <button onclick="handleSendMessage()">Wyślij</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ---------------------- SUPABASE INIT ---------------------- */
+// **Zmień na swoje dane** const db = supabase.createClient(
+  "https://jjmnacolebxsifmnmqks.supabase.co", 
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbm5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0"
+);
+
+let user = null;
+let currentConversationId = null;
+let conversations = []; 
+let messagesSubscription = null; 
+
+/* ---------------------- BOOT ---------------------- */
+(async () => {
+  const { data: { session }} = await db.auth.getSession();
+  if(!session){ location.href="/login.html"; return; }
+  
+  user = session.user;
+  const { data: profileData } = await db.from('profiles').select('is_admin').eq('id', user.id).single();
+  user.is_admin = profileData?.is_admin || false;
+
+  // Ukryj listę konwersacji, jeśli to zwykły użytkownik
+  const listPanel = document.getElementById('conversationListPanel');
+  if (!user.is_admin) {
+      listPanel.style.display = 'none';
+      listPanel.style.borderRight = 'none';
+      document.querySelector('.chat-layout').style.border = 'none'; 
+  }
+
+  // Sprawdź, czy przekazano ID konwersacji w URL (np. po kliknięciu "Otwórz Chat" przez Admina)
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialConvId = urlParams.get('conv');
+
+  if (initialConvId) {
+    currentConversationId = Number(initialConvId);
+  }
+  
+  await loadConversations();
+})();
+
+/* ---------------------- AUTORYZACJA i WYSZUKIWANIE ---------------------- */
+
+/**
+ * Pobiera listę konwersacji.
+ */
+async function loadConversations(){
+  const listContainer = document.getElementById('conversationsList');
+  if (user.is_admin) {
+      listContainer.innerHTML = '<p class="status-info">Ładowanie konwersacji...</p>';
+  }
+  
+  // Zapytanie musi obsłużyć zarówno adminów, jak i zwykłych użytkowników
+  const { data: convs, error } = await db
+    .from('conversations')
+    .select(`
+      id, 
+      status, 
+      created_at, 
+      event_id,
+      user_id,
+      admin_id,
+      user:user_id(username),
+      admin:admin_id(username),
+      latest_message:conversation_messages(content, created_at, sender_id),
+      event:event_id(name)
+    `)
+    .or(`user_id.eq.${user.id},admin_id.eq.${user.id}`)
+    .order('created_at', { ascending: false, foreignTable: 'latest_message' }); 
+  
+  if(error){
+    console.error("Błąd ładowania konwersacji:", error);
+    if (user.is_admin) listContainer.innerHTML = '<p class="status-info">Błąd ładowania konwersacji.</p>';
+    return;
+  }
+  
+  conversations = (convs || [])
+    .map(conv => {
+      // Określenie rozmówcy i ostatniej wiadomości
+      const isUserInvolved = conv.user_id === user.id;
+      const otherUser = isUserInvolved ? conv.admin : conv.user;
+      
+      const lastMessage = Array.isArray(conv.latest_message) && conv.latest_message.length > 0
+          ? conv.latest_message.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+          : null;
+
+      return {
+        ...conv,
+        isUserInvolved: isUserInvolved,
+        otherUsername: otherUser?.username || 'Użytkownik usunięty / Admin',
+        lastMessage: lastMessage
+      };
+    })
+    .filter(conv => conv.lastMessage); 
+  
+  // Logika wyboru/renderowania
+  if (user.is_admin) {
+      renderConversations();
+      if(currentConversationId){
+          const activeConv = conversations.find(c => c.id === currentConversationId);
+          if(activeConv) selectConversation(activeConv);
+      } else if (conversations.length > 0) {
+          selectConversation(conversations[0]);
+      }
+  } else {
+      // Zwykły użytkownik
+      const userConv = conversations.find(c => c.isUserInvolved && c.status === 'open');
+      if (userConv) {
+          currentConversationId = userConv.id;
+          selectConversation(userConv);
+      } else {
+          document.getElementById('messagesContainer').innerHTML = '<p class="status-info">Nie masz obecnie aktywnych konwersacji.</p>';
+          document.getElementById('chatHeader').innerHTML = 'Brak aktywnego czatu';
+      }
+  }
+}
+
+/**
+ * Renderuje listę konwersacji (tylko dla Admina).
+ */
+function renderConversations(){
+  const listContainer = document.getElementById('conversationsList');
+  if(!user.is_admin) return; // Tylko Admin ma listę
+  
+  if(conversations.length === 0){
+    listContainer.innerHTML = '<p class="status-info">Brak aktywnych konwersacji.</p>';
+    return;
+  }
+  
+  let html = '';
+  conversations.forEach(conv => {
+    const isActive = conv.id === currentConversationId;
+    const latestMsg = conv.lastMessage;
+    
+    // Wskaźnik dla Admina: jeśli ostatnia wiadomość pochodzi od user_id (nie admina)
+    let indicator = '';
+    if(user.is_admin && latestMsg && latestMsg.sender_id === conv.user_id){
+        indicator = '<span class="new-message-indicator"> 📩</span>';
+    } 
+
+    const eventInfo = conv.event ? `<div class="conv-event">Event: ${conv.event.name}</div>` : '';
+    const lastMessageContent = latestMsg ? latestMsg.content.substring(0, 30) + (latestMsg.content.length > 30 ? '...' : '') : 'Brak wiadomości';
+
+    html += `
+      <div 
+        class="conversation-item ${isActive ? 'active' : ''}" 
+        onclick="selectConversationById(${conv.id})">
+        <div class="conversation-item-info">
+            <span class="conv-username">${conv.otherUsername}</span>
+            <span class="conv-event">${latestMsg ? new Date(latestMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''} ${indicator}</span>
+        </div>
+        ${eventInfo}
+        <div class="conv-last-msg" style="font-size:13px; color:var(--muted);">${lastMessageContent}</div>
+      </div>
+    `;
+  });
+  
+  listContainer.innerHTML = html;
+}
+
+function selectConversationById(convId){
+    const conv = conversations.find(c => c.id === convId);
+    if (conv) selectConversation(conv);
+}
+
+
+/* ---------------------- WIADOMOŚCI ---------------------- */
+
+/**
+ * Wybiera konwersację, aktualizuje widok i subskrybuje Realtime.
+ */
+async function selectConversation(conv){
+    const convId = conv.id;
+
+    // 1. Zmień aktywną konwersację
+    currentConversationId = convId;
+    if (user.is_admin) renderConversations(); // Odświeżenie listy dla Admina
+    
+    // 2. Aktualizuj nagłówek czatu i pole input
+    document.getElementById('chatHeader').innerHTML = `Rozmowa z: ${conv.otherUsername} (${conv.status === 'open' ? 'Otwarta' : 'Zamknięta'})`;
+    document.getElementById('chatInputArea').style.display = conv.status === 'open' ? 'flex' : 'none';
+
+    // 3. Wyczyść i załaduj wiadomości
+    await loadMessages(convId);
+    
+    // 4. Uruchom subskrypcję Realtime
+    setupRealtimeSubscription(convId);
+}
+
+/**
+ * Ładuje i wyświetla wiadomości dla danej konwersacji.
+ */
+async function loadMessages(conversationId){
+  const messagesContainer = document.getElementById('messagesContainer');
+  messagesContainer.innerHTML = '<p class="status-info">Ładowanie wiadomości...</p>';
+  
+  const { data: messages, error } = await db
+    .from('conversation_messages')
+    .select('id, sender_id, content, created_at, sender:sender_id(username)')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true });
+    
+  if(error){
+    console.error("Błąd ładowania wiadomości:", error);
+    messagesContainer.innerHTML = '<p class="status-info">Błąd ładowania wiadomości.</p>';
+    return;
+  }
+  
+  renderMessages(messages || []);
+}
+
+/**
+ * Renderuje wiadomości do kontenera.
+ */
+function renderMessages(messages){
+  const messagesContainer = document.getElementById('messagesContainer');
+  
+  if(messages.length === 0){
+    messagesContainer.innerHTML = '<p class="status-info">Brak wiadomości w tej konwersacji.</p>';
+    return;
+  }
+  
+  let html = '';
+  messages.forEach(msg => {
+    const isSent = msg.sender_id === user.id;
+    const senderName = isSent ? 'Ty' : msg.sender.username;
+    
+    // Pokazuj nazwę nadawcy, tylko jeśli wiadomość jest odebrana
+    const showSenderName = !isSent; 
+
+    html += `
+      <div class="message ${isSent ? 'sent' : 'received'}">
+        ${showSenderName ? `<div class="message-sender">${senderName}</div>` : ''}
+        <div>${msg.content}</div>
+        <div style="font-size:10px; opacity:0.6; text-align:right;">${new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+      </div>
+    `;
+  });
+  
+  messagesContainer.innerHTML = html;
+  messagesContainer.scrollTop = messagesContainer.scrollHeight; 
+}
+
+/**
+ * Obsługuje wysyłanie nowej wiadomości.
+ */
+async function handleSendMessage(){
+  const inputEl = document.getElementById('messageInput');
+  const content = inputEl.value.trim();
+  
+  if(!content || !currentConversationId) return;
+  
+  inputEl.value = ''; 
+  
+  const { error } = await db
+    .from('conversation_messages')
+    .insert({
+      conversation_id: currentConversationId,
+      sender_id: user.id,
+      content: content
+    });
+    
+  if(error){
+    console.error("Błąd wysyłania wiadomości:", error);
+    alert('Błąd wysyłania wiadomości. Upewnij się, że konwersacja jest OTWARTA.');
+    inputEl.value = content; 
+  } else {
+    // Odśwież listę konwersacji (dla Admina), aby zaktualizować ostatnią wiadomość
+    if (user.is_admin) await loadConversations();
+  }
+}
+
+document.getElementById('messageInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSendMessage();
+    }
+});
+
+
+/* ---------------------- REAL-TIME ---------------------- */
+
+/**
+ * Ustanawia subskrypcję Realtime dla wiadomości w danej konwersacji.
+ */
+function setupRealtimeSubscription(conversationId){
+  // Jeśli istnieje stara subskrypcja, usuń ją
+  if(messagesSubscription){
+    db.removeChannel(messagesSubscription);
+    messagesSubscription = null;
+  }
+  
+  messagesSubscription = db.channel(`messages-conv-${conversationId}`)
+    .on(
+      'postgres_changes',
+      { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'conversation_messages',
+        filter: `conversation_id=eq.${conversationId}`
+      },
+      (payload) => {
+        console.log('Nowa wiadomość Realtime:', payload);
+        // Odśwież wiadomości
+        loadMessages(conversationId);
+        // Odśwież konwersacje (aby zaktualizować ostatnią wiadomość w liście)
+        if (user.is_admin) loadConversations();
+      }
+    )
+    .subscribe((status, err) => {
+      if(status === 'CLOSED' || status === 'TIMED_OUT'){
+          console.error("Błąd Realtime:", err);
+      }
+    });
+}
+</script>
+
+</body>
+</html>
