@@ -231,7 +231,7 @@ async function login(){
   if(!email||!pass){alert("Podaj dane logowania!");return;}
   const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
   if(error){alert("Błąd: "+error.message);}
-  else { location.href = "seriale.html"; }
+  else { location.href = "/filmy/"; }
 }
 
 /* ---------- Magic Link ---------- */
