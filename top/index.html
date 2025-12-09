@@ -292,7 +292,7 @@ function parseSupabaseTs(ts){
 /* ---------------------- BOOT ---------------------- */
 (async () => {
   const { data:{ session }} = await db.auth.getSession();
-  if(!session){ location.href="login.html"; return; }
+  if(!session){ location.href="/login/"; return; }
   user = session.user;
 
   await Promise.all([
@@ -305,7 +305,7 @@ function parseSupabaseTs(ts){
 
 async function logout(){
   await db.auth.signOut();
-  location.href="login.html";
+  location.href="/login/";
 }
 
 /* ---------------------- HIDE FROM TOP ---------------------- */
