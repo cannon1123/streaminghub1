@@ -150,7 +150,7 @@ let currentUser = null;
 
 (async()=>{
   const { data:{ session } } = await db.auth.getSession();
-  if(!session) return location.href="login.html";
+  if(!session) return location.href="/login/";
   currentUser = session.user;
 
   await loadFriendCode();
@@ -293,7 +293,7 @@ async function loadFriends(){
   alert("❌ Usunięto ze znajomych!");
 }
 
-async function logout(){ await db.auth.signOut(); location.href="login.html"; }
+async function logout(){ await db.auth.signOut(); location.href="/login/"; }
 </script>
 </body>
 </html>
