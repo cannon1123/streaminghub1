@@ -162,7 +162,7 @@ let roomChannel = null;
 
 (async ()=>{
   const { data:{ session } } = await db.auth.getSession();
-  if(!session) return location.href="login.html";
+  if(!session) return location.href="/login/";
   currentUser = session.user;
   await loadMyUnlockedMovies();
   await loadMyRooms();
@@ -408,7 +408,7 @@ async function deleteRoomMember(roomId, userId){
   await loadRoomMembers(roomId);
 }
 
-async function logout(){ await db.auth.signOut(); location.href="login.html"; }
+async function logout(){ await db.auth.signOut(); location.href="/login/"; }
 </script>
 </body>
 </html>
