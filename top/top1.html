@@ -8,6 +8,7 @@
 :root {
   --bg: #0b0d10;
   --card: #151922;
+  --card-light: #1c222c; /* Dodane dla lepszych hoverów */
   --text: #e3e7ee;
   --muted: #a8bfe2;
   --brand: #4f7cff; /* Główny kolor niebieski */
@@ -52,6 +53,8 @@ header {
 .brand {
   margin-right: auto;       
   font-weight: 800;
+  color: var(--text); /* Upewnij się, że marka jest widoczna */
+  text-decoration: none;
 }
 
 .menu {
@@ -111,6 +114,11 @@ header {
 .btn.secondary {
   background: #2a3446;
 }
+.btn.small {
+    padding: 6px 10px;
+    font-size: 13px;
+    border-radius: 8px;
+}
 
 /* BOXY */
 .event-box, .toggle-box {
@@ -156,6 +164,29 @@ header {
   display: flex;
   gap: 10px;
   margin-top: 10px;
+  flex-wrap: wrap; /* Zapewnienie responsywności przycisków */
+}
+/* ------------- WIDŻET CHATU ------------- */
+#chat-widget {
+  position: fixed; 
+  bottom: 20px; 
+  right: 20px; 
+  width: 50px; 
+  height: 50px; 
+  background: var(--brand); 
+  border-radius: 50%; 
+  display: none; /* Domyślnie ukryty, kontrolowany przez JS */
+  align-items: center; 
+  justify-content: center; 
+  cursor: pointer; 
+  z-index: 500; 
+  color: white; 
+  font-size: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  transition: transform 0.2s;
+}
+#chat-widget:hover {
+    transform: scale(1.05);
 }
 /* ------------- RESPONSYWNOŚĆ ------------- */
 @media (max-width: 900px) {
@@ -226,10 +257,11 @@ header {
   <div id="eventContent" class="small">Ładowanie...</div>
   <div id="countdown"></div>
   <div class="admin-actions" id="adminActions" style="display:none">
-    <button class="btn secondary" id="seeWinnersBtn" onclick="showWinners()">Zobacz wygranych</button>
     <button class="btn secondary" id="configRewardsBtn" onclick="openRewardsConfig()">Konfiguruj auto-nagrody</button>
     <button class="btn" id="finalizeBtn" onclick="finalizeCurrentEvent()">Finalizuj event</button>
   </div>
+    <button class="btn secondary" id="seeWinnersBtn" onclick="showWinners()" style="display:none; margin-top:10px;">Pokaż Wygranych</button>
+
 </div>
 
 <div class="toggle-box">
@@ -251,12 +283,16 @@ header {
 </main>
 
 <div id="modalRoot" style="display:none"></div>
+<div id="rewardModalRoot" style="display:none"></div> <div id="chat-widget" onclick="openChatPage()">
+  💬
+</div>
+
 
 <script>
 /* ---------------------- SUPABASE INIT ---------------------- */
 const db = supabase.createClient(
   "https://jjmnacolebxsifmnmqks.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbm5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0"
 );
 
 let user = null;
@@ -264,9 +300,6 @@ let currentEvent = null;
 let countdownInterval = null;
 
 /* ------------- POPRAWIONA FUNKCJA DO PARSOWANIA DAT ------------- */
-/**
- * Konwertuje timestamp z Supabase na milisekundy (epoch time).
- */
 function parseSupabaseTs(ts){
   if(!ts) return NaN;
   if(typeof ts === 'number') return Number(ts);
@@ -294,10 +327,15 @@ function parseSupabaseTs(ts){
   const { data:{ session }} = await db.auth.getSession();
   if(!session){ location.href="login.html"; return; }
   user = session.user;
-
+  
+  // NOWE: Pobierz status admina od razu
+  const { data:profile } = await db.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
+  user.is_admin = profile?.is_admin || false; // Ustaw globalnie
+  
   await Promise.all([
     loadHideToggle(),
-    loadEvent()
+    loadEvent(),
+    initChatWidget() // NOWA FUNKCJA: Inicjuje widoczność dymku czatu
   ]);
 
   showTab('unlocks');
@@ -325,7 +363,7 @@ async function toggleHide(){
   showTab(document.getElementById("content").dataset.tab || 'unlocks');
 }
 
-/* ---------------------- EVENT SYSTEM ---------------------- */
+/* ---------------------- EVENT SYSTEM (POPRAWIONA LOGIKA) ---------------------- */
 async function loadEvent(){
   const { data } = await db
     .from("events")
@@ -336,9 +374,11 @@ async function loadEvent(){
   const box = document.getElementById("eventContent");
   const timer = document.getElementById("countdown");
   const adminActionBox = document.getElementById("adminActions");
+  const seeWinnersBtn = document.getElementById("seeWinnersBtn"); // Pobierz przycisk
   
   if(countdownInterval) clearInterval(countdownInterval);
   adminActionBox.style.display = "none";
+  seeWinnersBtn.style.display = "none"; // Ukrywamy domyślnie
   currentEvent = null;
 
   if(!data || data.length===0){
@@ -360,7 +400,6 @@ async function loadEvent(){
   
   let startMs = parseSupabaseTs(ev.starts_at);
   if (isNaN(startMs)) {
-      // Ustawienie na 0, aby event był aktywny od początku czasu, jeśli starts_at jest NULL
       startMs = 0; 
   }
 
@@ -373,14 +412,9 @@ async function loadEvent(){
   `;
 
   if (endMs <= nowMs) {
+      // --- EVENT ZAKOŃCZONY ---
       timer.innerHTML = "⛔ Event zakończony";
       
-      const { data:profile } = await db
-        .from("profiles")
-        .select("is_admin")
-        .eq("id", user.id)
-        .maybeSingle();
-
       const { data:results } = await db
         .from("event_results")
         .select("id")
@@ -389,19 +423,22 @@ async function loadEvent(){
 
       const finalized = results && results.length>0;
 
-      adminActionBox.style.display = (profile?.is_admin && !finalized) ? "flex" : "none";
+      // Admin widzi przyciski akcji (Finalizuj, Konfiguruj), jeśli event NIE sfinalizowano
+      if (user.is_admin) {
+          adminActionBox.style.display = "flex";
+          document.getElementById('finalizeBtn').style.display = finalized ? 'none' : 'inline-block';
+      }
+      
+      // Pokazujemy przycisk "Zobacz Wygranych" ZAWSZE po zakończeniu dla każdego
+      seeWinnersBtn.style.display = "inline-block";
       
   } else if (startMs > nowMs) {
+      // --- EVENT NIE ROZPOCZĘTY ---
       timer.innerHTML = `⏳ Event rozpocznie się: ${new Date(startMs).toLocaleDateString()}`;
       
   } else {
-      const { data:profile } = await db
-        .from("profiles")
-        .select("is_admin")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      adminActionBox.style.display = profile?.is_admin ? "flex" : "none";
+      // --- EVENT TRWA ---
+      adminActionBox.style.display = user.is_admin ? "flex" : "none";
       
       function updateTimer(){
           const now = Date.now();
@@ -410,6 +447,7 @@ async function loadEvent(){
           if(diff <= 0){
               timer.innerHTML = "⛔ Event zakończony!";
               clearInterval(countdownInterval);
+              // Przeładuj, aby uruchomić logikę po zakończeniu (pokazanie przycisku)
               setTimeout(()=>{ loadEvent().catch(console.error); }, 1000); 
               return;
           }
@@ -735,7 +773,7 @@ async function finalizeCurrentEvent(){
   await loadEvent();
 }
 
-/* ---------------------- WINNERS MODAL ---------------------- */
+/* ---------------------- WINNERS MODAL (POPRAWIONE) ---------------------- */
 async function showWinners(){
   let ev = currentEvent;
 
@@ -745,63 +783,75 @@ async function showWinners(){
     ev = data[0];
   }
 
-  const { data } = await db
+  // Sprawdzenie, czy event został sfinalizowany. Jeśli nie, pokazujemy podgląd (lub nic)
+  const isFinalized = await checkIsFinalized(ev.id);
+  
+  if (!isFinalized) {
+    // Jeśli event jest zakończony, ale NIE sfinalizowany, wyświetlamy podgląd.
+    const endMs = parseSupabaseTs(ev.ends_at);
+    if (endMs > Date.now()) {
+        alert("Wyniki będą dostępne po zakończeniu eventu.");
+        return;
+    }
+    showWinnersModalPreview(ev); // Funkcja do wyświetlania podglądu, jeśli Admin nie sfinalizował
+    return;
+  }
+  
+  // Właściwe wyświetlanie sfinalizowanych wyników
+  const { data, error } = await db
     .from("event_results")
-    .select("id, user_id, score, reward, profiles:profiles(username)")
+    .select("id, user_id, score, reward, claimed_at, profiles:user_id(username, is_admin)")
     .eq("event_id", ev.id)
-    .order("id", { ascending: true });
+    .order("score", { ascending: false }); 
 
+  if(error) { console.error(error); alert("Błąd ładowania wyników."); return; }
+  
   let html = `
     <div class="modal" onclick="closeModal()">
       <div class="modal-card" onclick="event.stopPropagation()">
-        <h3>Wygrani — ${ev.name}</h3>
+        <h3>🏆 Wygrani — ${ev.name}</h3>
         <div style="margin-top:12px;">`;
 
   if(!data || data.length===0){
-    const endMs = parseSupabaseTs(ev.ends_at);
-    if(endMs <= Date.now()){
-        html += "<p>Brak zapisanych zwycięzców. Poniżej podgląd potencjalnych wyników:</p>";
-        const potentialWinners = await computeWinnersForEvent(ev);
-        const winnersIds = potentialWinners.map(w => w.user_id);
-        const { data: profilesData } = await db.from("profiles").select("id, username").in("id", winnersIds);
-        const userMap = new Map();
-        (profilesData || []).forEach(p=>userMap.set(p.id, p.username));
-        
-        if(potentialWinners.length > 0){
-          let rank = 1;
-          potentialWinners.forEach(w=>{
-             html += `
-              <div class="item">
-                <div>
-                  <span class="rank">#${rank}</span>
-                  <div class="username">${userMap.get(w.user_id) || w.user_id}</div>
-                </div>
-                <div style="text-align:right;">
-                  <div class="small">Wynik: ${w.score}</div>
-                  <div><b>(Podgląd)</b></div>
-                </div>
-              </div>`;
-            rank++;
-          });
-        } else {
-          html += "<p>Brak danych do podglądu wyników.</p>";
-        }
-    } else {
-        html += "<p>Brak zapisanych zwycięzców.</p>";
-    }
-    
+    html += "<p>Brak zapisanych zwycięzców.</p>";
   } else {
     let rank = 1;
     data.forEach(w=>{
+      const isCurrentUser = w.user_id === user.id;
+      
+      let actionButton = '';
+      if (isCurrentUser) {
+          if (w.claimed_at) {
+              actionButton = `<span style="color:green; margin-left:10px;">✅ Nagroda odebrana</span>`;
+          } else if (w.reward) {
+              // UWAGA: Trzeba upewnić się, że reward jest poprawnie formatowany w JS (ucieczka znaków)
+              actionButton = `
+                  <button class="btn primary small" onclick="claimReward(${w.id}, '${String(w.reward).replace(/'/g, "\\'")}')" style="margin-left:10px;">
+                      Odbierz Nagrodę
+                  </button>
+              `;
+          }
+      }
+      
+      let adminChatButton = '';
+      if (user.is_admin) {
+           adminChatButton = `
+              <button class="btn secondary small" onclick="openChatWithUser('${w.user_id}', ${ev.id})" style="margin-left:10px;">
+                  💬 Otwórz Chat
+              </button>
+          `;
+      }
+      
       html += `
         <div class="item">
           <div>
             <span class="rank">#${rank}</span>
-            <div class="username">${w.profiles?.username || w.user_id}</div>
+            <span class="username">${w.profiles?.username || w.user_id} ${isCurrentUser ? '(Ty)' : ''}</span>
           </div>
-          <div style="text-align:right;">
-            <div class="small">Wynik: ${w.score}</div>
-            <div><b>${w.reward || "-"}</b></div>
+          <div style="text-align:right; display:flex; align-items:center;">
+            <div class="small" style="margin-right:10px;">Wynik: ${w.score}</div>
+            ${actionButton}
+            ${adminChatButton}
           </div>
         </div>`;
       rank++;
@@ -822,11 +872,232 @@ async function showWinners(){
   root.style.display = "block";
 }
 
-function closeModal(){
-  const root = document.getElementById("modalRoot");
-  root.style.display = "none";
-  root.innerHTML = "";
+async function checkIsFinalized(eventId){
+    const { data:results } = await db
+      .from("event_results")
+      .select("id")
+      .eq("event_id", eventId)
+      .limit(1);
+    return results && results.length > 0;
 }
+
+// Funkcja do wyświetlania podglądu (oryginalna logika showWinners)
+async function showWinnersModalPreview(ev){ 
+    const { data: resultsData } = await db
+    .from("event_results") // To może być problematyczne, jeśli nie ma jeszcze wyników
+    .select("id, user_id, score, reward, profiles:profiles(username)")
+    .eq("event_id", ev.id)
+    .order("id", { ascending: true }); // Używam ID, aby zachować oryginalną logikę sortowania
+
+  let html = `
+    <div class="modal" onclick="closeModal()">
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <h3>Podgląd Wygranych — ${ev.name}</h3>
+        <p class="small" style="color:red;">Administrator nie sfinalizował jeszcze eventu. Poniżej potencjalne wyniki.</p>
+        <div style="margin-top:12px;">`;
+
+  let rank = 1;
+  const potentialWinners = await computeWinnersForEvent(ev);
+  const winnersIds = potentialWinners.map(w => w.user_id);
+  const { data: profilesData } = await db.from("profiles").select("id, username").in("id", winnersIds);
+  const userMap = new Map();
+  (profilesData || []).forEach(p=>userMap.set(p.id, p.username));
+  
+  if(potentialWinners.length > 0){
+      potentialWinners.forEach(w=>{
+         html += `
+          <div class="item">
+            <div>
+              <span class="rank">#${rank}</span>
+              <div class="username">${userMap.get(w.user_id) || w.user_id}</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="small">Wynik: ${w.score}</div>
+              <div><b>(Podgląd)</b></div>
+            </div>
+          </div>`;
+        rank++;
+      });
+  } else {
+    html += "<p>Brak danych do podglądu wyników.</p>";
+  }
+
+  html += `
+        </div>
+        <div style="margin-top:16px; text-align:right;">
+          <button class="btn secondary" onclick="closeModal()">Zamknij</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const root = document.getElementById("modalRoot");
+  root.innerHTML = html;
+  root.style.display = "block";
+}
+
+
+/**
+ * Obsługa roszczenia nagrody
+ */
+async function claimReward(resultId, rewardText) {
+    // 1. Otwórz modal do wyświetlenia nagrody, aby upewnić się, że użytkownik to widzi
+    const rewardModal = document.getElementById('rewardModalRoot');
+    rewardModal.innerHTML = `
+      <div class="modal" onclick="claimRewardModalClose()">
+        <div class="modal-card" onclick="event.stopPropagation()" style="text-align:center;">
+          <h3>🎁 Potwierdzenie Nagrody 🎁</h3>
+          <p>Potwierdź odbiór nagrody:</p>
+          <div style="padding: 15px; border: 1px dashed var(--brand); margin: 15px 0; background: var(--card-light);">
+            <p style="font-size: 1.2em; font-weight: bold;">${rewardText}</p>
+          </div>
+          <p class="small">Po odebraniu nagrody nie będzie możliwości jej ponownego roszczenia.</p>
+          <div style="margin-top:20px;">
+            <button class="btn secondary" onclick="claimRewardModalClose()">Anuluj</button>
+            <button class="btn" onclick="confirmClaim(${resultId}, '${rewardText.replace(/'/g, "\\'")}')">Odbierz i Potwierdź</button>
+          </div>
+        </div>
+      </div>
+    `;
+    rewardModal.style.display = 'block';
+}
+
+function claimRewardModalClose(){
+    document.getElementById('rewardModalRoot').style.display = 'none';
+    document.getElementById('rewardModalRoot').innerHTML = '';
+}
+
+async function confirmClaim(resultId, rewardText) {
+    claimRewardModalClose(); // Zamknij modal potwierdzenia
+    
+    // 2. Oznacz nagrodę jako odebraną w bazie danych
+    const { error } = await db
+        .from('event_results')
+        .update({ claimed_at: new Date().toISOString() })
+        .eq('id', resultId)
+        .eq('user_id', user.id); 
+
+    if (error) {
+        console.error("Błąd odbierania nagrody:", error);
+        alert('Błąd: Nie udało się odebrać nagrody. Spróbuj ponownie.');
+        return;
+    }
+
+    // 3. Pokaż finalne potwierdzenie
+    const successModal = document.getElementById('rewardModalRoot');
+    successModal.innerHTML = `
+      <div class="modal" onclick="claimRewardModalClose()">
+        <div class="modal-card" onclick="event.stopPropagation()" style="text-align:center;">
+          <h3>✅ Nagroda Odebrana!</h3>
+          <p>Twoja nagroda: <b>${rewardText}</b> została zarejestrowana.</p>
+          <div style="margin-top:20px;">
+            <button class="btn" onclick="claimRewardModalClose()">OK</button>
+          </div>
+        </div>
+      </div>
+    `;
+    successModal.style.display = 'block';
+    
+    // 4. Odśwież widok wyników
+    showWinners();
+}
+
+/* ---------------------- WIDGET CZATU (WIDOCZNOŚĆ) ---------------------- */
+
+/**
+ * Inicjalizuje widoczność pływającego widżetu czatu.
+ */
+async function initChatWidget() {
+    const chatWidget = document.getElementById('chat-widget'); 
+    if (!chatWidget || !user) return; 
+
+    if (user.is_admin) {
+        // Admin widzi zawsze
+        chatWidget.style.display = 'flex';
+        return;
+    }
+
+    // Sprawdź, czy użytkownik ma jakąkolwiek otwartą konwersację
+    const { data, error } = await db
+        .from('conversations')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('status', 'open')
+        .limit(1);
+
+    if (error) {
+        console.error("Błąd sprawdzania konwersacji dla widgetu:", error);
+        return;
+    }
+
+    if (data && data.length > 0) {
+        // Zwykły użytkownik widzi, jeśli ma otwartą konwersację (np. od Admina po wygranej)
+        chatWidget.style.display = 'flex';
+    } else {
+        chatWidget.style.display = 'none';
+    }
+}
+
+/**
+ * Otwiera stronę czatu.
+ */
+function openChatPage() {
+    // Przekierowanie do chat/index.html. Admin zobaczy listę, User swoją konwersację.
+    window.location.href = `/top/chat/index.html`; 
+}
+
+
+/* ---------------------- ADMIN CHAT ---------------------- */
+
+/**
+ * Inicjuje lub otwiera konwersację z danym użytkownikiem (tylko dla Admina).
+ */
+async function openChatWithUser(targetUserId, eventId = null) {
+    if (!user.is_admin) return;
+
+    // 1. Sprawdź, czy istnieje już otwarta konwersacja z tym user_id
+    let { data: existingConv, error } = await db
+        .from('conversations')
+        .select('id')
+        .eq('user_id', targetUserId)
+        .eq('admin_id', user.id) 
+        .eq('status', 'open')
+        .limit(1)
+        .single();
+        
+    if (error && error.code !== 'PGRST116') { // PGRST116 to "no rows found"
+        console.error("Błąd wyszukiwania konwersacji:", error);
+        return;
+    }
+
+    let conversationId;
+
+    if (existingConv) {
+        conversationId = existingConv.id;
+    } else {
+        // 2. Jeśli nie istnieje, utwórz nową konwersację
+        const { data: newConv, error: insertError } = await db
+            .from('conversations')
+            .insert({
+                user_id: targetUserId,
+                admin_id: user.id,
+                status: 'open',
+                event_id: eventId 
+            })
+            .select('id')
+            .single();
+
+        if (insertError) {
+            console.error("Błąd tworzenia konwersacji:", insertError);
+            return;
+        }
+        conversationId = newConv.id;
+    }
+
+    // 3. Otwórz stronę czatu z ID konwersacji w URL
+    window.location.href = `/top/chat/index.html?conv=${conversationId}`;
+}
+
 
 /* ---------------------- AUTO-REWARDS CONFIG ---------------------- */
 async function openRewardsConfig(){
@@ -854,7 +1125,7 @@ async function openRewardsConfig(){
             <button class="btn secondary" onclick="rebuildPositionsInputs(Number(document.getElementById('cfgWinners').value), JSON.parse(document.getElementById('rewardsStorage').value))">Zmień</button>
           </div>
 
-          <input type="hidden" id="rewardsStorage" value='${JSON.stringify(autoRewards)}'>
+          <input type="hidden" id="rewardsStorage" value='${JSON.stringify(autoRewards).replace(/'/g, "\\'") }'>
 
           <div id="positionsContainer" style="margin-top:12px;">`;
 
@@ -893,23 +1164,22 @@ function rebuildPositionsInputs(count, existing){
   if(!container) return;
   
   const currentRewards = {};
-  const maxExisting = Number(document.getElementById("rewardsStorage").value) ? Object.keys(JSON.parse(document.getElementById("rewardsStorage").value)).reduce((max, key) => Math.max(max, parseInt(key)), 0) : 0;
+  const maxExisting = 100; // Użyj dużej liczby zamiast parsać hidden field, żeby uniknąć błędów parsowania
   
-  for(let i=1; i<=maxExisting; i++){
+  for(let i=1; i<=count; i++){
       const amtEl = document.getElementById(`amt_${i}`);
-      const amt = amtEl ? Number(amtEl.value) : 0;
+      const amt = amtEl ? Number(amtEl.value) : (existing[i]?.amount || ""); // Pobierz z istniejących lub z pola
       if(amt && !isNaN(amt) && amt>0){
         currentRewards[i] = { type: "points", amount: amt };
       }
   }
   
-  const mergedRewards = {...existing, ...currentRewards};
-  document.getElementById("rewardsStorage").value = JSON.stringify(mergedRewards);
+  document.getElementById("rewardsStorage").value = JSON.stringify(currentRewards).replace(/'/g, "\\'"); 
   
   container.innerHTML = "";
   
   for(let i=1;i<=count;i++){
-    const def = mergedRewards[i] || {};
+    const def = currentRewards[i] || {};
     const amount = def.type === "points" ? (def.amount || "") : "";
     const row = document.createElement("div");
     row.className = "form-row";
