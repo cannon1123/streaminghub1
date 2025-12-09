@@ -215,7 +215,7 @@ let currentUser = null;
 /* ------------------- INIT ------------------- */
 (async()=>{
   const { data:{ session } } = await db.auth.getSession();
-  if(!session) return location.href="login.html";
+  if(!session) return location.href="/login/";
   currentUser = session.user;
   document.getElementById("watchAdBtn").onclick = watchAd;
   await loadPoints();
