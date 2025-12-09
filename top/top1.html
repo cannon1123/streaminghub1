@@ -289,10 +289,12 @@ header {
 
 
 <script>
-/* ---------------------- SUPABASE INIT ---------------------- */
+/* ---------------------- SUPABASE INIT (KLUCZE POPRAWIONE) ---------------------- */
 const db = supabase.createClient(
+  // PAMIĘTAJ! Adres URL to: https://[REF].supabase.co
   "https://jjmnacolebxsifmnmqks.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0"
+  // Ten klucz jest publiczny (anon key), ale kluczowe jest, by REF (jjmnacolebxsifmnmqks) w JWT był poprawny.
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbm5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0"
 );
 
 let user = null;
@@ -324,7 +326,14 @@ function parseSupabaseTs(ts){
 
 /* ---------------------- BOOT ---------------------- */
 (async () => {
-  const { data:{ session }} = await db.auth.getSession();
+  const { data:{ session }, error: sessionError } = await db.auth.getSession();
+  
+  if(sessionError) {
+      console.error("Błąd pobierania sesji (problem z kluczem Anon/Service Key):", sessionError);
+      alert("Błąd połączenia z bazą danych (autoryzacja). Sprawdź klucze Supabase.");
+      return;
+  }
+  
   if(!session){ location.href="login.html"; return; }
   user = session.user;
   
