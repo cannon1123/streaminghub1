@@ -384,7 +384,7 @@ async function makeSeriesHtml(rows){
   }).join("");
 }
 
-async function logout(){ await db.auth.signOut(); location.href="login.html"; }
+async function logout(){ await db.auth.signOut(); location.href="/login/"; }
 </script>
 </body>
 </html>
