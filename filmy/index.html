@@ -439,7 +439,7 @@ async function getMovies(filters={}){
   return data||[];
 }
 async function getMovie(id){
-  const { data, error } = await db.from("movies").select("*").eq("id", id).single();
+  const { data, error } = await db.from("movies_secure").select("*").eq("id", id).single();
   if(error) throw error; return data;
 }
 async function addMovie(payload){ return db.from("movies").insert(payload); }
