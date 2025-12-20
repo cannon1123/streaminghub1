@@ -338,9 +338,9 @@ footer {
       <a href="/top/">TOP</a>
 <a href="/moja-biblioteka/">Moja biblioteka</a>
 <form onsubmit="event.preventDefault(); Auth.logout(); window.location='/login/';">
-<a href="#" onclick="UI.show('moja-biblioteka')">Moja biblioteka</a> <button class="btn secondary" onclick="Auth.logout()">Wyloguj</button>
+ <button class="btn secondary" onclick="Auth.logout()">Wyloguj</button>
   <div id="guest-menu" class="flex">
-      <button class="btn" onclick="UI.show('login')">Zaloguj</button>
+      <button class="btn" onclick="UI.show('/login/')">Zaloguj</button>
   </div>
 </form>
 
