@@ -12,6 +12,8 @@
       --muted: #a8bfe2;
       --brand: #4f7cff;
       --border: #232a37;
+      --danger: #c24b4b;
+      --success: #22c55e;
     }
     * { box-sizing: border-box; }
     body {
@@ -30,13 +32,14 @@
       z-index: 10;
     }
     .nav { display: flex; gap: 12px; align-items: center; padding: 12px 16px; }
-    .brand { font-weight: 800; }
+    .brand { font-weight: 800; text-decoration: none; color: #fff; }
     .menu a, .menu button {
       padding: 8px 10px;
       color: var(--muted);
       background: none;
       border: none;
       cursor: pointer;
+      text-decoration: none;
     }
     .btn {
       background: var(--brand);
@@ -45,9 +48,13 @@
       border-radius: 10px;
       border: none;
       cursor: pointer;
+      font-weight: 600;
+      transition: opacity 0.2s;
     }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
     .btn.secondary { background: #2a3446; }
-    .btn.danger { background: #c24b4b; }
+    .btn.danger { background: var(--danger); }
+    .btn.success { background: var(--success); }
     .small-btn {
       padding: 6px 10px;
       border-radius: 8px;
@@ -98,8 +105,8 @@
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(6px);
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(8px);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -112,9 +119,45 @@
       padding: 20px;
       max-width: 800px;
       width: 90%;
-      max-height: 80vh;
-      overflow-y: auto;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
       animation: fadeIn 0.25s ease;
+      position: relative;
+    }
+    
+    /* AD CONTAINER STYLES */
+    .ad-frame-wrapper {
+      flex-grow: 1;
+      background: #000;
+      border-radius: 8px;
+      min-height: 300px;
+      margin: 15px 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    iframe.monetag-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .timer-display {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--brand);
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .center-reward {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      gap: 15px;
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
@@ -141,10 +184,13 @@
 <main class="container" id="app">
   <h1>Moja biblioteka</h1>
 
-  <!-- Punkty -->
   <section id="pointsBox" class="card">
-    <h2>🎯 Twoje punkty: <span id="points">…</span></h2>
-    <button id="watchAdBtn" class="btn">🎬 Obejrzyj reklamę (+50 pkt)</button>
+    <h2>🎯 Twoje punkty: <span id="points">...</span></h2>
+    <div id="adContainer">
+        <button id="watchAdBtn" class="btn">🎬 Obejrzyj reklamę (+50 pkt)</button>
+        <p id="cooldownMsg" class="muted-block" style="color: #e5a50a; display:none;"></p>
+    </div>
+    
     <hr style="margin:20px 0;border-color:var(--border)">
     <h3>🎟 Wykorzystaj kod</h3>
     <input id="codeInput" placeholder="Wpisz kod promocyjny">
@@ -152,7 +198,6 @@
     <p id="codeMessage" class="muted-block"></p>
   </section>
 
-  <!-- Znajomi i wspólne oglądanie -->
   <section id="friendsBox" class="card">
     <h2>🧑‍🤝‍🧑 Społeczność</h2>
     <p>Połącz się ze znajomymi i oglądaj razem filmy!</p>
@@ -162,7 +207,6 @@
     </div>
   </section>
 
-  <!-- Zmiana profilu -->
   <section id="profileBox" class="card">
     <h2>👤 Zmień dane profilu</h2>
     <label>Nazwa użytkownika</label>
@@ -172,7 +216,6 @@
     <button class="btn" onclick="updateProfile()">💾 Zapisz zmiany</button>
   </section>
 
-  <!-- Zmiana hasła -->
   <section id="passwordBox" class="card">
     <h2>🔐 Zmień hasło</h2>
     <input type="password" id="currentPassword" placeholder="Obecne hasło">
@@ -181,7 +224,6 @@
     <button class="btn" onclick="changePassword()">Zmień hasło</button>
   </section>
 
-  <!-- Historia filmów -->
   <section id="filmsBox" class="card">
     <div class="top-row">
       <h2>🎞 Historia oglądania — Filmy</h2>
@@ -190,7 +232,6 @@
     <div id="filmsList" class="row-scroll"></div>
   </section>
 
-  <!-- Historia seriali -->
   <section id="seriesBox" class="card">
     <div class="top-row">
       <h2>📺 Historia oglądania — Seriale</h2>
@@ -202,30 +243,187 @@
 
 <footer>© <script>document.write(new Date().getFullYear())</script> StreamingHub</footer>
 
-<!-- Modal container -->
 <div id="historyModalContainer"></div>
+<div id="adModalContainer"></div>
 
 <script>
+// --- KONFIGURACJA ---
 const db = supabase.createClient(
   "https://jjmnacolebxsifmnmqks.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0"
 );
 let currentUser = null;
 
+const AD_COOLDOWN_MINUTES = 3;
+const POINTS_REWARD = 50; // Zaktualizowano do 50 pkt
+const AD_DURATION = 25; // Czas oczekiwania 25 sekund
+const MONETAG_DIRECT_LINK = "https://thumperjv.com/p/858/3911/498305.html"; // TUTAJ WKLEJ SWÓJ LINK MONETAG
+
 /* ------------------- INIT ------------------- */
 (async()=>{
   const { data:{ session } } = await db.auth.getSession();
   if(!session) return location.href="/login/";
   currentUser = session.user;
-  document.getElementById("watchAdBtn").onclick = watchAd;
-  await loadPoints();
-  await loadProfile();
-  await loadCompactHistory();
+  
+  document.getElementById("watchAdBtn").onclick = initiateAdProcess;
+  
+  await Promise.all([
+    loadPoints(),
+    loadProfile(),
+    loadCompactHistory(),
+    checkCooldownState()
+  ]);
 })();
 
-/* ------------------- PROFIL ------------------- */
+/* ------------------- SYSTEM REKLAMOWY MONETAG ------------------- */
+
+async function initiateAdProcess() {
+  const btn = document.getElementById("watchAdBtn");
+  btn.disabled = true;
+
+  const canWatch = await checkCooldownState();
+  if (!canWatch) {
+    btn.disabled = false;
+    return;
+  }
+
+  showAdModal();
+}
+
+function showAdModal() {
+  const container = document.getElementById("adModalContainer");
+  
+  container.innerHTML = `
+    <div class='modal-backdrop'>
+      <div class='modal' id='adModalContent'>
+        <div id="adHeader">
+            <h3 style="margin:0">⏳ Reklama w toku...</h3>
+            <p class="muted-block" id="statusMsg">Ładowanie treści reklamowej...</p>
+        </div>
+        
+        <div class="ad-frame-wrapper" id="adWrapper">
+           <div id="loadingPlaceholder">Inicjalizacja połączenia...</div>
+           <iframe id="monetagIframe" class="monetag-iframe" src="${MONETAG_DIRECT_LINK}" style="display:none;" onload="startAdCounter()"></iframe>
+        </div>
+        
+        <div id="adFooter" style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="timer-display" id="adTimer">${AD_DURATION}s</div>
+            <button class="btn danger" id="resetAdBtn" onclick="reloadAdIframe()">🔄 Odśwież reklamę</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function reloadAdIframe() {
+  const iframe = document.getElementById("monetagIframe");
+  const placeholder = document.getElementById("loadingPlaceholder");
+  if(iframe) {
+      iframe.style.display = "none";
+      placeholder.style.display = "block";
+      iframe.src = iframe.src;
+  }
+}
+
+let currentTimer = null;
+function startAdCounter() {
+  const iframe = document.getElementById("monetagIframe");
+  const placeholder = document.getElementById("loadingPlaceholder");
+  const statusMsg = document.getElementById("statusMsg");
+  const timerElem = document.getElementById("adTimer");
+  
+  if(iframe) {
+      iframe.style.display = "block";
+      placeholder.style.display = "none";
+      statusMsg.textContent = "Obejrzyj reklamę, aby odebrać punkty.";
+  }
+
+  if(currentTimer) clearInterval(currentTimer);
+  
+  let timeLeft = AD_DURATION;
+  timerElem.textContent = timeLeft + "s";
+
+  currentTimer = setInterval(() => {
+    timeLeft--;
+    timerElem.textContent = timeLeft + "s";
+    
+    if (timeLeft <= 0) {
+      clearInterval(currentTimer);
+      prepareReward();
+    }
+  }, 1000);
+}
+
+function prepareReward() {
+  const modalContent = document.getElementById("adModalContent");
+  
+  // Usuwamy reklamę i pokazujemy przycisk na środku
+  modalContent.innerHTML = `
+    <div class="center-reward" style="padding: 40px 0;">
+        <div style="font-size: 50px;">🎁</div>
+        <h2 style="margin:10px 0;">Reklama zakończona!</h2>
+        <p class="muted-block">Możesz teraz odebrać swoją nagrodę.</p>
+        <button class="btn success" style="padding: 15px 30px; font-size: 1.2rem;" onclick="finishAdSuccess()">💰 ODBIERZ 50 PKT</button>
+    </div>
+  `;
+}
+
+async function finishAdSuccess() {
+  document.getElementById("adModalContainer").innerHTML = ""; 
+  
+  try {
+    const { data: prof } = await db.from("profiles").select("points").eq("id", currentUser.id).single();
+    const newPoints = (prof?.points || 0) + POINTS_REWARD;
+    const now = new Date().toISOString();
+
+    await db.from("profiles").update({ 
+      points: newPoints,
+      last_ad_watched: now
+    }).eq("id", currentUser.id);
+
+    alert(`✅ Dodano +${POINTS_REWARD} pkt do Twojego konta!`);
+    await loadPoints();
+    await checkCooldownState();
+
+  } catch (err) {
+    alert("Błąd połączenia. Spróbuj ponownie za chwilę.");
+  }
+}
+
+async function checkCooldownState() {
+  const btn = document.getElementById("watchAdBtn");
+  const msg = document.getElementById("cooldownMsg");
+  
+  const { data: prof } = await db.from("profiles").select("last_ad_watched").eq("id", currentUser.id).single();
+
+  if (!prof || !prof.last_ad_watched) {
+    btn.disabled = false;
+    msg.style.display = 'none';
+    return true;
+  }
+
+  const lastWatched = new Date(prof.last_ad_watched);
+  const diffMinutes = (new Date() - lastWatched) / 1000 / 60;
+
+  if (diffMinutes < AD_COOLDOWN_MINUTES) {
+    const waitTime = Math.ceil(AD_COOLDOWN_MINUTES - diffMinutes);
+    btn.disabled = true;
+    btn.textContent = `Poczekaj ${waitTime} min`;
+    msg.textContent = `Możesz odebrać kolejne punkty za ${waitTime} minut.`;
+    msg.style.display = 'block';
+    return false;
+  } else {
+    btn.disabled = false;
+    btn.textContent = `🎬 Obejrzyj reklamę (+${POINTS_REWARD} pkt)`;
+    msg.style.display = 'none';
+    return true;
+  }
+}
+
+/* ------------------- POZOSTAŁE FUNKCJE ------------------- */
+
 async function loadProfile(){
-  const { data, error } = await db.from("profiles").select("username,bio").eq("id", currentUser.id).maybeSingle();
+  const { data } = await db.from("profiles").select("username,bio").eq("id", currentUser.id).maybeSingle();
   if (data) {
     document.getElementById("usernameInput").value = data.username || "";
     document.getElementById("bioInput").value = data.bio || "";
@@ -236,23 +434,13 @@ async function updateProfile(){
   const username = document.getElementById("usernameInput").value.trim();
   const bio = document.getElementById("bioInput").value.trim();
   if(!username) return alert("Podaj nazwę użytkownika");
-
   const { error } = await db.from("profiles").update({ username, bio }).eq("id", currentUser.id);
-  if(error) alert("Błąd: " + error.message);
-  else alert("✅ Zaktualizowano profil!");
+  if(error) alert("Błąd: " + error.message); else alert("✅ Zaktualizowano profil!");
 }
 
-/* ------------------- PUNKTY ------------------- */
 async function loadPoints(){
   const { data } = await db.from("profiles").select("points").eq("id", currentUser.id).maybeSingle();
   document.getElementById("points").textContent = data?.points ?? 0;
-}
-
-async function watchAd(){
-  const { data: prof } = await db.from("profiles").select("points").eq("id", currentUser.id).maybeSingle();
-  await db.from("profiles").update({ points: (prof?.points||0)+50 }).eq("id", currentUser.id);
-  await loadPoints();
-  alert("Dodano +50 pkt!");
 }
 
 async function redeemCode(){
@@ -265,27 +453,12 @@ async function redeemCode(){
   if(code.limit_left<=0) return msg.textContent="❌ Kod wykorzystany";
   const { data: prof } = await db.from("profiles").select("points").eq("id", currentUser.id).maybeSingle();
   await db.from("profiles").update({ points: (prof?.points||0)+(code.amount||0) }).eq("id", currentUser.id);
-  await db.from("points_log").insert([{ user_id: currentUser.id, change: code.amount, reason: "Kod: "+val }]);
-  await db.from("codes").update({ limit_left: code.limit_left-1 }).eq("id", code.id);
+  if(code.id) await db.from("codes").update({ limit_left: code.limit_left-1 }).eq("id", code.id);
   msg.textContent="✅ Dodano "+code.amount+" pkt!";
   input.value="";
   await loadPoints();
 }
 
-/* ------------------- HASŁO ------------------- */
-async function changePassword(){
-  const cur=document.getElementById("currentPassword").value.trim();
-  const n=document.getElementById("newPassword").value.trim();
-  const c=document.getElementById("confirmPassword").value.trim();
-  if(!cur||!n||!c) return alert("Uzupełnij pola");
-  if(n!==c) return alert("Hasła różne");
-  const { error: loginErr } = await db.auth.signInWithPassword({ email: currentUser.email, password: cur });
-  if(loginErr) return alert("Złe obecne hasło");
-  const { error } = await db.auth.updateUser({ password:n });
-  if(error) alert(error.message); else alert("Hasło zmienione ✅");
-}
-
-/* ------------------- HISTORIA ------------------- */
 async function loadCompactHistory(){
   const { data } = await db.from("watch_history").select("*").eq("user_id", currentUser.id).order("watched_at",{ascending:false}).limit(100);
   const movies = [...new Map(data.filter(d=>d.movie_id).map(x=>[x.movie_id,x])).values()].slice(0,6);
@@ -294,7 +467,6 @@ async function loadCompactHistory(){
   document.getElementById("seriesList").innerHTML = await makeSeriesHtml(series);
 }
 
-/* ------------------- MODAL ------------------- */
 async function openHistoryModal(type){
   const modalContainer = document.getElementById("historyModalContainer");
   modalContainer.innerHTML = `<div class='modal-backdrop' onclick='closeModal(event)'><div class='modal' onclick='event.stopPropagation()'>
@@ -321,7 +493,6 @@ function closeModal(e){
   document.getElementById("historyModalContainer").innerHTML="";
 }
 
-/* Potwierdzenie usunięcia */
 function confirmClear(type){
   const modal = document.querySelector(".modal");
   modal.innerHTML = `
@@ -341,7 +512,6 @@ async function clearHistory(type){
   await loadCompactHistory();
 }
 
-/* ------------------- HTML GENERATORY ------------------- */
 async function makeFilmsHtml(rows){
   if(!rows.length) return "<div class='muted-block'>Brak historii filmów.</div>";
   const ids=rows.map(r=>r.movie_id);
