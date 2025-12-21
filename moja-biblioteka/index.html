@@ -534,18 +534,34 @@ async function makeFilmsHtml(rows){
 
 async function makeSeriesHtml(rows){
   if(!rows.length) return "<div class='muted-block'>Brak historii seriali.</div>";
-  const eids=rows.map(r=>r.episode_id);
-  const { data: eps }=await db.from("episodes").select("id,series_id,season,episode,thumb").in("id",eids);
-  const sids=[...new Set(eps.map(e=>e.series_id))];
-  const { data: series }=await db.from("series").select("id,title").in("id",sids);
-  const sMap=new Map(series.map(s=>[s.id,s]));
-  return eps.map(e=>{
-    const thumb=e.thumb;
+  
+  const eids = rows.map(r => r.episode_id);
+  
+  // Pobieramy dane odcinków
+  const { data: eps } = await db.from("episodes").select("id,series_id,season,episode,thumb").in("id",eids);
+  
+  const sids = [...new Set(eps.map(e => e.series_id))];
+  // Pobieramy dane seriali (dodajemy thumb jako zapas gdyby odcinek nie miał swojego)
+  const { data: series } = await db.from("series").select("id,title,thumb").in("id",sids);
+  
+  // Tworzymy mapy dla szybkiego dostępu
+  const sMap = new Map(series.map(s => [s.id, s]));
+  const eMap = new Map(eps.map(e => [e.id, e]));
+
+  // Mapujemy po ROWS (historii), a nie po EPS, żeby miniaturka s5e4 zawsze była przy s5e4
+  return rows.map(r => {
+    const e = eMap.get(r.episode_id);
+    if (!e) return ""; // Zabezpieczenie jeśli odcinek został usunięty z bazy
+    
+    const s = sMap.get(e.series_id);
+    // Używamy thumb z odcinka, a jeśli go brak, to z serialu
+    const thumb = e.thumb || s?.thumb || '';
+    
     return `<div class='item'>
       <div style="display:flex;gap:12px;align-items:center;">
-        <img class='thumb' src='${thumb||''}'>
+        <img class='thumb' src='${thumb}' onerror="this.src='placeholder.png'">
         <div>
-          <b>${sMap.get(e.series_id)?.title||'Serial'}</b>
+          <b>${s?.title || 'Serial'}</b>
           <div class='muted-block'>S${e.season}E${e.episode}</div>
         </div>
       </div>
@@ -553,7 +569,6 @@ async function makeSeriesHtml(rows){
     </div>`;
   }).join("");
 }
-
 async function logout(){ await db.auth.signOut(); location.href="/login/"; }
 </script>
 </body>
