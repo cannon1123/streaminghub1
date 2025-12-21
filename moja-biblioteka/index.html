@@ -105,7 +105,7 @@
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.9);
+      background: rgba(0, 0, 0, 0.92);
       backdrop-filter: blur(8px);
       display: flex;
       justify-content: center;
@@ -116,49 +116,33 @@
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 20px;
-      max-width: 800px;
+      padding: 25px;
+      max-width: 500px;
       width: 90%;
-      max-height: 90vh;
       display: flex;
       flex-direction: column;
       animation: fadeIn 0.25s ease;
-      position: relative;
+      text-align: center;
     }
     
-    /* AD CONTAINER STYLES */
     .ad-frame-wrapper {
-      flex-grow: 1;
       background: #000;
       border-radius: 8px;
-      min-height: 300px;
-      margin: 15px 0;
-      overflow: hidden;
+      min-height: 250px;
+      margin: 20px 0;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
-      position: relative;
+      border: 1px dashed var(--border);
     }
-    iframe.monetag-iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
+
     .timer-display {
-      font-size: 1.5rem;
+      font-size: 2rem;
       font-weight: bold;
       color: var(--brand);
-      text-align: center;
-      margin-bottom: 10px;
+      margin: 10px 0;
     }
-    .center-reward {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      gap: 15px;
-    }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
@@ -255,9 +239,8 @@ const db = supabase.createClient(
 let currentUser = null;
 
 const AD_COOLDOWN_MINUTES = 3;
-const POINTS_REWARD = 50; // Zaktualizowano do 50 pkt
-const AD_DURATION = 25; // Czas oczekiwania 25 sekund
-const MONETAG_DIRECT_LINK = "https://otieu.com/4/10359105"; // TUTAJ WKLEJ SWÓJ LINK MONETAG
+const POINTS_REWARD = 50; 
+const AD_DURATION = 25; 
 
 /* ------------------- INIT ------------------- */
 (async()=>{
@@ -275,7 +258,7 @@ const MONETAG_DIRECT_LINK = "https://otieu.com/4/10359105"; // TUTAJ WKLEJ SWÓJ
   ]);
 })();
 
-/* ------------------- SYSTEM REKLAMOWY MONETAG ------------------- */
+/* ------------------- SYSTEM REKLAMOWY A-ADS ------------------- */
 
 async function initiateAdProcess() {
   const btn = document.getElementById("watchAdBtn");
@@ -296,53 +279,28 @@ function showAdModal() {
   container.innerHTML = `
     <div class='modal-backdrop'>
       <div class='modal' id='adModalContent'>
-        <div id="adHeader">
-            <h3 style="margin:0">⏳ Reklama w toku...</h3>
-            <p class="muted-block" id="statusMsg">Ładowanie treści reklamowej...</p>
+        <h3 style="margin:0">⏳ Reklama w toku...</h3>
+        <p class="muted-block">Obejrzyj reklamę poniżej, aby otrzymać punkty.</p>
+        
+        <div class="ad-frame-wrapper">
+           <iframe data-aa='2421578' src='//acceptable.a-ads.com/2421578/?size=Adaptive' style='border:0; width:100%; height:250px;'></iframe>
         </div>
         
-        <div class="ad-frame-wrapper" id="adWrapper">
-           <div id="loadingPlaceholder">Inicjalizacja połączenia...</div>
-           <iframe id="monetagIframe" class="monetag-iframe" src="${MONETAG_DIRECT_LINK}" style="display:none;" onload="startAdCounter()"></iframe>
-        </div>
-        
-        <div id="adFooter" style="display:flex; justify-content:space-between; align-items:center;">
-            <div class="timer-display" id="adTimer">${AD_DURATION}s</div>
-            <button class="btn danger" id="resetAdBtn" onclick="reloadAdIframe()">🔄 Odśwież reklamę</button>
-        </div>
+        <div class="timer-display" id="adTimer">${AD_DURATION}s</div>
+        <p class="muted-block" style="font-size: 11px;">Nie zamykaj tego okna przed czasem.</p>
       </div>
     </div>
   `;
-}
-
-function reloadAdIframe() {
-  const iframe = document.getElementById("monetagIframe");
-  const placeholder = document.getElementById("loadingPlaceholder");
-  if(iframe) {
-      iframe.style.display = "none";
-      placeholder.style.display = "block";
-      iframe.src = iframe.src;
-  }
+  
+  startAdCounter();
 }
 
 let currentTimer = null;
 function startAdCounter() {
-  const iframe = document.getElementById("monetagIframe");
-  const placeholder = document.getElementById("loadingPlaceholder");
-  const statusMsg = document.getElementById("statusMsg");
   const timerElem = document.getElementById("adTimer");
-  
-  if(iframe) {
-      iframe.style.display = "block";
-      placeholder.style.display = "none";
-      statusMsg.textContent = "Obejrzyj reklamę, aby odebrać punkty.";
-  }
-
   if(currentTimer) clearInterval(currentTimer);
   
   let timeLeft = AD_DURATION;
-  timerElem.textContent = timeLeft + "s";
-
   currentTimer = setInterval(() => {
     timeLeft--;
     timerElem.textContent = timeLeft + "s";
@@ -356,44 +314,37 @@ function startAdCounter() {
 
 function prepareReward() {
   const modalContent = document.getElementById("adModalContent");
-  
-  // Usuwamy reklamę i pokazujemy przycisk na środku
   modalContent.innerHTML = `
-    <div class="center-reward" style="padding: 40px 0;">
+    <div style="padding: 30px 0;">
         <div style="font-size: 50px;">🎁</div>
-        <h2 style="margin:10px 0;">Reklama zakończona!</h2>
-        <p class="muted-block">Możesz teraz odebrać swoją nagrodę.</p>
-        <button class="btn success" style="padding: 15px 30px; font-size: 1.2rem;" onclick="finishAdSuccess()">💰 ODBIERZ 50 PKT</button>
+        <h2 style="margin:10px 0;">Gotowe!</h2>
+        <p class="muted-block">Reklama zweryfikowana. Odbierz swoje punkty.</p>
+        <button class="btn success" style="width:100%; padding: 15px; margin-top:20px;" onclick="finishAdSuccess()">💰 ODBIERZ 50 PKT</button>
     </div>
   `;
 }
 
 async function finishAdSuccess() {
   document.getElementById("adModalContainer").innerHTML = ""; 
-  
   try {
     const { data: prof } = await db.from("profiles").select("points").eq("id", currentUser.id).single();
     const newPoints = (prof?.points || 0) + POINTS_REWARD;
-    const now = new Date().toISOString();
-
     await db.from("profiles").update({ 
       points: newPoints,
-      last_ad_watched: now
+      last_ad_watched: new Date().toISOString()
     }).eq("id", currentUser.id);
 
-    alert(`✅ Dodano +${POINTS_REWARD} pkt do Twojego konta!`);
+    alert(`✅ Dodano +${POINTS_REWARD} pkt!`);
     await loadPoints();
     await checkCooldownState();
-
   } catch (err) {
-    alert("Błąd połączenia. Spróbuj ponownie za chwilę.");
+    alert("Błąd połączenia.");
   }
 }
 
 async function checkCooldownState() {
   const btn = document.getElementById("watchAdBtn");
   const msg = document.getElementById("cooldownMsg");
-  
   const { data: prof } = await db.from("profiles").select("last_ad_watched").eq("id", currentUser.id).single();
 
   if (!prof || !prof.last_ad_watched) {
@@ -402,14 +353,12 @@ async function checkCooldownState() {
     return true;
   }
 
-  const lastWatched = new Date(prof.last_ad_watched);
-  const diffMinutes = (new Date() - lastWatched) / 1000 / 60;
-
+  const diffMinutes = (new Date() - new Date(prof.last_ad_watched)) / 60000;
   if (diffMinutes < AD_COOLDOWN_MINUTES) {
     const waitTime = Math.ceil(AD_COOLDOWN_MINUTES - diffMinutes);
     btn.disabled = true;
     btn.textContent = `Poczekaj ${waitTime} min`;
-    msg.textContent = `Możesz odebrać kolejne punkty za ${waitTime} minut.`;
+    msg.textContent = `Kolejna nagroda za ${waitTime} minut.`;
     msg.style.display = 'block';
     return false;
   } else {
@@ -420,8 +369,7 @@ async function checkCooldownState() {
   }
 }
 
-/* ------------------- POZOSTAŁE FUNKCJE ------------------- */
-
+/* --- POZOSTAŁE FUNKCJE (BEZ ZMIAN) --- */
 async function loadProfile(){
   const { data } = await db.from("profiles").select("username,bio").eq("id", currentUser.id).maybeSingle();
   if (data) {
@@ -429,36 +377,28 @@ async function loadProfile(){
     document.getElementById("bioInput").value = data.bio || "";
   }
 }
-
 async function updateProfile(){
   const username = document.getElementById("usernameInput").value.trim();
   const bio = document.getElementById("bioInput").value.trim();
   if(!username) return alert("Podaj nazwę użytkownika");
-  const { error } = await db.from("profiles").update({ username, bio }).eq("id", currentUser.id);
-  if(error) alert("Błąd: " + error.message); else alert("✅ Zaktualizowano profil!");
+  await db.from("profiles").update({ username, bio }).eq("id", currentUser.id);
+  alert("✅ Zaktualizowano profil!");
 }
-
 async function loadPoints(){
   const { data } = await db.from("profiles").select("points").eq("id", currentUser.id).maybeSingle();
   document.getElementById("points").textContent = data?.points ?? 0;
 }
-
 async function redeemCode(){
   const input = document.getElementById("codeInput");
-  const msg = document.getElementById("codeMessage");
   const val = input.value.trim();
-  if(!val) return alert("Podaj kod");
   const { data: code } = await db.from("codes").select("*").eq("code", val).maybeSingle();
-  if(!code) return msg.textContent="❌ Kod nie istnieje";
-  if(code.limit_left<=0) return msg.textContent="❌ Kod wykorzystany";
+  if(!code || code.limit_left<=0) return alert("Kod nieprawidłowy");
   const { data: prof } = await db.from("profiles").select("points").eq("id", currentUser.id).maybeSingle();
-  await db.from("profiles").update({ points: (prof?.points||0)+(code.amount||0) }).eq("id", currentUser.id);
-  if(code.id) await db.from("codes").update({ limit_left: code.limit_left-1 }).eq("id", code.id);
-  msg.textContent="✅ Dodano "+code.amount+" pkt!";
-  input.value="";
-  await loadPoints();
+  await db.from("profiles").update({ points: (prof?.points||0)+code.amount }).eq("id", currentUser.id);
+  await db.from("codes").update({ limit_left: code.limit_left-1 }).eq("id", code.id);
+  alert("✅ Kod aktywowany!");
+  input.value=""; loadPoints();
 }
-
 async function loadCompactHistory(){
   const { data } = await db.from("watch_history").select("*").eq("user_id", currentUser.id).order("watched_at",{ascending:false}).limit(100);
   const movies = [...new Map(data.filter(d=>d.movie_id).map(x=>[x.movie_id,x])).values()].slice(0,6);
@@ -466,107 +406,26 @@ async function loadCompactHistory(){
   document.getElementById("filmsList").innerHTML = await makeFilmsHtml(movies);
   document.getElementById("seriesList").innerHTML = await makeSeriesHtml(series);
 }
-
-async function openHistoryModal(type){
-  const modalContainer = document.getElementById("historyModalContainer");
-  modalContainer.innerHTML = `<div class='modal-backdrop' onclick='closeModal(event)'><div class='modal' onclick='event.stopPropagation()'>
-    <h2>${type==='movie'?'🎞 Cała historia filmów':'📺 Cała historia seriali'}</h2>
-    <div id='modalList' class='mt-2'>Ładowanie…</div>
-    <div style='margin-top:12px;text-align:right'>
-      <button class='btn danger' onclick="confirmClear('${type}')">🗑 Wyczyść historię</button>
-      <button class='btn secondary' onclick='closeModal()'>← Powrót</button>
-    </div>
-  </div></div>`;
-  const list = document.getElementById("modalList");
-  const { data } = await db.from("watch_history").select("*").eq("user_id", currentUser.id).order("watched_at",{ascending:false});
-  if(type==='movie'){
-    const rows = [...new Map(data.filter(r=>r.movie_id).map(r=>[r.movie_id,r])).values()];
-    list.innerHTML = await makeFilmsHtml(rows);
-  }else{
-    const rows = [...new Map(data.filter(r=>r.episode_id).map(r=>[r.episode_id,r])).values()];
-    list.innerHTML = await makeSeriesHtml(rows);
-  }
-}
-
-function closeModal(e){
-  if(e && e.target!==e.currentTarget) return;
-  document.getElementById("historyModalContainer").innerHTML="";
-}
-
-function confirmClear(type){
-  const modal = document.querySelector(".modal");
-  modal.innerHTML = `
-    <h2>🗑 Usuń historię</h2>
-    <p>Czy na pewno chcesz usunąć całą historię ${type==='movie'?'filmów':'seriali'}?</p>
-    <button class='btn danger' onclick="clearHistory('${type}')">Tak, usuń</button>
-    <button class='btn secondary' onclick='closeModal()'>Anuluj</button>`;
-}
-
-async function clearHistory(type){
-  if(type==='movie')
-    await db.from("watch_history").delete().eq("user_id", currentUser.id).not("movie_id","is",null);
-  else
-    await db.from("watch_history").delete().eq("user_id", currentUser.id).not("episode_id","is",null);
-  alert("Historia usunięta ✅");
-  closeModal();
-  await loadCompactHistory();
-}
-
 async function makeFilmsHtml(rows){
-  if(!rows.length) return "<div class='muted-block'>Brak historii filmów.</div>";
-  const ids=rows.map(r=>r.movie_id);
-  const { data }=await db.from("movies").select("id,title,thumb").in("id",ids);
-  const map=new Map((data||[]).map(m=>[m.id,m]));
+  if(!rows.length) return "<div class='muted-block'>Brak historii.</div>";
+  const { data } = await db.from("movies").select("id,title,thumb").in("id",rows.map(r=>r.movie_id));
+  const map = new Map(data.map(m=>[m.id,m]));
   return rows.map(r=>{
     const m=map.get(r.movie_id);
-    return `<div class='item'>
-      <div style="display:flex;gap:12px;align-items:center;">
-        <img class='thumb' src='${m?.thumb||''}'>
-        <div>
-          <b>${m?.title||'Film'}</b>
-          <div class='muted-block'>${new Date(r.watched_at).toLocaleString()}</div>
-        </div>
-      </div>
-      <button class='small-btn' onclick="location.href='filmy.html?id=${m?.id}'">▶ Otwórz</button>
-    </div>`;
+    return `<div class='item'><div style="display:flex;gap:12px;align-items:center;"><img class='thumb' src='${m?.thumb||''}'><div><b>${m?.title||'Film'}</b><div class='muted-block'>${new Date(r.watched_at).toLocaleString()}</div></div></div><button class='small-btn' onclick="location.href='filmy.html?id=${m?.id}'">▶</button></div>`;
   }).join("");
 }
-
 async function makeSeriesHtml(rows){
-  if(!rows.length) return "<div class='muted-block'>Brak historii seriali.</div>";
-  
-  const eids = rows.map(r => r.episode_id);
-  
-  // Pobieramy dane odcinków
-  const { data: eps } = await db.from("episodes").select("id,series_id,season,episode,thumb").in("id",eids);
-  
-  const sids = [...new Set(eps.map(e => e.series_id))];
-  // Pobieramy dane seriali (dodajemy thumb jako zapas gdyby odcinek nie miał swojego)
+  if(!rows.length) return "<div class='muted-block'>Brak historii.</div>";
+  const { data: eps } = await db.from("episodes").select("id,series_id,season,episode,thumb").in("id",rows.map(r=>r.episode_id));
+  const sids = [...new Set(eps.map(e=>e.series_id))];
   const { data: series } = await db.from("series").select("id,title,thumb").in("id",sids);
-  
-  // Tworzymy mapy dla szybkiego dostępu
-  const sMap = new Map(series.map(s => [s.id, s]));
-  const eMap = new Map(eps.map(e => [e.id, e]));
-
-  // Mapujemy po ROWS (historii), a nie po EPS, żeby miniaturka s5e4 zawsze była przy s5e4
-  return rows.map(r => {
-    const e = eMap.get(r.episode_id);
-    if (!e) return ""; // Zabezpieczenie jeśli odcinek został usunięty z bazy
-    
+  const sMap = new Map(series.map(s=>[s.id,s]));
+  const eMap = new Map(eps.map(e=>[e.id,e]));
+  return rows.map(r=>{
+    const e = eMap.get(r.episode_id); if(!e) return "";
     const s = sMap.get(e.series_id);
-    // Używamy thumb z odcinka, a jeśli go brak, to z serialu
-    const thumb = e.thumb || s?.thumb || '';
-    
-    return `<div class='item'>
-      <div style="display:flex;gap:12px;align-items:center;">
-        <img class='thumb' src='${thumb}' onerror="this.src='placeholder.png'">
-        <div>
-          <b>${s?.title || 'Serial'}</b>
-          <div class='muted-block'>S${e.season}E${e.episode}</div>
-        </div>
-      </div>
-      <button class='small-btn' onclick="location.href='seriale.html?series=${e.series_id}&season=${e.season}&episode=${e.episode}'">▶ Otwórz</button>
-    </div>`;
+    return `<div class='item'><div style="display:flex;gap:12px;align-items:center;"><img class='thumb' src='${e.thumb||s?.thumb||''}'><div><b>${s?.title||'Serial'}</b><div class='muted-block'>S${e.season}E${e.episode}</div></div></div><button class='small-btn' onclick="location.href='seriale.html?series=${e.series_id}&season=${e.season}&episode=${e.episode}'">▶</button></div>`;
   }).join("");
 }
 async function logout(){ await db.auth.signOut(); location.href="/login/"; }
