@@ -75,7 +75,6 @@
     }
     button:hover { background:#668cff; }
 
-    /* Google Button */
     .btn-google {
       background: var(--google-bg); color: var(--google-text);
       display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -84,7 +83,6 @@
     .btn-google:hover { background: #f0f0f0; }
     .btn-google svg { width: 20px; height: 20px; }
 
-    /* Separator */
     .separator {
       display: flex; align-items: center; text-align: center;
       color: var(--muted); font-size: 0.85rem; margin: 15px 0;
@@ -111,13 +109,12 @@
       font-size:0.9rem;
     }
 
-    /* --- NOWE STYLE MOBILNE SKOPIOWANE Z WZORU --- */
     @media (max-width: 900px) {
       .row { grid-template-columns: 1fr; }
       .nav { flex-direction: column; align-items: stretch; }
       .menu { justify-content: center; }
       .card img { height: 180px; }
-      .container { padding: 12px; }
+      .container { padding: 24px; }
     }
 
     @media (max-width: 600px) {
@@ -220,7 +217,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// KONFIGURACJA
 const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
