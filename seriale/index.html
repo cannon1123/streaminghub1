@@ -125,12 +125,13 @@
 
     .alert {
       background: #152031;
-      padding: 20px;
-      border-radius: 10px;
+      padding: 30px;
+      border-radius: 14px;
       color: var(--text);
-      margin: 20px 0;
+      margin: 40px auto;
       text-align: center;
       border: 1px solid var(--border);
+      max-width: 500px;
     }
 
     .flex { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
@@ -246,8 +247,8 @@
     <nav class="menu flex" id="menu">
       <a href="index.html">Filmy</a>
       <a href="#" class="active" style="color:#fff">Seriale</a>
-      <a href="/top/">TOP</a>
-      <a href="/moja-biblioteka/">Biblioteka</a>
+      <a href="index.html">TOP</a>
+      <a href="index.html">Biblioteka</a>
       
       <div id="authBtns">
         </div>
@@ -277,7 +278,7 @@ function slugify(str) {
     .replace(/^\-|\-$/g,"");
 }
 function safeThumb(url) {
-  if (!url) return "https://via.placeholder.com/400x600?text=Brak+Okładki"; // Placeholder
+  if (!url) return "https://via.placeholder.com/400x600?text=Brak+Okładki";
   return url;
 }
 function escapeHtml(str){ return (str||"").replace(/[&<>"']/g, s=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[s])); }
@@ -294,24 +295,26 @@ let CURRENT_EPISODES = [];
   const authBtns = document.getElementById("authBtns");
   const main = document.getElementById("main");
 
-  // 1. Sprawdzenie logowania - NOWE PODEJŚCIE (bez alerta)
+  // 1. Sprawdzenie logowania - Jeśli BRAK sesji
   if (!session || !session.user) {
-    // Użytkownik NIE jest zalogowany -> Pokaż ładny komunikat zamiast listy
+    // Przycisk "Zaloguj" w menu
     authBtns.innerHTML = `<a href="index.html" class="btn">Zaloguj</a>`;
+    
+    // Blokada treści z komunikatem i przyciskiem powrotu do index.html
     main.innerHTML = `
-      <div class="alert" style="max-width: 500px; margin: 40px auto;">
-        <h2 style="margin-top:0">🔒 Dostęp zablokowany.</h2>
-        <p style="color:var(--muted); margin-bottom: 20px;">
+      <div class="alert">
+        <h2 style="margin-top:0">🔒 Dostęp zablokowany</h2>
+        <p style="color:var(--muted); margin-bottom: 24px;">
           Sekcja seriali jest dostępna wyłącznie dla zarejestrowanych użytkowników.
-          Zaloguj się na swoje konto, aby uzyskać dostęp.
+          Zaloguj się na swoje konto.
         </p>
         <a href="index.html" class="btn">Zaloguj się / Wróć na stronę główną</a>
       </div>
     `;
-    return; // Zatrzymaj dalsze ładowanie skryptu
+    return; // Stop skryptu
   }
 
-  // 2. Użytkownik JEST zalogowany -> Pokaż przycisk wyloguj i ładuj aplikację
+  // 2. Użytkownik JEST zalogowany
   authBtns.innerHTML = `<button class="btn secondary" onclick="logout()">Wyloguj</button>`;
   
   await UI.init();
@@ -321,7 +324,7 @@ let CURRENT_EPISODES = [];
 
 async function logout() {
   await db.auth.signOut();
-  location.href = "index.html"; // Po wylogowaniu wracamy do filmów
+  location.href = "index.html"; // Po wylogowaniu wracamy do index.html
 }
 
 /* ---------- Pobieranie Danych ---------- */
@@ -351,12 +354,12 @@ async function getAllEpisodesForSeries(series_id) {
 /* ---------- UI Logika ---------- */
 const UI = {
   async init() {
-    // Renderuje szkielet widoku listy (filtry + grid)
+    // Pobranie danych
     const cats = await getCategories();
     const series = await getSeries();
     SERIES_LIST = series;
     
-    // Budowanie mapy slugów
+    // Mapa slugów
     SLUG_MAP = {};
     series.forEach(s => {
       SLUG_MAP[slugify(s.title || `${s.id}`)] = s.id;
@@ -364,7 +367,7 @@ const UI = {
 
     const main = document.getElementById("main");
     
-    // Render HTML filtrów i kontenera listy
+    // Renderowanie widoku głównego seriali
     main.innerHTML = `
       <section class="section mt-8">
         <h2>Seriale</h2>
@@ -400,8 +403,11 @@ const UI = {
 
     // Obsługa szukajki w headerze
     document.getElementById("globalSearch").addEventListener("input", (e) => {
-        document.getElementById("search").value = e.target.value;
-        UI.apply();
+        const searchInput = document.getElementById("search");
+        if(searchInput) {
+            searchInput.value = e.target.value;
+            UI.apply();
+        }
     });
   },
 
@@ -412,7 +418,6 @@ const UI = {
     };
     const s = await getSeries(filters);
     SERIES_LIST = s;
-    // Aktualizuj mapę slugów dla wyników wyszukiwania
     SLUG_MAP = {};
     s.forEach(item => SLUG_MAP[slugify(item.title || `${item.id}`)] = item.id);
     renderSeriesGrid(s);
@@ -424,10 +429,12 @@ function renderSeriesGrid(series) {
   const grid = document.getElementById("seriesGrid");
   const detailView = document.getElementById("detailView");
   
+  if(!grid) return; // Zabezpieczenie
+
   // Pokaż grid, ukryj detale
   grid.parentElement.classList.remove("hidden");
   detailView.classList.add("hidden");
-  detailView.innerHTML = ""; // Czyść detale
+  detailView.innerHTML = ""; 
 
   if (!series.length) {
     grid.innerHTML = `<div class="small" style="grid-column: 1/-1; text-align:center; padding: 20px;">Brak wyników</div>`;
@@ -462,7 +469,8 @@ function handleHashChange() {
   if (!raw) {
     const gridSection = document.querySelector("section.section");
     if(gridSection) gridSection.classList.remove("hidden");
-    document.getElementById("detailView").classList.add("hidden");
+    const detailView = document.getElementById("detailView");
+    if(detailView) detailView.classList.add("hidden");
     return;
   }
 
@@ -472,14 +480,12 @@ function handleHashChange() {
   const seriesId = SLUG_MAP[slug] || null;
 
   if (!seriesId) {
-    // Jeśli nie znaleziono w obecnej liście (np. po bezpośrednim wejściu z linku), spróbuj pobrać
+    // Jeśli wchodzimy z linku bezpośredniego i mapa nie jest gotowa, pobierz dane
     (async () => {
-       // Pobierz wszystko (uproszczone) aby znaleźć ID
        const all = await getSeries();
        all.forEach(s => SLUG_MAP[slugify(s.title)] = s.id);
        const idFound = SLUG_MAP[slug];
        if(idFound) openSeries(idFound, parts.slice(1));
-       else console.log("Nie znaleziono serialu:", slug);
     })();
     return;
   }
@@ -539,14 +545,12 @@ async function openSeries(seriesId, tailParts=[]) {
         </div>
      `;
      
-     // Zapisz sezony do UI, żeby mieć do nich dostęp
      UI.currentSeasons = seasons; 
   }
 
   // Obsługa logiki wyboru sezonu/odcinka z URL
   const [seasonPart, epPart] = tailParts;
   
-  // Domyślnie wybierz 1. sezon jeśli nic nie wybrano, a są sezony
   if(!seasonPart && UI.currentSeasons && UI.currentSeasons.length > 0) {
       UI.selectSeason(UI.currentSeasons[0].seasonNumber);
   } else if (seasonPart) {
@@ -574,13 +578,11 @@ function buildSeasonsFromEpisodes(episodes) {
 }
 
 UI.selectSeason = function(seasonNumber) {
-    // Aktualizuj UI chipów
     document.querySelectorAll('.season-chip').forEach(c => {
         if(c.textContent.trim() === `Sezon ${seasonNumber}`) c.classList.add('active');
         else c.classList.remove('active');
     });
 
-    // Filtruj odcinki
     const getSeason = (ep) => (ep.season ?? ep.season_number ?? 1);
     const eps = CURRENT_EPISODES.filter(e => getSeason(e) == seasonNumber)
         .sort((a,b) => (a.episode_number || a.id) - (b.episode_number || b.id));
@@ -616,11 +618,7 @@ function playEpisode(ep) {
     playerArea.classList.remove("hidden");
     frame.src = url;
     title.innerText = `Oglądasz: ${ep.title || "Odcinek"}`;
-    
-    // Scroll do playera
     playerArea.scrollIntoView({ behavior: "smooth" });
-    
-    // Zapisz historię
     saveEpisodeHistory(ep.series_id, ep.id);
 }
 
@@ -629,7 +627,6 @@ async function saveEpisodeHistory(seriesId, episodeId) {
     if (!session) return;
     const userId = session.user.id;
 
-    // Prosty upsert/insert historii
     const { data: existing } = await db.from("watch_history")
       .select("id").eq("user_id", userId).eq("episode_id", episodeId).maybeSingle();
 
