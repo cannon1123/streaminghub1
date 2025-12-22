@@ -39,7 +39,7 @@
       margin:0 auto; 
       padding:12px 16px; 
       gap:12px; 
-      flex-wrap: wrap; /* Pozwala na zawijanie na małych ekranach */
+      flex-wrap: wrap; 
     }
     
     .brand { font-weight:700; display:flex; align-items:center; gap:8px; color:var(--text); }
@@ -56,8 +56,12 @@
     }
     
     .menu { display:flex; align-items:center; gap:16px; flex-wrap: wrap; }
-    .menu a { color:var(--muted); font-size:0.95rem; transition:color .2s; }
+    .menu a { color:var(--muted); font-size:0.95rem; transition:color .2s; cursor: pointer; }
+    .menu a:hover { color: #fff; }
     
+    /* Styl dla aktywnego linku */
+    .menu a.active { color: #fff; font-weight: 600; }
+
     .btn { background:var(--brand); color:#fff; padding:8px 14px; border-radius:12px; border:none; cursor:pointer; font-size:0.9rem; transition:background .18s; display: inline-block;}
     .btn.secondary { background:#2a3446; }
     
@@ -119,57 +123,40 @@
     .player-info { margin-top:10px; color:var(--muted); }
 
     .no-results { text-align:center; color:var(--muted); margin-top:30px; }
-    .login-wall { text-align:center; padding: 60px 20px; background: var(--card); border-radius: 14px; border: 1px solid var(--border); margin-top: 40px; }
+    
+    /* Styl komunikatu o logowaniu */
+    .login-wall { 
+      text-align:center; 
+      padding: 60px 20px; 
+      background: var(--card); 
+      border-radius: 14px; 
+      border: 1px solid var(--border); 
+      margin-top: 40px; 
+    }
 
     footer { color:var(--muted); text-align:center; padding:30px 0; font-size:0.9rem; }
 
-    /* =========================================
-       RESPONSYWNOŚĆ (Mobile & Tablet) - skopiowane i dopasowane
-       ========================================= */
-
+    /* --- Responsywność --- */
     @media (max-width: 900px) {
       .series-header { flex-direction:column; align-items:flex-start; }
       .series-thumb { width:100%; height:300px; }
-      
-      /* ZMNIEJSZONA TOPKA (NAGŁÓWEK) */
-      .nav { 
-        flex-direction: column; 
-        align-items: stretch; 
-        padding: 8px 12px; 
-        gap: 8px;          
-      }
-      .nav input[type="search"] {
-        max-width: 100%;
-      }
+      .nav { flex-direction: column; align-items: stretch; padding: 8px 12px; gap: 8px; }
+      .nav input[type="search"] { max-width: 100%; }
       .menu { justify-content: center; }
       .card img { height: 180px; }
       .container { padding: 12px; }
     }
-
     @media (max-width: 600px) {
-      /* Siatka filmów na mniejsze ekrany */
       .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
-      
-      /* Mniejsze przyciski i teksty */
       .btn { padding: 8px 12px; font-size: 14px; }
       h1, h2, h3 { font-size: 1.1rem; }
-      
       .card img { height: 150px; }
       input, select, textarea { font-size: 14px; }
     }
-
     @media (max-width: 400px) {
-      /* BARDZO MAŁE EKRANY - ULTRA KOMPAKTOWA TOPKA */
-      .nav { 
-        padding: 6px; 
-      }
-      .nav input[type=search] { 
-        padding: 8px; 
-        font-size: 13px; 
-      }
+      .nav { padding: 6px; }
+      .nav input[type=search] { padding: 8px; font-size: 13px; }
       .menu a, .menu button { font-size: 13px; }
-      
-      /* Siatka 2 kolumny na sztywno */
       .grid { grid-template-columns: 1fr 1fr; gap: 8px; }
       .card img { height: 130px; }
       footer { font-size: 12px; }
@@ -180,13 +167,16 @@
 <header>
   <div class="nav">
     <a class="brand" href="index.html">🎬 <span>StreamingHub</span></a>
+    
     <input type="search" id="globalSearch" placeholder="Szukaj seriali..." />
+    
     <nav class="menu" id="menu">
-      <a href="#" onclick="location.href='index.html'">Filmy</a>
-      <a href="/seriale/" style="color:#fff;">Seriale</a>
-      <a href="/top/">top</a>
+      <a href="index.html">Filmy</a>
+      <a href="/seriale/" class="active">Seriale</a>
+      <a href="/top/">TOP</a>
       <a href="/moja-biblioteka/">Moja biblioteka</a>
-      <div id="authBtns"></div>
+      
+      <span id="authBtns"></span>
     </nav>
   </div>
 </header>
@@ -288,10 +278,11 @@ let CURRENT_EPISODES = [];
   const mainContainer = document.getElementById("main");
 
   if (!session || !session.user) {
-    // === BRAK LOGOWANIA: Pokaż komunikat w treści strony zamiast alertu ===
-    authBtns.innerHTML = `<a href="index.html" class="btn">Zaloguj</a>`; // Przycisk w menu
+    // === BRAK LOGOWANIA ===
+    // Przycisk w menu jako zwykły link (bez tła)
+    authBtns.innerHTML = `<a href="index.html" style="color:#fff; font-weight:bold;">Zaloguj</a>`;
     
-    // Podmieniamy treść main na komunikat
+    // Podmieniamy treść main na komunikat (Blokada seriali)
     mainContainer.innerHTML = `
       <div class="login-wall">
         <h2>🔐 Dostęp tylko dla zalogowanych</h2>
@@ -299,10 +290,10 @@ let CURRENT_EPISODES = [];
           Sekcja seriali jest dostępna tylko dla społeczności StreamingHub.<br>
           Zaloguj się na swoje konto, aby oglądać wszystkie odcinki bez ograniczeń.
         </p>
-        <a href="index.html" class="btn">Przejdź do strony głównej i zaloguj się</a>
+        <a href="index.html" class="btn">Wróć do strony głównej</a>
       </div>
     `;
-    return; // Przerywamy ładowanie seriali
+    return; // Przerywamy ładowanie seriali, ale header i footer zostają
   } else {
     // === ZALOGOWANY ===
     authBtns.innerHTML = `<button class="btn secondary" onclick="logout()">Wyloguj</button>`;
