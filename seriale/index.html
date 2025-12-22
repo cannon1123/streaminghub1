@@ -250,8 +250,7 @@
       <a href="index.html">TOP</a>
       <a href="index.html">Biblioteka</a>
       
-      <div id="authBtns">
-        </div>
+      <div id="authBtns"></div>
     </nav>
   </div>
 </header>
@@ -293,30 +292,15 @@ let CURRENT_EPISODES = [];
 (async function initAuthAndApp() {
   const { data: { session } } = await db.auth.getSession();
   const authBtns = document.getElementById("authBtns");
-  const main = document.getElementById("main");
 
-  // 1. Sprawdzenie logowania - Jeśli BRAK sesji
+  // Ustawienie przycisków w zależności od sesji
   if (!session || !session.user) {
-    // Przycisk "Zaloguj" w menu
     authBtns.innerHTML = `<a href="index.html" class="btn">Zaloguj</a>`;
-    
-    // Blokada treści z komunikatem i przyciskiem powrotu do index.html
-    main.innerHTML = `
-      <div class="alert">
-        <h2 style="margin-top:0">🔒 Dostęp zablokowany</h2>
-        <p style="color:var(--muted); margin-bottom: 24px;">
-          Sekcja seriali jest dostępna wyłącznie dla zarejestrowanych użytkowników.
-          Zaloguj się na swoje konto.
-        </p>
-        <a href="index.html" class="btn">Zaloguj się / Wróć na stronę główną</a>
-      </div>
-    `;
-    return; // Stop skryptu
+  } else {
+    authBtns.innerHTML = `<button class="btn secondary" onclick="logout()">Wyloguj</button>`;
   }
-
-  // 2. Użytkownik JEST zalogowany
-  authBtns.innerHTML = `<button class="btn secondary" onclick="logout()">Wyloguj</button>`;
   
+  // Zawsze inicjalizujemy UI, aby lista była dostępna dla wszystkich
   await UI.init();
   window.addEventListener("hashchange", handleHashChange, false);
   handleHashChange(); 
@@ -324,7 +308,7 @@ let CURRENT_EPISODES = [];
 
 async function logout() {
   await db.auth.signOut();
-  location.href = "index.html"; // Po wylogowaniu wracamy do index.html
+  location.href = "index.html"; 
 }
 
 /* ---------- Pobieranie Danych ---------- */
@@ -336,11 +320,9 @@ async function getCategories() {
 async function getSeries(filters = {}) {
   let q = db.from("series").select("*");
   if (filters.category_id) q = q.eq("category_id", filters.category_id);
-  if (filters.year) q = q.eq("year", filters.year);
   if (filters.search) q = q.ilike("title", `%${filters.search}%`);
   
-  if (filters.sort === "az") q = q.order("title", { ascending: true });
-  else q = q.order("created_at", { ascending: false });
+  q = q.order("created_at", { ascending: false });
 
   const { data, error } = await q;
   return data || [];
@@ -354,12 +336,10 @@ async function getAllEpisodesForSeries(series_id) {
 /* ---------- UI Logika ---------- */
 const UI = {
   async init() {
-    // Pobranie danych
     const cats = await getCategories();
     const series = await getSeries();
     SERIES_LIST = series;
     
-    // Mapa slugów
     SLUG_MAP = {};
     series.forEach(s => {
       SLUG_MAP[slugify(s.title || `${s.id}`)] = s.id;
@@ -367,7 +347,6 @@ const UI = {
 
     const main = document.getElementById("main");
     
-    // Renderowanie widoku głównego seriali
     main.innerHTML = `
       <section class="section mt-8">
         <h2>Seriale</h2>
@@ -392,8 +371,7 @@ const UI = {
           </form>
         </div>
         
-        <div class="grid" id="seriesGrid">
-            </div>
+        <div class="grid" id="seriesGrid"></div>
       </section>
       
       <div id="detailView" class="hidden"></div>
@@ -401,7 +379,6 @@ const UI = {
 
     renderSeriesGrid(series);
 
-    // Obsługa szukajki w headerze
     document.getElementById("globalSearch").addEventListener("input", (e) => {
         const searchInput = document.getElementById("search");
         if(searchInput) {
@@ -429,9 +406,8 @@ function renderSeriesGrid(series) {
   const grid = document.getElementById("seriesGrid");
   const detailView = document.getElementById("detailView");
   
-  if(!grid) return; // Zabezpieczenie
+  if(!grid) return;
 
-  // Pokaż grid, ukryj detale
   grid.parentElement.classList.remove("hidden");
   detailView.classList.add("hidden");
   detailView.innerHTML = ""; 
@@ -447,7 +423,7 @@ function renderSeriesGrid(series) {
     
     return `
       <div class="card">
-        <a href="#${slug}" onclick="return true;">
+        <a href="#${slug}">
             <img src="${thumb}" alt="${escapeHtml(s.title)}">
         </a>
         <div class="card p">
@@ -465,7 +441,6 @@ function renderSeriesGrid(series) {
 function handleHashChange() {
   const raw = location.hash.replace(/^#/, '');
   
-  // Jeśli brak hasha -> pokaż listę
   if (!raw) {
     const gridSection = document.querySelector("section.section");
     if(gridSection) gridSection.classList.remove("hidden");
@@ -474,13 +449,11 @@ function handleHashChange() {
     return;
   }
 
-  // Parsowanie hasha: slug/season-X/ep-Y
   const parts = raw.split('/');
   const slug = parts[0];
   const seriesId = SLUG_MAP[slug] || null;
 
   if (!seriesId) {
-    // Jeśli wchodzimy z linku bezpośredniego i mapa nie jest gotowa, pobierz dane
     (async () => {
        const all = await getSeries();
        all.forEach(s => SLUG_MAP[slugify(s.title)] = s.id);
@@ -495,20 +468,25 @@ function handleHashChange() {
 
 /* ---------- Widok Szczegółów (Odtwarzacz) ---------- */
 async function openSeries(seriesId, tailParts=[]) {
+  // SPRAWDZENIE SESJI: Tylko zalogowani mogą zobaczyć detale
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) {
+      alert("Sekcja seriali jest dostępna wyłącznie dla zarejestrowanych użytkowników. Zaloguj się!");
+      location.hash = ""; 
+      return;
+  }
+
   const gridSection = document.querySelector("section.section");
   const detailView = document.getElementById("detailView");
 
-  // Ukryj listę, pokaż detale
   if(gridSection) gridSection.classList.add("hidden");
   detailView.classList.remove("hidden");
 
-  // Jeśli to ta sama seria, nie pobieraj danych ponownie (chyba że pusto)
   if (!CURRENT_SERIES || CURRENT_SERIES.id !== seriesId) {
      const { data: series } = await db.from("series").select("*").eq("id", seriesId).single();
      CURRENT_SERIES = series;
      CURRENT_EPISODES = await getAllEpisodesForSeries(seriesId);
      
-     // Renderowanie szkieletu widoku serii
      const seasons = buildSeasonsFromEpisodes(CURRENT_EPISODES);
      
      detailView.innerHTML = `
@@ -548,7 +526,6 @@ async function openSeries(seriesId, tailParts=[]) {
      UI.currentSeasons = seasons; 
   }
 
-  // Obsługa logiki wyboru sezonu/odcinka z URL
   const [seasonPart, epPart] = tailParts;
   
   if(!seasonPart && UI.currentSeasons && UI.currentSeasons.length > 0) {
