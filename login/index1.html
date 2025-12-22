@@ -211,60 +211,55 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// KONFIGURACJA
 const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Pobiera aktualny adres (działa na localhost i na domenie)
 const redirectUrl = window.location.origin + window.location.pathname;
 
-/* --- Funkcja sprawdzająca czy użytkownik jest już zalogowany --- */
-async function checkAuth() {
-  const { data: { session } } = await db.auth.getSession();
-  if (session && !window.location.hash.includes("type=recovery")) {
-    location.href = "/filmy/";
+/* -------------------------------------------------------------------------- */
+/* GŁÓWNA LOGIKA SESJI                             */
+/* -------------------------------------------------------------------------- */
+
+// To jest serce naprawy. Nasłuchujemy zmian stanu, zamiast zgadywać z URL.
+db.auth.onAuthStateChange(async (event, session) => {
+  console.log("Supabase Auth Event:", event);
+
+  if (event === 'PASSWORD_RECOVERY') {
+    // 1. Wykryto kliknięcie w "Reset Hasła" w mailu
+    hideAll();
+    document.getElementById("formTitle").innerText = "Ustaw nowe hasło";
+    document.getElementById("newPassForm").style.display = "block";
+    document.getElementById("googleSection").style.display = "none";
+  } 
+  else if (event === 'SIGNED_IN') {
+    // 2. Wykryto zalogowanie (Google, Email, Magic Link)
+    // Sprawdzamy, czy to nie jest sesja odzyskiwania hasła (żeby nie przekierować za szybko)
+    const isRecovery = window.location.hash && window.location.hash.includes("type=recovery");
+    
+    if (!isRecovery) {
+       // Pomyślne logowanie -> Przekieruj do filmów
+       window.location.href = "/filmy/";
+    }
   }
-}
+});
 
-/* ---------- Przełączanie widoków ---------- */
-function showLogin(){ 
-  hideAll(); 
-  document.getElementById("formTitle").innerText="Zaloguj się"; 
-  document.getElementById("loginForm").style.display="block"; 
-  document.getElementById("googleSection").style.display="block"; 
-}
-function showRegister(){ 
-  hideAll(); 
-  generateCaptcha(); 
-  document.getElementById("formTitle").innerText="Rejestracja"; 
-  document.getElementById("registerForm").style.display="block"; 
-  document.getElementById("googleSection").style.display="block"; 
-}
-function showReset(){ 
-  hideAll(); 
-  document.getElementById("formTitle").innerText="Reset hasła"; 
-  document.getElementById("resetForm").style.display="block"; 
-}
-function hideAll(){ 
-  ["loginForm","registerForm","resetForm","newPassForm","googleSection"].forEach(id=>document.getElementById(id).style.display="none"); 
-}
+/* -------------------------------------------------------------------------- */
+/* FUNKCJE FORMULARZY                           */
+/* -------------------------------------------------------------------------- */
 
-/* ---------- Captcha ---------- */
-function generateCaptcha(){
-  const code = Math.random().toString(36).substring(2,8).toUpperCase();
-  document.getElementById("captchaText").textContent = code;
-  document.getElementById("captchaText").dataset.value = code;
-}
-
-/* ---------- Logowanie Google ---------- */
+/* Logowanie Google */
 async function loginWithGoogle() {
   const { error } = await db.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: redirectUrl }
   });
-  if(error) alert("Błąd: " + error.message);
+  if(error) alert("Błąd Google: " + error.message);
 }
 
-/* ---------- Rejestracja ---------- */
+/* Rejestracja */
 async function register(){
   const name = document.getElementById("regName").value.trim();
   const email = document.getElementById("regEmail").value.trim();
@@ -272,63 +267,105 @@ async function register(){
   const captcha = document.getElementById("captchaInput").value.trim().toUpperCase();
   const correct = document.getElementById("captchaText").dataset.value;
 
-  if(!name || !email || !pass){alert("Uzupełnij wszystkie pola!");return;}
-  if(captcha !== correct){alert("Captcha niepoprawna!");generateCaptcha();return;}
+  if(!name || !email || !pass){ alert("Uzupełnij pola!"); return; }
+  if(captcha !== correct){ alert("Captcha niepoprawna!"); generateCaptcha(); return; }
 
   const { error } = await db.auth.signUp({
     email,
     password: pass,
     options: {
       data: { username: name },
-      emailRedirectTo: redirectUrl
+      emailRedirectTo: redirectUrl // Ważne dla linku potwierdzającego
     }
   });
+  
   if(error) alert("Błąd: " + error.message);
-  else alert("Sprawdź maila!");
+  else {
+    alert("✅ E-mail wysłany! Sprawdź folder SPAM, jeśli nie widzisz wiadomości.");
+    showLogin();
+  }
 }
 
-/* ---------- Logowanie ---------- */
+/* Logowanie E-mail */
 async function login(){
   const email = document.getElementById("loginEmail").value.trim();
   const pass = document.getElementById("loginPass").value;
+  
   const { error } = await db.auth.signInWithPassword({ email, password: pass });
   if(error) alert("Błąd: " + error.message);
-  else location.href = "/filmy/";
+  // Przekierowanie obsłuży onAuthStateChange powyżej
 }
 
-/* ---------- Reset haseł ---------- */
+/* Magic Link */
+async function sendMagicLink(){
+  const email = prompt("Podaj email dla magicznego linku:");
+  if(!email) return;
+  
+  const { error } = await db.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: redirectUrl }
+  });
+  
+  if(error) alert("Błąd: " + error.message);
+  else alert("✨ Magic Link wysłany! Sprawdź pocztę (i Spam).");
+}
+
+/* Reset Hasła - wysłanie maila */
 async function resetPassword(){
   const email = document.getElementById("resetEmail").value.trim();
-  const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
-  if(error) alert("Błąd: " + error.message);
-  else alert("Link wysłany!");
+  if(!email) return alert("Podaj email");
+
+  const { error } = await db.auth.resetPasswordForEmail(email, {
+    redirectTo: redirectUrl
+  });
+
+  if(error) {
+    if(error.status === 429) alert("Za dużo prób! Odczekaj chwilę (Supabase Limit).");
+    else alert("Błąd: " + error.message);
+  } else {
+    alert("🔗 Link do resetu wysłany! Sprawdź Spam.");
+    showLogin();
+  }
 }
 
+/* Aktualizacja Hasła (po kliknięciu w link resetujący) */
 async function updatePassword(){
   const p1 = document.getElementById("newPass1").value;
+  if(!p1) return alert("Wpisz hasło");
+  
   const { error } = await db.auth.updateUser({ password: p1 });
-  if(error) alert(error.message);
-  else { alert("Hasło zmienione!"); location.href = "/login/"; }
+  
+  if(error) alert("Błąd: " + error.message);
+  else {
+    alert("Hasło zmienione pomyślnie! ✅");
+    window.location.href = "/filmy/"; // Teraz można bezpiecznie przekierować
+  }
 }
 
-/* ---------- Obsługa linków i sesji ---------- */
-(async () => {
-  await checkAuth(); // Przekieruj jeśli już zalogowany
+/* -------------------------------------------------------------------------- */
+/* UI & NARZĘDZIA                               */
+/* -------------------------------------------------------------------------- */
 
-  const hash = window.location.hash;
-  if (hash.includes("access_token")) {
-    const urlParams = new URLSearchParams(hash.replace("#", ""));
-    const type = urlParams.get("type");
-    if (type === "recovery") {
-      hideAll();
-      document.getElementById("newPassForm").style.display = "block";
-    } else {
-      location.href = "/filmy/";
-    }
-  }
-})();
+function showLogin(){ hideAll(); document.getElementById("formTitle").innerText="Zaloguj się"; document.getElementById("loginForm").style.display="block"; document.getElementById("googleSection").style.display="block"; }
+function showRegister(){ hideAll(); generateCaptcha(); document.getElementById("formTitle").innerText="Rejestracja"; document.getElementById("registerForm").style.display="block"; document.getElementById("googleSection").style.display="block"; }
+function showReset(){ hideAll(); document.getElementById("formTitle").innerText="Reset hasła"; document.getElementById("resetForm").style.display="block"; }
 
+function hideAll(){ 
+  ["loginForm","registerForm","resetForm","newPassForm","googleSection"].forEach(id=> {
+    const el = document.getElementById(id);
+    if(el) el.style.display="none";
+  }); 
+}
+
+function generateCaptcha(){
+  const code = Math.random().toString(36).substring(2,8).toUpperCase();
+  const el = document.getElementById("captchaText");
+  if(el) { el.textContent = code; el.dataset.value = code; }
+}
+
+// Inicjalizacja przy starcie
 generateCaptcha();
+
 </script>
 </body>
 </html>
