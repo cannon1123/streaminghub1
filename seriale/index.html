@@ -22,20 +22,45 @@
       line-height: 1.3;
     }
     a { color: var(--text); text-decoration: none; }
+    
     header {
       position: sticky; top: 0;
-      background: rgba(11,13,16,0.85);
+      background: rgba(11,13,16,0.9);
       backdrop-filter: blur(6px);
       z-index: 10;
       border-bottom: 1px solid rgba(255,255,255,0.02);
     }
-    .nav { display:flex; align-items:center; justify-content:space-between; max-width:1200px; margin:0 auto; padding:12px 16px; gap:12px; }
+    
+    .nav { 
+      display:flex; 
+      align-items:center; 
+      justify-content:space-between; 
+      max-width:1200px; 
+      margin:0 auto; 
+      padding:12px 16px; 
+      gap:12px; 
+      flex-wrap: wrap; /* Pozwala na zawijanie na małych ekranach */
+    }
+    
     .brand { font-weight:700; display:flex; align-items:center; gap:8px; color:var(--text); }
-    input[type="search"] { flex:1; background:#0e1218; border:1px solid var(--border); color:#fff; padding:10px 12px; border-radius:12px; max-width:340px; }
-    .menu { display:flex; align-items:center; gap:16px; }
+    
+    input[type="search"] { 
+      flex:1; 
+      background:#0e1218; 
+      border:1px solid var(--border); 
+      color:#fff; 
+      padding:10px 12px; 
+      border-radius:12px; 
+      min-width: 200px;
+      max-width:340px; 
+    }
+    
+    .menu { display:flex; align-items:center; gap:16px; flex-wrap: wrap; }
     .menu a { color:var(--muted); font-size:0.95rem; transition:color .2s; }
-    .btn { background:var(--brand); color:#fff; padding:8px 14px; border-radius:12px; border:none; cursor:pointer; font-size:0.9rem; transition:background .18s; }
+    
+    .btn { background:var(--brand); color:#fff; padding:8px 14px; border-radius:12px; border:none; cursor:pointer; font-size:0.9rem; transition:background .18s; display: inline-block;}
     .btn.secondary { background:#2a3446; }
+    
     .container { max-width:1200px; margin:20px auto; padding:16px; }
 
     /* --- List view (filters + grid) --- */
@@ -45,10 +70,11 @@
     select, input[type="number"], input[type="text"] { background:#0e1218; border:1px solid var(--border); color:#fff; padding:10px 12px; border-radius:10px; width:100%; }
     .filters .actions { display:flex; align-items:flex-end; gap:8px; }
 
-    .grid { margin-top:20px; display:grid; gap:14px; grid-template-columns: repeat(5, 1fr); }
+    .grid { margin-top:20px; display:grid; gap:14px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+    
     .card { background:var(--card); border-radius:12px; overflow:hidden; transition:transform .2s, box-shadow .2s; cursor:pointer; border:1px solid rgba(255,255,255,0.02); }
     .card:hover { transform:translateY(-6px); box-shadow:0 10px 25px rgba(0,0,0,0.5); border-color: rgba(79,124,255,0.08); }
-    .card img { width:100%; height:180px; object-fit:cover; display:block; background:#0c0d0f; }
+    .card img { width:100%; height:200px; object-fit:cover; display:block; background:#0c0d0f; }
     .card .p { padding:10px 12px; }
     .card .title { font-weight:700; font-size:0.95rem; }
     .card .meta { font-size:0.82rem; color:var(--muted); margin-top:4px; }
@@ -74,17 +100,80 @@
 
     /* player */
     .player-wrap { margin-top:22px; display:none; }
-    .player { width:100%; height:520px; border-radius:12px; border:none; background:#000; display:block; }
+    .player-container {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+      height: 0;
+      background: black;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .player-container iframe {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
     .player-info { margin-top:10px; color:var(--muted); }
 
     .no-results { text-align:center; color:var(--muted); margin-top:30px; }
+    .login-wall { text-align:center; padding: 60px 20px; background: var(--card); border-radius: 14px; border: 1px solid var(--border); margin-top: 40px; }
 
     footer { color:var(--muted); text-align:center; padding:30px 0; font-size:0.9rem; }
 
-    @media (max-width:1200px) { .grid{ grid-template-columns: repeat(4, 1fr);} .series-thumb{width:160px;height:240px;} }
-    @media (max-width:900px) { .grid{ grid-template-columns: repeat(3, 1fr);} .series-header{flex-direction:column; align-items:flex-start;} .series-thumb{width:100%;height:300px;} }
-    @media (max-width:600px) { .grid{ grid-template-columns: repeat(2, 1fr);} }
-    @media (max-width:420px) { .grid{ grid-template-columns: repeat(1, 1fr);} }
+    /* =========================================
+       RESPONSYWNOŚĆ (Mobile & Tablet) - skopiowane i dopasowane
+       ========================================= */
+
+    @media (max-width: 900px) {
+      .series-header { flex-direction:column; align-items:flex-start; }
+      .series-thumb { width:100%; height:300px; }
+      
+      /* ZMNIEJSZONA TOPKA (NAGŁÓWEK) */
+      .nav { 
+        flex-direction: column; 
+        align-items: stretch; 
+        padding: 8px 12px; 
+        gap: 8px;          
+      }
+      .nav input[type="search"] {
+        max-width: 100%;
+      }
+      .menu { justify-content: center; }
+      .card img { height: 180px; }
+      .container { padding: 12px; }
+    }
+
+    @media (max-width: 600px) {
+      /* Siatka filmów na mniejsze ekrany */
+      .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+      
+      /* Mniejsze przyciski i teksty */
+      .btn { padding: 8px 12px; font-size: 14px; }
+      h1, h2, h3 { font-size: 1.1rem; }
+      
+      .card img { height: 150px; }
+      input, select, textarea { font-size: 14px; }
+    }
+
+    @media (max-width: 400px) {
+      /* BARDZO MAŁE EKRANY - ULTRA KOMPAKTOWA TOPKA */
+      .nav { 
+        padding: 6px; 
+      }
+      .nav input[type=search] { 
+        padding: 8px; 
+        font-size: 13px; 
+      }
+      .menu a, .menu button { font-size: 13px; }
+      
+      /* Siatka 2 kolumny na sztywno */
+      .grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .card img { height: 130px; }
+      footer { font-size: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -93,7 +182,7 @@
     <a class="brand" href="index.html">🎬 <span>StreamingHub</span></a>
     <input type="search" id="globalSearch" placeholder="Szukaj seriali..." />
     <nav class="menu" id="menu">
-      <a href="/filmy/">Filmy</a>
+      <a href="#" onclick="location.href='index.html'">Filmy</a>
       <a href="/seriale/" style="color:#fff;">Seriale</a>
       <a href="/top/">top</a>
       <a href="/moja-biblioteka/">Moja biblioteka</a>
@@ -103,7 +192,6 @@
 </header>
 
 <main class="container" id="main">
-  <!-- LIST VIEW (filtry + grid) -->
   <div id="listView">
     <h2>Filtruj</h2>
     <div class="filters">
@@ -141,7 +229,6 @@
     <div class="grid" id="list"></div>
   </div>
 
-  <!-- DETAIL VIEW (seria -> sezony -> odcinki -> player) -->
   <div id="detailView" style="display:none;">
     <a class="back" href="#" onclick="goHome();return false;">← Powrót do listy</a>
     <div class="series-header">
@@ -156,7 +243,9 @@
     <div id="episodesContainer" class="episodes"></div>
 
     <div id="playerWrap" class="player-wrap">
-      <iframe id="playerFrame" class="player" allowfullscreen></iframe>
+      <div class="player-container">
+        <iframe id="playerFrame" allowfullscreen></iframe>
+      </div>
       <div id="playerInfo" class="player-info"></div>
     </div>
   </div>
@@ -186,29 +275,43 @@ function safeThumb(url) {
 }
 
 /* ---------- Global state ---------- */
-let SERIES_LIST = [];        // wszystkie serie pobrane z DB
-let SLUG_MAP = {};          // slug -> series.id
-let CURRENT_SERIES = null;   // obiekt bieżącej serii
-let CURRENT_EPISODES = [];   // wszystkie odcinki bieżącej serii (pobierane z DB)
+let SERIES_LIST = [];        
+let SLUG_MAP = {};          
+let CURRENT_SERIES = null;   
+let CURRENT_EPISODES = [];   
 
 /* ---------- Autoryzacja & start ---------- */
 (async function initAuthAndApp() {
-  // Sprawdź sesję
+  // 1. Sprawdź sesję
   const { data: { session } } = await db.auth.getSession();
   const authBtns = document.getElementById("authBtns");
+  const mainContainer = document.getElementById("main");
+
   if (!session || !session.user) {
-    // brak sesji -> przekieruj na index
-    alert("Musisz być zalogowany, aby oglądać seriale!");
-    location.href = "index.html";
-    return;
+    // === BRAK LOGOWANIA: Pokaż komunikat w treści strony zamiast alertu ===
+    authBtns.innerHTML = `<a href="index.html" class="btn">Zaloguj</a>`; // Przycisk w menu
+    
+    // Podmieniamy treść main na komunikat
+    mainContainer.innerHTML = `
+      <div class="login-wall">
+        <h2>🔐 Dostęp tylko dla zalogowanych</h2>
+        <p style="color:var(--muted); margin: 15px 0 25px 0;">
+          Sekcja seriali jest dostępna tylko dla społeczności StreamingHub.<br>
+          Zaloguj się na swoje konto, aby oglądać wszystkie odcinki bez ograniczeń.
+        </p>
+        <a href="index.html" class="btn">Przejdź do strony głównej i zaloguj się</a>
+      </div>
+    `;
+    return; // Przerywamy ładowanie seriali
   } else {
+    // === ZALOGOWANY ===
     authBtns.innerHTML = `<button class="btn secondary" onclick="logout()">Wyloguj</button>`;
   }
 
-  // Inicjalizacja UI i routingu
+  // Inicjalizacja UI i routingu (tylko jeśli zalogowany)
   await UI.init();
   window.addEventListener("hashchange", handleHashChange, false);
-  handleHashChange(); // od razu obsłuż hash (jeśli ktoś wkleił link)
+  handleHashChange(); 
 })();
 
 async function logout() {
@@ -225,7 +328,7 @@ async function getCategories() {
 
 async function getSeries(filters = {}) {
   let q = db.from("series").select("*");
-  // filtry jak wcześniej
+  // filtry
   if (filters.category_id) q = q.eq("category_id", filters.category_id);
   if (filters.year) q = q.eq("year", filters.year);
   if (filters.minLength) q = q.gte("duration", filters.minLength);
@@ -239,7 +342,6 @@ async function getSeries(filters = {}) {
   return data || [];
 }
 
-// pobierz wszystkie odcinki dla series_id (użyjemy do grupowania po sezonach)
 async function getAllEpisodesForSeries(series_id) {
   const { data, error } = await db.from("episodes").select("*").eq("series_id", series_id);
   if (error) { console.error(error); return []; }
@@ -249,21 +351,20 @@ async function getAllEpisodesForSeries(series_id) {
 /* ---------- UI & routing ---------- */
 const UI = {
   async init() {
-    // wczytaj kategorie oraz listę serii i zrenderuj widok listy
     const cats = await getCategories();
     const series = await getSeries();
     SERIES_LIST = series;
-    // wypełnij select kategorii
+    
     const sel = document.getElementById("cat");
     sel.innerHTML = `<option value="">—</option>` + (cats.map(c => `<option value="${c.id}">${c.name}</option>`).join(""));
-    // prepare slug map & render list
+    
     SLUG_MAP = {};
     series.forEach(s => {
       const slug = slugify(s.title || `${s.id}`);
       SLUG_MAP[slug] = s.id;
     });
     renderSeriesGrid(series);
-    // global search enter
+    
     document.getElementById("globalSearch").addEventListener("keypress", (e) => {
       if (e.key === "Enter") {
         document.getElementById("search").value = e.target.value;
@@ -305,7 +406,7 @@ function renderSeriesGrid(series) {
     const year = s.year || (s.created_at ? new Date(s.created_at).getFullYear() : '');
     const titleEsc = (s.title || "").replace(/"/g,'&quot;');
     const slug = slugify(s.title || `${s.id}`);
-    // karta: klik ustawia hash na #<slug>
+    
     return `
       <div class="card" data-id="${s.id}" data-slug="${slug}" onclick="openSeriesBySlug('${slug}')">
         <img src="${thumb}" alt="${titleEsc}">
@@ -326,15 +427,10 @@ function handleHashChange() {
     return;
   }
 
-  // expected patterns:
-  // slug
-  // slug/season-<n>
-  // slug/season-<n>/ep-<id>
   const parts = raw.split('/');
   const slug = parts[0];
   const seriesId = SLUG_MAP[slug] || null;
   if (!seriesId) {
-    // jeśli slug nie znaleziony w pamięci, spróbuj pobrać listę serii (może była filtrowana) i odświeżyć
     (async () => {
       const series = await getSeries();
       SERIES_LIST = series;
@@ -349,61 +445,49 @@ function handleHashChange() {
   openSeries(seriesId, parts.slice(1));
 }
 
-/* ---------- Widoki: show/hide ---------- */
 function showListView() {
   document.getElementById("listView").style.display = "block";
   document.getElementById("detailView").style.display = "none";
-  // clear player and detail state
   CURRENT_SERIES = null;
   CURRENT_EPISODES = [];
   document.getElementById("playerWrap").style.display = "none";
+  // Reset iframe src to stop audio
+  const frame = document.getElementById("playerFrame");
+  if(frame) frame.src = "";
 }
 
 async function openSeriesBySlug(slug) {
   location.hash = slug;
-  // handleHashChange will pick it up
 }
 
-/* ---------- Otwieranie serii + obsługa pod-scopes ---------- */
 async function openSeries(seriesId, tailParts=[]) {
-  // tailParts: [] | ['season-1'] | ['season-1','ep-23']
-  // wczytaj series
   const { data: series, error } = await db.from("series").select("*").eq("id", seriesId).single();
   if (error || !series) { console.error(error); showListView(); return; }
   CURRENT_SERIES = series;
 
-  // get all episodes for series (we'll group seasons from them)
   CURRENT_EPISODES = await getAllEpisodesForSeries(seriesId);
 
-  // show detail view
   document.getElementById("listView").style.display = "none";
   document.getElementById("detailView").style.display = "block";
 
-  // fill header
   document.getElementById("seriesThumb").src = safeThumb(series.thumb);
   document.getElementById("seriesTitle").textContent = series.title || 'Bez tytułu';
   document.getElementById("seriesDesc").textContent = series.description || '';
 
-  // build seasons from episodes dynamically (since nie masz table seasons)
   const seasons = buildSeasonsFromEpisodes(CURRENT_EPISODES, series);
   renderSeasons(seasons);
 
-  // if hash includes season and maybe ep -> handle it
   if (tailParts.length === 0) {
-    // nothing selected: clear episodes and player
     document.getElementById("episodesContainer").innerHTML = "<div class='no-results'>Wybierz sezon, aby zobaczyć odcinki</div>";
     document.getElementById("playerWrap").style.display = "none";
     return;
   }
 
-  // parse season part
   const [seasonPart, epPart] = tailParts;
   const seasonMatch = seasonPart && seasonPart.match(/^season-(\d+)$/);
   if (seasonMatch) {
     const seasonNumber = Number(seasonMatch[1]);
-    // render episodes of that season
     renderEpisodesForSeason(seasonNumber);
-    // if epPart present, parse and play it
     if (epPart) {
       const epMatch = epPart.match(/^ep-(\d+)$/);
       if (epMatch) {
@@ -412,19 +496,15 @@ async function openSeries(seriesId, tailParts=[]) {
         if (ep) playEpisode(ep);
       }
     } else {
-      // no ep selected -> hide player
       document.getElementById("playerWrap").style.display = "none";
     }
   } else {
-    // not a season pattern -> just show seasons list
     document.getElementById("episodesContainer").innerHTML = "<div class='no-results'>Wybierz sezon...</div>";
     document.getElementById("playerWrap").style.display = "none";
   }
 }
 
-/* ---------- Helper: build seasons array from episodes ---------- */
 function buildSeasonsFromEpisodes(episodes, series) {
-  // detect season field name dynamically
   const getSeason = (ep) => (ep.season ?? ep.season_number ?? ep.season_no ?? ep.seasonId ?? ep.seasonId);
   const getThumb = (ep) => (ep.thumb || ep.episode_thumb || ep.image || null);
   const seasonMap = {};
@@ -446,7 +526,6 @@ function buildSeasonsFromEpisodes(episodes, series) {
   return seasons;
 }
 
-/* ---------- Render seasons ---------- */
 function renderSeasons(seasons) {
   const cont = document.getElementById("seasonsContainer");
   cont.innerHTML = "";
@@ -462,7 +541,6 @@ function renderSeasons(seasons) {
       <div class="season-info">${s.title} <div style="font-weight:400;color:var(--muted);font-size:0.85rem;">${s.count} odc.</div></div>
     `;
     div.onclick = () => {
-      // update hash to include season
       const slug = slugify(CURRENT_SERIES.title || `${CURRENT_SERIES.id}`);
       location.hash = `${slug}/season-${s.seasonNumber}`;
     };
@@ -470,13 +548,11 @@ function renderSeasons(seasons) {
   });
 }
 
-/* ---------- Render episodes for season ---------- */
 function renderEpisodesForSeason(seasonNumber) {
-  // find episodes with seasonNumber (detect season property similarly)
   const getSeasonVal = (ep) => (ep.season ?? ep.season_number ?? ep.season_no ?? ep.seasonId ?? ep.seasonId);
   const getEpNumber = (ep) => (ep.episode_number ?? ep.episode ?? ep.number ?? ep.ep_number ?? ep.id);
   const eps = CURRENT_EPISODES.filter(e => Number(getSeasonVal(e) || 0) === Number(seasonNumber));
-  // sort by episode number (fallback to id)
+  
   eps.sort((a,b) => (Number(getEpNumber(a) || a.id) - Number(getEpNumber(b) || b.id)));
   const cont = document.getElementById("episodesContainer");
   if (!eps.length) {
@@ -493,19 +569,15 @@ function renderEpisodesForSeason(seasonNumber) {
       <div class="episode-desc">${ep.description || ''}</div>
     `;
     div.onclick = () => {
-      // update hash to include ep id
       const slug = slugify(CURRENT_SERIES.title || `${CURRENT_SERIES.id}`);
       location.hash = `${slug}/season-${seasonNumber}/ep-${ep.id}`;
-      // playEpisode will be triggered by hashchange -> but call directly to be snappy
       playEpisode(ep);
     };
     cont.appendChild(div);
   });
 }
 
-/* ---------- Play episode ---------- */
 function playEpisode(ep) {
-  // ep should contain iframe_url (or url / link)
   const urlCandidates = ep.iframe_url ?? ep.iframe ?? ep.url ?? ep.link ?? ep.video_url ?? ep.video;
   const playerFrame = document.getElementById("playerFrame");
   const playerWrap = document.getElementById("playerWrap");
@@ -520,66 +592,37 @@ function playEpisode(ep) {
   playerInfo.innerHTML = `<strong>${ep.title || ''}</strong><br>${ep.description || ''}<br><small style="color:var(--muted)">Sezon: ${ep.season ?? ep.season_number ?? ep.season_no ?? '1'} • Odcinek: ${ep.episode_number ?? ep.episode ?? ''}</small>`;
   playerWrap.style.display = "block";
   saveEpisodeHistory(ep.series_id, ep.id);
-  // scroll to player
-  setTimeout(()=> window.scrollTo({ top: playerWrap.offsetTop - 60, behavior: 'smooth' }), 80);
+  
+  setTimeout(()=> window.scrollTo({ top: playerWrap.offsetTop - 80, behavior: 'smooth' }), 100);
 }
 
-/* ---------- Utility: go home ---------- */
 function goHome() {
   location.hash = '';
   showListView();
 }
 
-/* ---------- Init helpers: open series from card click, deep link ---------- */
-// openSeries is used by handleHashChange
-
-//<!-- Zapis historii oglądania odcinka -->
 async function saveEpisodeHistory(seriesId, episodeId) {
   try {
-    console.log(":floppy_disk: saveEpisodeHistory →", { seriesId, episodeId }); // DIAG
-
     const { data: { session } } = await db.auth.getSession();
-    if (!session || !session.user) {
-      console.warn(":x: Użytkownik niezalogowany — historia nie zapisana");
-      return;
-    }
+    if (!session || !session.user) return;
     const userId = session.user.id;
 
-    // sprawdź czy istnieje już wpis
-    const { data: existing, error: existingErr } = await db
+    const { data: existing } = await db
       .from("watch_history")
       .select("id")
       .eq("user_id", userId)
       .eq("episode_id", episodeId)
       .maybeSingle();
 
-    if (existingErr) {
-      console.error("❌ existingErr:", existingErr);
-      return;
-    }
-
     if (existing) {
-      console.log("🔁 aktualizacja historii:", existing.id);
-      const { error: upErr } = await db
-        .from("watch_history")
-        .update({ watched_at: new Date().toISOString() })
-        .eq("id", existing.id);
-      if (upErr) console.error("❌ update error:", upErr);
+      await db.from("watch_history").update({ watched_at: new Date().toISOString() }).eq("id", existing.id);
     } else {
-      console.log("🆕 dodaję nowy wpis historii");
-      const { error: insErr } = await db
-        .from("watch_history")
-        .insert([{ user_id: userId, episode_id: episodeId }]);
-      if (insErr) console.error("❌ insert error:", insErr);
+      await db.from("watch_history").insert([{ user_id: userId, episode_id: episodeId }]);
     }
-
   } catch (err) {
-    console.error("❌ saveEpisodeHistory błąd:", err);
+    console.error("History save error:", err);
   }
 }
 </script>
-
-
 </body>
 </html>
-
