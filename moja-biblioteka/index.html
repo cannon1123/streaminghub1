@@ -31,404 +31,299 @@
       backdrop-filter: blur(6px);
       z-index: 10;
     }
-    .nav { display: flex; gap: 12px; align-items: center; padding: 12px 16px; }
-    .brand { font-weight: 800; text-decoration: none; color: #fff; }
-    .menu a, .menu button {
-      padding: 8px 10px;
-      color: var(--muted);
-      background: none;
-      border: none;
-      cursor: pointer;
-      text-decoration: none;
+    .nav { 
+      display: flex; 
+      gap: 12px; 
+      align-items: center; 
+      padding: 12px 16px; 
+      flex-wrap: wrap; 
+      justify-content: space-between; 
+      border-bottom: 1px solid var(--border); 
     }
-    .btn {
-      background: var(--brand);
-      color: #fff;
-      padding: 8px 12px;
-      border-radius: 10px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-      transition: opacity 0.2s;
-    }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
-    .btn.secondary { background: #2a3446; }
-    .btn.danger { background: var(--danger); }
-    .btn.success { background: var(--success); }
-    .small-btn {
-      padding: 6px 10px;
-      border-radius: 8px;
-      background: #2a3446;
-      color: #fff;
-      border: none;
-      cursor: pointer;
-    }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      padding: 16px;
-      border-radius: 12px;
-      margin-top: 16px;
-    }
-    .row-scroll {
-      display: flex;
-      gap: 12px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-    }
-    .item {
-      background: #0e1218;
-      border: 1px solid var(--border);
-      padding: 12px;
-      border-radius: 10px;
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      min-width: 320px;
-      justify-content: space-between;
-    }
-    .thumb { width: 120px; height: 80px; object-fit: cover; border-radius: 8px; background: #000; }
-    .top-row { display: flex; justify-content: space-between; align-items: center; }
-    input, textarea {
-      width: 100%;
-      padding: 8px;
-      margin-top: 4px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: #0e1218;
-      color: var(--text);
-    }
-    .muted-block { color: var(--muted); margin-top: 8px; font-size: 13px; }
-    footer { color: var(--muted); text-align: center; padding: 30px 0; }
+    .brand { font-weight: 700; font-size: 1.25rem; display: flex; align-items: center; gap: 8px; text-decoration: none; color: #fff; }
+    .menu { display: flex; gap: 16px; align-items: center; }
+    .menu a { font-size: .9rem; color: var(--muted); text-decoration: none; transition: color .2s; }
+    .menu a:hover { color: #fff; }
+    .menu a.active { color: #fff; font-weight: 600; }
 
-    /* MODAL STYLES */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.92);
-      backdrop-filter: blur(8px);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 100;
-    }
-    .modal {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 25px;
-      max-width: 500px;
-      width: 90%;
-      display: flex;
-      flex-direction: column;
-      animation: fadeIn 0.25s ease;
-      text-align: center;
-    }
+    h1 { font-size: 1.5rem; margin-bottom: 24px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 8px; overflow-x: auto; }
+    .tab { background: none; border: none; color: var(--muted); padding: 8px 16px; cursor: pointer; border-radius: 8px; font-size: .9rem; white-space: nowrap; }
+    .tab.active { background: var(--brand); color: #fff; }
+
+    .section-title { font-size: 1.1rem; font-weight: 600; margin: 32px 0 16px; display: flex; align-items: center; gap: 8px; color: var(--muted); }
+    .list { display: flex; flex-direction: column; gap: 12px; }
+    .item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .thumb { width: 45px; height: 60px; object-fit: cover; border-radius: 6px; background: #000; }
+    .muted-block { font-size: .8rem; color: var(--muted); margin-top: 4px; }
     
-    .ad-frame-wrapper {
-      background: #000;
-      border-radius: 8px;
-      min-height: 250px;
-      margin: 20px 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border: 1px dashed var(--border);
+    .small-btn { background: var(--border); border: none; color: #fff; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: .8rem; }
+    .small-btn:hover { background: #2d3646; }
+
+    .loading { text-align: center; padding: 40px; color: var(--muted); }
+
+    /* --- SKOPIOWANE STYLE MOBILNE 1:1 --- */
+    @media (max-width: 900px) {
+      .row { grid-template-columns: 1fr; }
+      .nav { flex-direction: column; align-items: stretch; gap: 24px; }
+      .menu { justify-content: center; }
+      .card img { height: 180px; }
+      .container { padding: 12px; }
     }
 
-    .timer-display {
-      font-size: 2rem;
-      font-weight: bold;
-      color: var(--brand);
-      margin: 10px 0;
+    @media (max-width: 600px) {
+      .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+      .btn { padding: 10px 12px; font-size: 14px; }
+      h1, h2, h3 { font-size: 1.1rem; }
+      .card img { height: 150px; }
+      input, select, textarea { font-size: 14px; }
+      .flex { gap: 8px; }
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
+    @media (max-width: 400px) {
+      .nav { padding: 8px; }
+      .nav input[type=search] { padding: 8px; font-size: 14px; }
+      .menu a, .menu button { font-size: 13px; }
+      .grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .card img { height: 130px; }
+      footer { font-size: 12px; }
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-
 <body>
+
 <header>
-  <div class="nav container">
-    <a class="brand" href="/filmy/">🎬 StreamingHub</a>
-    <nav class="menu" style="margin-left:auto">
+  <div class="nav">
+    <a href="index.html" class="brand">🎬 StreamingHub</a>
+    <nav class="menu">
       <a href="/filmy/">Filmy</a>
       <a href="/seriale/">Seriale</a>
-      <a href="/top/">TOP</a>
-      <a href="/moja-biblioteka/" style="color:#fff">Moja biblioteka</a>
-      <button onclick="logout()" class="btn secondary">Wyloguj</button>
+      <a href="/moja-biblioteka/" class="active">Moja biblioteka</a>
+      <a href="#" onclick="logout()" id="logoutBtn" style="display:none;">Wyloguj</a>
     </nav>
   </div>
 </header>
 
-<main class="container" id="app">
-  <h1>Moja biblioteka</h1>
+<div class="container">
+  <h1 id="userName">Twoja biblioteka</h1>
 
-  <section id="pointsBox" class="card">
-    <h2>🎯 Twoje punkty: <span id="points">...</span></h2>
-    <div id="adContainer">
-        <button id="watchAdBtn" class="btn">🎬 Obejrzyj reklamę (+50 pkt)</button>
-        <p id="cooldownMsg" class="muted-block" style="color: #e5a50a; display:none;"></p>
-    </div>
-    
-    <hr style="margin:20px 0;border-color:var(--border)">
-    <h3>🎟 Wykorzystaj kod</h3>
-    <input id="codeInput" placeholder="Wpisz kod promocyjny">
-    <button class="btn" onclick="redeemCode()">Aktywuj</button>
-    <p id="codeMessage" class="muted-block"></p>
-  </section>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('history', this)">Historia oglądania</button>
+    <button class="tab" onclick="switchTab('watchlist', this)">Chcę obejrzeć</button>
+    <button class="tab" onclick="switchTab('favorites', this)">Ulubione</button>
+    <button class="tab" onclick="switchTab('settings', this)">Ustawienia profilu</button>
+  </div>
 
-  <section id="friendsBox" class="card">
-    <h2>🧑‍🤝‍🧑 Społeczność</h2>
-    <p>Połącz się ze znajomymi i oglądaj razem filmy!</p>
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <button class="btn" onclick="location.href='/znajomi/'">👥 Znajomi</button>
-      <button class="btn secondary" onclick="location.href='wspolne-oglądanie.html'">🎥 Wspólne oglądanie</button>
-    </div>
-  </section>
+  <div id="content">
+    <div class="loading">Ładowanie Twoich danych...</div>
+  </div>
+</div>
 
-  <section id="profileBox" class="card">
-    <h2>👤 Zmień dane profilu</h2>
-    <label>Nazwa użytkownika</label>
-    <input type="text" id="usernameInput" placeholder="Nowa nazwa">
-    <label>Opis (bio)</label>
-    <textarea id="bioInput" placeholder="Napisz coś o sobie..."></textarea>
-    <button class="btn" onclick="updateProfile()">💾 Zapisz zmiany</button>
-  </section>
-
-  <section id="passwordBox" class="card">
-    <h2>🔐 Zmień hasło</h2>
-    <input type="password" id="currentPassword" placeholder="Obecne hasło">
-    <input type="password" id="newPassword" placeholder="Nowe hasło">
-    <input type="password" id="confirmPassword" placeholder="Powtórz nowe hasło">
-    <button class="btn" onclick="changePassword()">Zmień hasło</button>
-  </section>
-
-  <section id="filmsBox" class="card">
-    <div class="top-row">
-      <h2>🎞 Historia oglądania — Filmy</h2>
-      <button class="btn secondary" onclick="openHistoryModal('movie')">Pokaż całą historię</button>
-    </div>
-    <div id="filmsList" class="row-scroll"></div>
-  </section>
-
-  <section id="seriesBox" class="card">
-    <div class="top-row">
-      <h2>📺 Historia oglądania — Seriale</h2>
-      <button class="btn secondary" onclick="openHistoryModal('series')">Pokaż całą historię</button>
-    </div>
-    <div id="seriesList" class="row-scroll"></div>
-  </section>
-</main>
-
-<footer>© <script>document.write(new Date().getFullYear())</script> StreamingHub</footer>
-
-<div id="historyModalContainer"></div>
-<div id="adModalContainer"></div>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// --- KONFIGURACJA ---
-const db = supabase.createClient(
-  "https://jjmnacolebxsifmnmqks.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0"
-);
-let currentUser = null;
+const SUPABASE_URL = "https://jjmnacolebxsifmnmqks.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqbW5hY29sZWJ4c2lmbW5tcWtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3OTcyNDQsImV4cCI6MjA3MTM3MzI0NH0.1hNoBQ4wDuA_t_vscorQ6FRb-aW8IxHEDxuZKEhndv0";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const AD_COOLDOWN_MINUTES = 3;
-const POINTS_REWARD = 50; 
-const AD_DURATION = 25; 
+let user = null;
 
-/* ------------------- INIT ------------------- */
-(async()=>{
-  const { data:{ session } } = await db.auth.getSession();
-  if(!session) return location.href="/login/";
-  currentUser = session.user;
-  
-  document.getElementById("watchAdBtn").onclick = initiateAdProcess;
-  
-  await Promise.all([
-    loadPoints(),
-    loadProfile(),
-    loadCompactHistory(),
-    checkCooldownState()
-  ]);
-})();
-
-/* ------------------- SYSTEM REKLAMOWY A-ADS ------------------- */
-
-async function initiateAdProcess() {
-  const btn = document.getElementById("watchAdBtn");
-  btn.disabled = true;
-
-  const canWatch = await checkCooldownState();
-  if (!canWatch) {
-    btn.disabled = false;
+async function init() {
+  const { data } = await db.auth.getUser();
+  if (!data.user) {
+    window.location.href = "login.html";
     return;
   }
-
-  showAdModal();
+  user = data.user;
+  document.getElementById("userName").innerText = `Witaj, ${user.user_metadata.username || 'użytkowniku'}!`;
+  document.getElementById("logoutBtn").style.display = "block";
+  loadHistory();
 }
 
-function showAdModal() {
-  const container = document.getElementById("adModalContainer");
-  
-  container.innerHTML = `
-    <div class='modal-backdrop'>
-      <div class='modal' id='adModalContent'>
-        <h3 style="margin:0">⏳ Reklama w toku...</h3>
-        <p class="muted-block">Obejrzyj reklamę poniżej, aby otrzymać punkty.</p>
-        
-        <div class="ad-frame-wrapper">
-           <iframe data-aa='2421578' src='//acceptable.a-ads.com/2421578/?size=Adaptive' style='border:0; width:100%; height:250px;'></iframe>
+async function logout() {
+  await db.auth.signOut();
+  window.location.href = "login.html";
+}
+
+async function switchTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  const div = document.getElementById("content");
+  div.innerHTML = '<div class="loading">Ładowanie...</div>';
+
+  if (tab === 'history') loadHistory();
+  else if (tab === 'watchlist') loadWatchlist();
+  else if (tab === 'favorites') loadFavorites();
+  else if (tab === 'settings') loadSettings();
+}
+
+// Sekcja ustawień
+async function loadSettings() {
+    const div = document.getElementById("content");
+    div.innerHTML = `
+        <div style="max-width: 400px; background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+            <h3 style="margin-top:0">Zmień nazwę użytkownika</h3>
+            <input type="text" id="newUsername" placeholder="Nowa nazwa" style="width:100%; padding:10px; background:#0b0d10; border:1px solid var(--border); color:#fff; border-radius:8px; margin-bottom:12px;">
+            <button class="small-btn" style="width:100%; padding:10px; background:var(--brand);" onclick="updateUsername()">Zapisz zmiany</button>
+            
+            <hr style="border:0; border-top:1px solid var(--border); margin: 20px 0;">
+            
+            <h3>Zmień hasło</h3>
+            <button class="small-btn" style="width:100%; padding:10px;" onclick="resetPasswordEmail()">Wyślij link do resetu hasła</button>
         </div>
-        
-        <div class="timer-display" id="adTimer">${AD_DURATION}s</div>
-        <p class="muted-block" style="font-size: 11px;">Nie zamykaj tego okna przed czasem.</p>
-      </div>
-    </div>
-  `;
-  
-  startAdCounter();
+    `;
 }
 
-let currentTimer = null;
-function startAdCounter() {
-  const timerElem = document.getElementById("adTimer");
-  if(currentTimer) clearInterval(currentTimer);
-  
-  let timeLeft = AD_DURATION;
-  currentTimer = setInterval(() => {
-    timeLeft--;
-    timerElem.textContent = timeLeft + "s";
+async function updateUsername() {
+    const newName = document.getElementById("newUsername").value.trim();
+    if(!newName) return alert("Wpisz nazwę!");
+    const { error } = await db.auth.updateUser({ data: { username: newName } });
+    if(error) alert(error.message);
+    else { alert("Zmieniono!"); location.reload(); }
+}
+
+async function resetPasswordEmail() {
+    const { error } = await db.auth.resetPasswordForEmail(user.email, { redirectTo: window.location.origin + '/login.html' });
+    if(error) alert(error.message);
+    else alert("Link wysłany na email!");
+}
+
+// Historia
+async function loadHistory() {
+  const div = document.getElementById("content");
+  const { data: mRows } = await db.from("watch_history_movies").select("*").eq("user_id", user.id).order("watched_at", { ascending: false });
+  const { data: sRows } = await db.from("watch_history_series").select("*").eq("user_id", user.id).order("watched_at", { ascending: false });
+
+  let html = "";
+  html += `<div class='section-title'>🎬 Ostatnio oglądane filmy</div>`;
+  html += `<div class='list'>${await makeMoviesHtml(mRows || [], 'history')}</div>`;
+  html += `<div class='section-title'>📺 Ostatnie odcinki seriali</div>`;
+  html += `<div class='list'>${await makeSeriesHtml(sRows || [], 'history')}</div>`;
+  div.innerHTML = html;
+}
+
+// Chcę obejrzeć (Watchlist)
+async function loadWatchlist() {
+    const div = document.getElementById("content");
+    const { data: mRows } = await db.from("watchlist_movies").select("*").eq("user_id", user.id);
+    const { data: sRows } = await db.from("watchlist_series").select("*").eq("user_id", user.id);
     
-    if (timeLeft <= 0) {
-      clearInterval(currentTimer);
-      prepareReward();
-    }
-  }, 1000);
+    let html = "";
+    html += `<div class='section-title'>📌 Filmy do obejrzenia</div>`;
+    html += `<div class='list'>${await makeMoviesHtml(mRows || [], 'watchlist')}</div>`;
+    html += `<div class='section-title'>📌 Seriale do obejrzenia</div>`;
+    html += `<div class='list'>${await makeSeriesHtml(sRows || [], 'watchlist_series')}</div>`;
+    div.innerHTML = html;
 }
 
-function prepareReward() {
-  const modalContent = document.getElementById("adModalContent");
-  modalContent.innerHTML = `
-    <div style="padding: 30px 0;">
-        <div style="font-size: 50px;">🎁</div>
-        <h2 style="margin:10px 0;">Gotowe!</h2>
-        <p class="muted-block">Reklama zweryfikowana. Odbierz swoje punkty.</p>
-        <button class="btn success" style="width:100%; padding: 15px; margin-top:20px;" onclick="finishAdSuccess()">💰 ODBIERZ 50 PKT</button>
-    </div>
-  `;
+// Ulubione
+async function loadFavorites() {
+    const div = document.getElementById("content");
+    const { data: mRows } = await db.from("favorites_movies").select("*").eq("user_id", user.id);
+    const { data: sRows } = await db.from("favorites_series").select("*").eq("user_id", user.id);
+    
+    let html = "";
+    html += `<div class='section-title'>❤️ Ulubione filmy</div>`;
+    html += `<div class='list'>${await makeMoviesHtml(mRows || [], 'favorites')}</div>`;
+    html += `<div class='section-title'>❤️ Ulubione seriale</div>`;
+    html += `<div class='list'>${await makeSeriesHtml(sRows || [], 'favorites_series')}</div>`;
+    div.innerHTML = html;
 }
 
-async function finishAdSuccess() {
-  document.getElementById("adModalContainer").innerHTML = ""; 
-  try {
-    const { data: prof } = await db.from("profiles").select("points").eq("id", currentUser.id).single();
-    const newPoints = (prof?.points || 0) + POINTS_REWARD;
-    await db.from("profiles").update({ 
-      points: newPoints,
-      last_ad_watched: new Date().toISOString()
-    }).eq("id", currentUser.id);
-
-    alert(`✅ Dodano +${POINTS_REWARD} pkt!`);
-    await loadPoints();
-    await checkCooldownState();
-  } catch (err) {
-    alert("Błąd połączenia.");
-  }
+// Generatory HTML
+async function makeMoviesHtml(rows, type) {
+  if (!rows.length) return "<div class='muted-block'>Nic tu jeszcze nie ma.</div>";
+  const ids = rows.map(r => r.movie_id);
+  const { data: movies } = await db.from("movies").select("id,title,thumb").in("id", ids);
+  const map = new Map(movies?.map(m => [m.id, m]));
+  
+  return rows.map(r => {
+    const m = map.get(r.movie_id);
+    if(!m) return "";
+    return `
+      <div class='item'>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <img class='thumb' src='${m.thumb}'>
+          <div>
+            <b>${m.title}</b>
+            <div class='muted-block'>${r.watched_at ? new Date(r.watched_at).toLocaleString() : ''}</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <button class='small-btn' onclick="location.href='filmy.html?id=${m.id}'">▶</button>
+            <button class='small-btn' style="color:var(--danger)" onclick="removeFromList('${type}', ${r.id})">✕</button>
+        </div>
+      </div>`;
+  }).join("");
 }
 
-async function checkCooldownState() {
-  const btn = document.getElementById("watchAdBtn");
-  const msg = document.getElementById("cooldownMsg");
-  const { data: prof } = await db.from("profiles").select("last_ad_watched").eq("id", currentUser.id).single();
+async function makeSeriesHtml(rows, type) {
+  if (!rows.length) return "<div class='muted-block'>Nic tu jeszcze nie ma.</div>";
+  
+  let html = "";
+  if(type === 'history') {
+      const { data: eps } = await db.from("episodes").select("id,series_id,season,episode,thumb").in("id", rows.map(r => r.episode_id));
+      const sids = [...new Set(eps?.map(e => e.series_id))];
+      const { data: series } = await db.from("series").select("id,title,thumb").in("id", sids);
+      const sMap = new Map(series?.map(s => [s.id, s]));
+      const eMap = new Map(eps?.map(e => [e.id, e]));
 
-  if (!prof || !prof.last_ad_watched) {
-    btn.disabled = false;
-    msg.style.display = 'none';
-    return true;
-  }
-
-  const diffMinutes = (new Date() - new Date(prof.last_ad_watched)) / 60000;
-  if (diffMinutes < AD_COOLDOWN_MINUTES) {
-    const waitTime = Math.ceil(AD_COOLDOWN_MINUTES - diffMinutes);
-    btn.disabled = true;
-    btn.textContent = `Poczekaj ${waitTime} min`;
-    msg.textContent = `Kolejna nagroda za ${waitTime} minut.`;
-    msg.style.display = 'block';
-    return false;
+      return rows.map(r => {
+        const e = eMap.get(r.episode_id); if (!e) return "";
+        const s = sMap.get(e.series_id);
+        return `
+          <div class='item'>
+            <div style="display:flex;gap:12px;align-items:center;">
+              <img class='thumb' src='${e.thumb || s?.thumb}'>
+              <div>
+                <b>${s?.title}</b>
+                <div class='muted-block'>S${e.season} E${e.episode} • ${new Date(r.watched_at).toLocaleString()}</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button class='small-btn' onclick="location.href='seriale.html?id=${s?.id}&e=${e.id}'">▶</button>
+                <button class='small-btn' style="color:var(--danger)" onclick="removeFromList('history_series', ${r.id})">✕</button>
+            </div>
+          </div>`;
+      }).join("");
   } else {
-    btn.disabled = false;
-    btn.textContent = `🎬 Obejrzyj reklamę (+${POINTS_REWARD} pkt)`;
-    msg.style.display = 'none';
-    return true;
+      const sids = rows.map(r => r.series_id);
+      const { data: series } = await db.from("series").select("id,title,thumb").in("id", sids);
+      const sMap = new Map(series?.map(s => [s.id, s]));
+      
+      return rows.map(r => {
+          const s = sMap.get(r.series_id);
+          if(!s) return "";
+          return `
+            <div class='item'>
+                <div style="display:flex;gap:12px;align-items:center;">
+                    <img class='thumb' src='${s.thumb}'>
+                    <div><b>${s.title}</b></div>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button class='small-btn' onclick="location.href='seriale.html?id=${s.id}'">▶</button>
+                    <button class='small-btn' style="color:var(--danger)" onclick="removeFromList('${type}', ${r.id})">✕</button>
+                </div>
+            </div>`;
+      }).join("");
   }
 }
 
-/* --- POZOSTAŁE FUNKCJE (BEZ ZMIAN) --- */
-async function loadProfile(){
-  const { data } = await db.from("profiles").select("username,bio").eq("id", currentUser.id).maybeSingle();
-  if (data) {
-    document.getElementById("usernameInput").value = data.username || "";
-    document.getElementById("bioInput").value = data.bio || "";
-  }
+async function removeFromList(type, id) {
+    if(!confirm("Usunąć z listy?")) return;
+    let table = "";
+    if(type === 'history') table = "watch_history_movies";
+    else if(type === 'history_series') table = "watch_history_series";
+    else if(type === 'watchlist') table = "watchlist_movies";
+    else if(type === 'watchlist_series') table = "watchlist_series";
+    else if(type === 'favorites') table = "favorites_movies";
+    else if(type === 'favorites_series') table = "favorites_series";
+    
+    const { error } = await db.from(table).delete().eq("id", id);
+    if(error) alert(error.message);
+    else location.reload();
 }
-async function updateProfile(){
-  const username = document.getElementById("usernameInput").value.trim();
-  const bio = document.getElementById("bioInput").value.trim();
-  if(!username) return alert("Podaj nazwę użytkownika");
-  await db.from("profiles").update({ username, bio }).eq("id", currentUser.id);
-  alert("✅ Zaktualizowano profil!");
-}
-async function loadPoints(){
-  const { data } = await db.from("profiles").select("points").eq("id", currentUser.id).maybeSingle();
-  document.getElementById("points").textContent = data?.points ?? 0;
-}
-async function redeemCode(){
-  const input = document.getElementById("codeInput");
-  const val = input.value.trim();
-  const { data: code } = await db.from("codes").select("*").eq("code", val).maybeSingle();
-  if(!code || code.limit_left<=0) return alert("Kod nieprawidłowy");
-  const { data: prof } = await db.from("profiles").select("points").eq("id", currentUser.id).maybeSingle();
-  await db.from("profiles").update({ points: (prof?.points||0)+code.amount }).eq("id", currentUser.id);
-  await db.from("codes").update({ limit_left: code.limit_left-1 }).eq("id", code.id);
-  alert("✅ Kod aktywowany!");
-  input.value=""; loadPoints();
-}
-async function loadCompactHistory(){
-  const { data } = await db.from("watch_history").select("*").eq("user_id", currentUser.id).order("watched_at",{ascending:false}).limit(100);
-  const movies = [...new Map(data.filter(d=>d.movie_id).map(x=>[x.movie_id,x])).values()].slice(0,6);
-  const series = [...new Map(data.filter(d=>d.episode_id).map(x=>[x.episode_id,x])).values()].slice(0,6);
-  document.getElementById("filmsList").innerHTML = await makeFilmsHtml(movies);
-  document.getElementById("seriesList").innerHTML = await makeSeriesHtml(series);
-}
-async function makeFilmsHtml(rows){
-  if(!rows.length) return "<div class='muted-block'>Brak historii.</div>";
-  const { data } = await db.from("movies").select("id,title,thumb").in("id",rows.map(r=>r.movie_id));
-  const map = new Map(data.map(m=>[m.id,m]));
-  return rows.map(r=>{
-    const m=map.get(r.movie_id);
-    return `<div class='item'><div style="display:flex;gap:12px;align-items:center;"><img class='thumb' src='${m?.thumb||''}'><div><b>${m?.title||'Film'}</b><div class='muted-block'>${new Date(r.watched_at).toLocaleString()}</div></div></div><button class='small-btn' onclick="location.href='filmy.html?id=${m?.id}'">▶</button></div>`;
-  }).join("");
-}
-async function makeSeriesHtml(rows){
-  if(!rows.length) return "<div class='muted-block'>Brak historii.</div>";
-  const { data: eps } = await db.from("episodes").select("id,series_id,season,episode,thumb").in("id",rows.map(r=>r.episode_id));
-  const sids = [...new Set(eps.map(e=>e.series_id))];
-  const { data: series } = await db.from("series").select("id,title,thumb").in("id",sids);
-  const sMap = new Map(series.map(s=>[s.id,s]));
-  const eMap = new Map(eps.map(e=>[e.id,e]));
-  return rows.map(r=>{
-    const e = eMap.get(r.episode_id); if(!e) return "";
-    const s = sMap.get(e.series_id);
-    return `<div class='item'><div style="display:flex;gap:12px;align-items:center;"><img class='thumb' src='${e.thumb||s?.thumb||''}'><div><b>${s?.title||'Serial'}</b><div class='muted-block'>S${e.season}E${e.episode}</div></div></div><button class='small-btn' onclick="location.href='seriale.html?series=${e.series_id}&season=${e.season}&episode=${e.episode}'">▶</button></div>`;
-  }).join("");
-}
-async function logout(){ await db.auth.signOut(); location.href="/login/"; }
+
+init();
 </script>
 </body>
 </html>
