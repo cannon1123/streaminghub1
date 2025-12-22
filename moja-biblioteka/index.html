@@ -147,6 +147,59 @@
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    /* =========================================
+   RESPONSYWNOŚĆ (Mobile & Tablet)
+   Zoptymalizowana topka (nagłówek)
+   ========================================= */
+
+@media (max-width: 900px) {
+  /* Układ kolumnowy dla całej strony */
+  .row { grid-template-columns: 1fr; }
+  
+  /* ZMNIEJSZONA TOPKA (NAGŁÓWEK) */
+  .nav { 
+    flex-direction: column; 
+    align-items: stretch; 
+    padding: 8px 12px; /* Mniejszy padding niż na desktopie */
+    gap: 8px;          /* Mniejsze odstępy między elementami */
+  }
+  
+  .menu { justify-content: center; }
+  .card img { height: 180px; }
+  .container { padding: 12px; }
+}
+
+@media (max-width: 600px) {
+  /* Siatka filmów na mniejsze ekrany */
+  .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  
+  /* Mniejsze przyciski i teksty */
+  .btn { padding: 8px 12px; font-size: 14px; }
+  h1, h2, h3 { font-size: 1.1rem; }
+  
+  .card img { height: 150px; }
+  input, select, textarea { font-size: 14px; }
+  .flex { gap: 8px; }
+}
+
+@media (max-width: 400px) {
+  /* BARDZO MAŁE EKRANY - ULTRA KOMPAKTOWA TOPKA */
+  .nav { 
+    padding: 6px; /* Minimalny padding */
+  }
+  .nav input[type=search] { 
+    padding: 8px; 
+    font-size: 13px; 
+  }
+  
+  .menu a, .menu button { font-size: 13px; }
+  
+  /* Siatka 2 kolumny na sztywno dla bardzo małych ekranów */
+  .grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .card img { height: 130px; }
+  footer { font-size: 12px; }
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
