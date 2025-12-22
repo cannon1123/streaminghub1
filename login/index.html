@@ -5,232 +5,204 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>StreamingHub • Logowanie</title>
   <style>
-    :root {
-      --bg: #0b0d10;
-      --card: #151922;
-      --muted: #9fb1d9;
-      --text: #e3e7ee;
-      --brand: #4f7cff;
-      --border: #232a37;
-      --google-bg: #ffffff;
-      --google-text: #1f1f1f;
-      --input-bg: #0e1218;
-    }
+:root {
+  --bg: #0b0d10;
+  --card: #151922;
+  --text: #e3e7ee;
+  --muted: #a8bfe2;
+  --brand: #4f7cff;
+  --border: #232a37;
+  --google-bg: #ffffff;
+  --google-text: #1f1f1f;
+}
 
-    * { box-sizing: border-box; }
+* { box-sizing: border-box; }
 
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: system-ui, -apple-system, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      line-height: 1.5;
-    }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto;
+  line-height: 1.4;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
 
-    header {
-      position: sticky;
-      top: 0;
-      background: rgba(11, 13, 16, 0.9);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      z-index: 100;
-      border-bottom: 1px solid var(--border);
-    }
+header {
+  position: sticky;
+  top: 0;
+  background: rgba(11,13,16,0.9);
+  backdrop-filter: blur(6px);
+  z-index: 10;
+}
 
-    .nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 12px 16px;
-    }
+.nav {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  flex-wrap: wrap;
+}
 
-    .brand { 
-      font-weight: 800; 
-      color: var(--text); 
-      text-decoration: none; 
-      font-size: 1.2rem;
-      letter-spacing: -0.5px;
-    }
+.brand { font-weight: 800; font-size: 1.2rem; text-decoration: none; color: var(--text); }
 
-    .menu { display: flex; align-items: center; gap: 16px; }
-    .menu a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color .2s; font-weight: 500; }
-    .menu a:hover { color: #fff; }
+.menu {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
 
-    main {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px 16px;
-    }
+.menu a, .menu button {
+  padding: 8px 12px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+  text-decoration: none;
+}
 
-    .auth-box {
-      background: var(--card);
-      padding: 32px;
-      border-radius: 20px;
-      width: 100%;
-      max-width: 420px;
-      border: 1px solid var(--border);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-    }
+main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+}
 
-    h2 { text-align: center; margin: 0 0 24px 0; font-size: 1.5rem; font-weight: 700; }
-    
-    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+.auth-box {
+  background: var(--card);
+  padding: 32px;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid var(--border);
+}
 
-    input {
-      width: 100%; 
-      background: var(--input-bg); 
-      border: 1px solid var(--border);
-      color: #fff; 
-      padding: 12px 14px; 
-      border-radius: 12px; 
-      margin-bottom: 16px;
-      font-size: 1rem;
-      transition: all 0.2s;
-    }
+h2 { text-align: center; margin: 0 0 24px 0; font-size: 1.5rem; font-weight: 700; }
 
-    input:focus {
-      outline: none;
-      border-color: var(--brand);
-      box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.2);
-    }
+label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
 
-    button {
-      width: 100%; 
-      background: var(--brand); 
-      color: #fff; 
-      border: none;
-      padding: 14px; 
-      border-radius: 12px; 
-      cursor: pointer;
-      font-weight: 600; 
-      font-size: 1rem;
-      margin-top: 8px; 
-      transition: transform 0.1s, background 0.2s;
-    }
+input {
+  width: 100%; 
+  background: #0e1218; 
+  border: 1px solid var(--border);
+  color: #fff; 
+  padding: 12px 14px; 
+  border-radius: 12px; 
+  margin-bottom: 16px;
+  font-size: 1rem;
+  outline: none;
+}
 
-    button:hover { background: #668cff; }
-    button:active { transform: scale(0.98); }
+input:focus { border-color: var(--brand); }
 
-    .btn-google {
-      background: var(--google-bg); 
-      color: var(--google-text);
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      gap: 12px;
-      margin-bottom: 8px;
-    }
-    .btn-google:hover { background: #f8f9fa; color: #000; }
-    .btn-google svg { width: 18px; height: 18px; }
+button.submit-btn {
+  width: 100%; 
+  background: var(--brand); 
+  color: #fff; 
+  border: none;
+  padding: 14px; 
+  border-radius: 12px; 
+  cursor: pointer;
+  font-weight: 600; 
+  font-size: 1rem;
+}
 
-    .separator {
-      display: flex; align-items: center; text-align: center;
-      color: var(--muted); font-size: 0.8rem; margin: 20px 0;
-      text-transform: uppercase; letter-spacing: 1px;
-    }
-    .separator::before, .separator::after {
-      content: ''; flex: 1; border-bottom: 1px solid var(--border);
-    }
-    .separator::before { margin-right: 12px; }
-    .separator::after { margin-left: 12px; }
+.btn-google {
+  width: 100%;
+  background: var(--google-bg); 
+  color: var(--google-text);
+  border: none;
+  padding: 12px;
+  border-radius: 12px;
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
 
-    .link-container {
-      margin-top: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      text-align: center;
-    }
+.separator {
+  display: flex; align-items: center; text-align: center;
+  color: var(--muted); font-size: 0.8rem; margin: 20px 0;
+}
+.separator::before, .separator::after {
+  content: ''; flex: 1; border-bottom: 1px solid var(--border);
+}
+.separator::before { margin-right: 12px; }
+.separator::after { margin-left: 12px; }
 
-    .link { 
-      color: var(--muted); 
-      cursor: pointer; 
-      font-size: 0.85rem; 
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-    .link:hover { color: #fff; text-decoration: underline; }
+.link-container {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+}
 
-    .captcha {
-      display: flex; 
-      align-items: center; 
-      gap: 10px;
-      background: var(--input-bg); 
-      padding: 10px; 
-      border: 1px solid var(--border);
-      border-radius: 12px; 
-      margin-bottom: 16px;
-    }
-    .captcha span { 
-      font-family: 'Courier New', monospace; 
-      font-size: 1.1rem; 
-      letter-spacing: 3px; 
-      font-weight: 800;
-      background: #232a37;
-      padding: 4px 10px;
-      border-radius: 6px;
-      color: var(--brand);
-    }
-    .captcha input { margin-bottom: 0; flex: 1; }
+.link { color: var(--muted); cursor: pointer; font-size: 0.85rem; }
+.link:hover { color: #fff; }
 
-    footer {
-      text-align: center;
-      padding: 24px;
-      color: var(--muted);
-      font-size: 0.85rem;
-      border-top: 1px solid var(--border);
-    }
+.captcha {
+  display: flex; 
+  align-items: center; 
+  gap: 10px;
+  background: #0e1218; 
+  padding: 10px; 
+  border: 1px solid var(--border);
+  border-radius: 12px; 
+  margin-bottom: 16px;
+}
+.captcha span { 
+  font-family: monospace; 
+  font-size: 1.1rem; 
+  font-weight: 800;
+  color: var(--brand);
+}
+.captcha input { margin-bottom: 0; flex: 1; }
 
-    /* RESPONSYWNOŚĆ MOBILNA */
-    @media (max-width: 768px) {
-      .nav { padding: 10px 16px; }
-      .brand { font-size: 1.1rem; }
-      .menu { gap: 10px; }
-      .menu a { font-size: 0.8rem; }
-      .auth-box { padding: 24px; border: none; box-shadow: none; background: transparent; }
-      h2 { font-size: 1.4rem; }
-    }
+footer {
+  text-align: center;
+  padding: 24px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
 
-    @media (max-width: 480px) {
-      .nav { flex-direction: column; gap: 12px; text-align: center; }
-      .menu { width: 100%; justify-content: center; flex-wrap: wrap; }
-      main { align-items: flex-start; padding-top: 10px; }
-      .auth-box { padding: 16px; width: 100%; }
-      input, button { font-size: 16px; } /* Zapobiega auto-zoomowi na iOS */
-      .captcha { flex-direction: column; align-items: stretch; }
-      .captcha input { width: 100%; }
-    }
+@media (max-width: 480px) {
+  .nav { justify-content: center; text-align: center; }
+  .menu { justify-content: center; }
+  .auth-box { padding: 20px; border: none; background: transparent; }
+  .captcha { flex-direction: column; }
+}
   </style>
 </head>
 <body>
 
 <header>
   <div class="nav">
-    <a class="brand" href="index.html">🎬 StreamingHub</a>
-    <nav class="menu">
+    <a class="brand" href="index.html">StreamingHub</a>
+    <div class="menu">
       <a href="/filmy/">Filmy</a>
       <a href="/seriale/">Seriale</a>
       <a href="/moja-biblioteka/">Moja biblioteka</a>
-      <a href="/login/" style="color:#fff;">Logowanie</a>
-      <a href="#" onclick="showRegister()">Rejestracja</a>
-    </nav>
+      <a href="/login/">Logowanie</a>
+      <button onclick="showRegister()">Rejestracja</button>
+    </div>
   </div>
 </header>
 
 <main>
-  <div class="auth-box" id="authBox">
+  <div class="auth-box">
     <h2 id="formTitle">Zaloguj się</h2>
 
     <div id="googleSection">
       <button class="btn-google" onclick="loginWithGoogle()">
-        <svg viewBox="0 0 48 48">
+        <svg width="18" height="18" viewBox="0 0 48 48">
           <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
           <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
           <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
@@ -246,38 +218,35 @@
       <input type="email" id="loginEmail" placeholder="twój@email.com" />
       <label>Hasło</label>
       <input type="password" id="loginPass" placeholder="••••••••" />
-      <button onclick="login()">Zaloguj się</button>
+      <button class="submit-btn" onclick="login()">Zaloguj się</button>
       <div class="link-container">
         <span class="link" onclick="showReset()">Zapomniałeś hasła?</span>
         <span class="link" onclick="showRegister()">Nie masz konta? Zarejestruj się</span>
-        <span class="link" onclick="sendMagicLink()">Zaloguj się magicznym linkiem ✨</span>
       </div>
     </div>
 
     <div id="registerForm" style="display:none;">
       <label>Nazwa użytkownika</label>
-      <input type="text" id="regName" placeholder="np. Janek123" />
+      <input type="text" id="regName" placeholder="Janek123" />
       <label>Email</label>
       <input type="email" id="regEmail" placeholder="twój@email.com" />
       <label>Hasło</label>
       <input type="password" id="regPass" placeholder="••••••••" />
-      <label>Powtórz hasło</label>
-      <input type="password" id="regPass2" placeholder="••••••••" />
       <label>Weryfikacja</label>
       <div class="captcha">
         <span id="captchaText"></span>
         <input type="text" id="captchaInput" placeholder="Kod">
       </div>
-      <button onclick="register()">Utwórz konto</button>
+      <button class="submit-btn" onclick="register()">Utwórz konto</button>
       <div class="link-container">
         <span class="link" onclick="showLogin()">Masz już konto? Zaloguj się</span>
       </div>
     </div>
 
     <div id="resetForm" style="display:none;">
-      <label>Podaj email powiązany z kontem</label>
+      <label>Podaj email konta</label>
       <input type="email" id="resetEmail" placeholder="twój@email.com" />
-      <button onclick="resetPassword()">Wyślij link do resetu</button>
+      <button class="submit-btn" onclick="resetPassword()">Wyślij link do resetu</button>
       <div class="link-container">
         <span class="link" onclick="showLogin()">Wróć do logowania</span>
       </div>
@@ -288,12 +257,12 @@
       <input type="password" id="newPass1" placeholder="••••••••" />
       <label>Powtórz nowe hasło</label>
       <input type="password" id="newPass2" placeholder="••••••••" />
-      <button onclick="updatePassword()">Zmień hasło i zaloguj</button>
+      <button class="submit-btn" onclick="updatePassword()">Zmień hasło</button>
     </div>
   </div>
 </main>
 
-<footer>© <script>document.write(new Date().getFullYear())</script> StreamingHub</footer>
+<footer>© 2025 StreamingHub</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -308,12 +277,9 @@ db.auth.onAuthStateChange(async (event, session) => {
     hideAll();
     document.getElementById("formTitle").innerText = "Ustaw nowe hasło";
     document.getElementById("newPassForm").style.display = "block";
-  } 
-  else if (event === 'SIGNED_IN') {
+  } else if (event === 'SIGNED_IN') {
     const isRecovery = window.location.hash && window.location.hash.includes("type=recovery");
-    if (!isRecovery) {
-       window.location.href = "/filmy/";
-    }
+    if (!isRecovery) window.location.href = "/filmy/";
   }
 });
 
@@ -322,71 +288,47 @@ async function loginWithGoogle() {
     provider: 'google',
     options: { redirectTo: redirectUrl }
   });
-  if(error) alert("Błąd: " + error.message);
+  if(error) alert(error.message);
 }
 
 async function register(){
-  const name = document.getElementById("regName").value.trim();
-  const email = document.getElementById("regEmail").value.trim();
+  const name = document.getElementById("regName").value;
+  const email = document.getElementById("regEmail").value;
   const pass = document.getElementById("regPass").value;
-  const captcha = document.getElementById("captchaInput").value.trim().toUpperCase();
+  const captcha = document.getElementById("captchaInput").value.toUpperCase();
   const correct = document.getElementById("captchaText").dataset.value;
 
-  if(!name || !email || !pass){ alert("Uzupełnij pola!"); return; }
   if(captcha !== correct){ alert("Kod captcha niepoprawny!"); generateCaptcha(); return; }
 
   const { error } = await db.auth.signUp({
     email,
     password: pass,
-    options: {
-      data: { username: name },
-      emailRedirectTo: redirectUrl
-    }
+    options: { data: { username: name }, emailRedirectTo: redirectUrl }
   });
   
-  if(error) alert("Błąd: " + error.message);
-  else {
-    alert("✅ E-mail weryfikacyjny wysłany! Sprawdź pocztę.");
-    showLogin();
-  }
+  if(error) alert(error.message);
+  else { alert("E-mail weryfikacyjny wysłany!"); showLogin(); }
 }
 
 async function login(){
-  const email = document.getElementById("loginEmail").value.trim();
+  const email = document.getElementById("loginEmail").value;
   const pass = document.getElementById("loginPass").value;
   const { error } = await db.auth.signInWithPassword({ email, password: pass });
-  if(error) alert("Błąd: " + error.message);
-}
-
-async function sendMagicLink(){
-  const email = prompt("Podaj email dla magicznego linku:");
-  if(!email) return;
-  const { error } = await db.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: redirectUrl }
-  });
-  if(error) alert("Błąd: " + error.message);
-  else alert("✨ Magic Link wysłany!");
+  if(error) alert(error.message);
 }
 
 async function resetPassword(){
-  const email = document.getElementById("resetEmail").value.trim();
-  if(!email) return alert("Podaj email");
+  const email = document.getElementById("resetEmail").value;
   const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
-  if(error) alert("Błąd: " + error.message);
-  else alert("🔗 Link do resetu wysłany!");
+  if(error) alert(error.message);
+  else alert("Link wysłany!");
 }
 
 async function updatePassword(){
   const p1 = document.getElementById("newPass1").value;
-  const p2 = document.getElementById("newPass2").value;
-  if(!p1 || p1 !== p2) return alert("Hasła muszą być identyczne!");
   const { error } = await db.auth.updateUser({ password: p1 });
-  if(error) alert("Błąd: " + error.message);
-  else {
-    alert("Hasło zmienione! ✅");
-    window.location.href = "/filmy/";
-  }
+  if(error) alert(error.message);
+  else { alert("Hasło zmienione!"); window.location.href = "/filmy/"; }
 }
 
 function showLogin(){ hideAll(); document.getElementById("formTitle").innerText="Zaloguj się"; document.getElementById("loginForm").style.display="block"; document.getElementById("googleSection").style.display="block"; }
