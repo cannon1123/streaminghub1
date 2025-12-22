@@ -5,258 +5,161 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>StreamingHub • Seriale</title>
   <style>
-    /* --- STYLE SKOPIOWANE Z INDEX.HTML DLA SPÓJNOŚCI --- */
     :root {
       --bg: #0b0d10;
       --card: #151922;
+      --muted: #9fb1d9;
       --text: #e3e7ee;
-      --muted: #a8bfe2;
       --brand: #4f7cff;
       --border: #232a37;
     }
-
     * { box-sizing: border-box; }
     body {
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto;
-      line-height: 1.4;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto;
+      line-height: 1.3;
     }
-
     a { color: var(--text); text-decoration: none; }
-
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 16px;
-    }
-
     header {
-      position: sticky;
-      top: 0;
-      background: rgba(11,13,16,0.9);
+      position: sticky; top: 0;
+      background: rgba(11,13,16,0.85);
       backdrop-filter: blur(6px);
       z-index: 10;
+      border-bottom: 1px solid rgba(255,255,255,0.02);
     }
+    .nav { display:flex; align-items:center; justify-content:space-between; max-width:1200px; margin:0 auto; padding:12px 16px; gap:12px; }
+    .brand { font-weight:700; display:flex; align-items:center; gap:8px; color:var(--text); }
+    input[type="search"] { flex:1; background:#0e1218; border:1px solid var(--border); color:#fff; padding:10px 12px; border-radius:12px; max-width:340px; }
+    .menu { display:flex; align-items:center; gap:16px; }
+    .menu a { color:var(--muted); font-size:0.95rem; transition:color .2s; }
+    .btn { background:var(--brand); color:#fff; padding:8px 14px; border-radius:12px; border:none; cursor:pointer; font-size:0.9rem; transition:background .18s; }
+    .btn.secondary { background:#2a3446; }
+    .container { max-width:1200px; margin:20px auto; padding:16px; }
 
-    .nav {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      padding: 12px 16px;
-      flex-wrap: wrap;
-    }
+    /* --- List view (filters + grid) --- */
+    .filters { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; }
+    .filters .field { flex:1 1 180px; display:flex; flex-direction:column; }
+    .filters label { font-size:0.82rem; color:var(--muted); margin-bottom:6px; }
+    select, input[type="number"], input[type="text"] { background:#0e1218; border:1px solid var(--border); color:#fff; padding:10px 12px; border-radius:10px; width:100%; }
+    .filters .actions { display:flex; align-items:flex-end; gap:8px; }
 
-    .brand { font-weight: 800; }
+    .grid { margin-top:20px; display:grid; gap:14px; grid-template-columns: repeat(5, 1fr); }
+    .card { background:var(--card); border-radius:12px; overflow:hidden; transition:transform .2s, box-shadow .2s; cursor:pointer; border:1px solid rgba(255,255,255,0.02); }
+    .card:hover { transform:translateY(-6px); box-shadow:0 10px 25px rgba(0,0,0,0.5); border-color: rgba(79,124,255,0.08); }
+    .card img { width:100%; height:180px; object-fit:cover; display:block; background:#0c0d0f; }
+    .card .p { padding:10px 12px; }
+    .card .title { font-weight:700; font-size:0.95rem; }
+    .card .meta { font-size:0.82rem; color:var(--muted); margin-top:4px; }
 
-    .nav input[type=search] {
-      flex: 1;
-      background: #0e1218;
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 10px 12px;
-      border-radius: 12px;
-      min-width: 160px;
-    }
+    /* --- Detail / Series view --- */
+    #detailView { display:none; max-width:1100px; margin:20px auto; padding:16px; }
+    .back { display:inline-block; margin-bottom:12px; color:var(--muted); text-decoration:none; }
+    .series-header { display:flex; gap:18px; align-items:flex-start; }
+    .series-thumb { width:200px; height:280px; object-fit:cover; border-radius:10px; background:#0f1113; }
+    .series-meta { flex:1; }
+    .series-title { font-size:1.6rem; font-weight:700; margin-bottom:6px; }
+    .series-desc { color:var(--muted); margin-bottom:8px; }
 
-    .menu {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
+    .seasons { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .season-card { display:flex; gap:8px; align-items:center; background:#11141b; padding:8px; border-radius:10px; border:1px solid var(--border); cursor:pointer; }
+    .season-card:hover { border-color:var(--brand); transform:translateY(-4px); }
+    .season-thumb { width:90px; height:56px; object-fit:cover; border-radius:8px; background:#0d0f12; flex-shrink:0; }
+    .season-info { color:var(--text); font-weight:700; }
 
-    .menu a, .menu button {
-      padding: 8px 10px;
-      color: var(--muted);
-      background: none;
-      border: none;
-      cursor: pointer;
-    }
+    .episodes { margin-top:18px; display:flex; flex-direction:column; gap:8px; }
+    .episode { background:var(--card); padding:12px; border-radius:10px; cursor:pointer; border:1px solid rgba(255,255,255,0.02); }
+    .episode:hover { background:#161822; }
 
-    .btn {
-      background: var(--brand);
-      color: #fff;
-      padding: 10px 14px;
-      border-radius: 12px;
-      border: none;
-      cursor: pointer;
-      font-size: 15px;
-      display: inline-block;
-      text-align: center;
-    }
+    /* player */
+    .player-wrap { margin-top:22px; display:none; }
+    .player { width:100%; height:520px; border-radius:12px; border:none; background:#000; display:block; }
+    .player-info { margin-top:10px; color:var(--muted); }
 
-    .btn.secondary { background: #2a3446; }
+    .no-results { text-align:center; color:var(--muted); margin-top:30px; }
 
-    .badge {
-      font-size: 12px;
-      color: #fff;
-      background: #2a3446;
-      padding: 2px 8px;
-      border-radius: 999px;
-    }
+    footer { color:var(--muted); text-align:center; padding:30px 0; font-size:0.9rem; }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 12px;
-    }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      overflow: hidden;
-      transition: transform 0.2s;
-    }
-    
-    .card:active { transform: scale(0.98); }
-
-    .card.p { padding: 12px; border: 0; }
-
-    .card img {
-      width: 100%;
-      height: 200px;
-      object-fit: cover;
-      display: block;
-    }
-
-    .small { font-size: 12px; color: var(--muted); }
-
-    .alert {
-      background: #152031;
-      padding: 30px;
-      border-radius: 14px;
-      color: var(--text);
-      margin: 40px auto;
-      text-align: center;
-      border: 1px solid var(--border);
-      max-width: 500px;
-    }
-
-    .flex { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    textarea, input, select {
-      width: 100%;
-      padding: 10px;
-      background: #0e1218;
-      border: 1px solid var(--border);
-      color: #fff;
-      border-radius: 10px;
-      font-size: 15px;
-    }
-
-    footer {
-      color: var(--muted);
-      text-align: center;
-      padding: 30px 0;
-      font-size: 14px;
-    }
-
-    .hidden { display: none; }
-
-    /* --- SPECYFICZNE STYLE DLA SERIALI --- */
-    
-    .series-header { display: flex; gap: 20px; margin-bottom: 20px; }
-    .series-thumb { width: 140px; height: 210px; object-fit: cover; border-radius: 12px; flex-shrink: 0; }
-    
-    .seasons-list { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; }
-    .season-chip {
-        background: #2a3446; 
-        padding: 8px 16px; 
-        border-radius: 99px; 
-        white-space: nowrap; 
-        cursor: pointer;
-        border: 1px solid transparent;
-    }
-    .season-chip:hover { border-color: var(--brand); }
-    .season-chip.active { background: var(--brand); color: white; }
-
-    .episode-item {
-        background: var(--card);
-        border: 1px solid var(--border);
-        padding: 12px;
-        margin-bottom: 8px;
-        border-radius: 10px;
-        cursor: pointer;
-    }
-    .episode-item:hover { border-color: var(--muted); }
-    
-    .video-container {
-      position: relative;
-      width: 100%;
-      padding-bottom: 56.25%;
-      height: 0;
-      overflow: hidden;
-      background: black;
-      border-radius: 14px;
-      margin-bottom: 16px;
-    }
-
-    .video-container iframe {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      border: 0;
-    }
-
-    /* RESPONSYWNOŚĆ */
-    @media (max-width: 900px) {
-      .row { grid-template-columns: 1fr; }
-      .nav { flex-direction: column; align-items: stretch; }
-      .menu { justify-content: center; }
-      .card img { height: 180px; }
-      .container { padding: 12px; }
-    }
-
-    @media (max-width: 600px) {
-      .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-      .btn { padding: 10px 12px; font-size: 14px; }
-      h1, h2, h3 { font-size: 1.1rem; }
-      .card img { height: 150px; }
-      input, select, textarea { font-size: 14px; }
-      .series-header { flex-direction: column; }
-      .series-thumb { width: 100%; height: auto; max-height: 300px; }
-    }
-
-    @media (max-width: 400px) {
-      .nav { padding: 8px; }
-      .nav input[type=search] { padding: 8px; font-size: 14px; }
-      .menu a, .menu button { font-size: 13px; }
-      .grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-      .card img { height: 130px; }
-    }
+    @media (max-width:1200px) { .grid{ grid-template-columns: repeat(4, 1fr);} .series-thumb{width:160px;height:240px;} }
+    @media (max-width:900px) { .grid{ grid-template-columns: repeat(3, 1fr);} .series-header{flex-direction:column; align-items:flex-start;} .series-thumb{width:100%;height:300px;} }
+    @media (max-width:600px) { .grid{ grid-template-columns: repeat(2, 1fr);} }
+    @media (max-width:420px) { .grid{ grid-template-columns: repeat(1, 1fr);} }
   </style>
 </head>
 <body>
-
 <header>
-  <div class="nav container">
-    <a class="brand" href="index.html">🎬 StreamingHub</a>
-    <form onsubmit="event.preventDefault(); UI.apply()" style="flex:1">
-      <input type="search" id="globalSearch" placeholder="Szukaj seriali..." />
-    </form>
-    
-    <nav class="menu flex" id="menu">
-      <a href="index.html">Filmy</a>
-      <a href="#" class="active" style="color:#fff">Seriale</a>
-      <a href="index.html">TOP</a>
-      <a href="index.html">Biblioteka</a>
-      
+  <div class="nav">
+    <a class="brand" href="index.html">🎬 <span>StreamingHub</span></a>
+    <input type="search" id="globalSearch" placeholder="Szukaj seriali..." />
+    <nav class="menu" id="menu">
+      <a href="/filmy/">Filmy</a>
+      <a href="/seriale/" style="color:#fff;">Seriale</a>
+      <a href="/top/">top</a>
+      <a href="/moja-biblioteka/">Moja biblioteka</a>
       <div id="authBtns"></div>
     </nav>
   </div>
 </header>
 
 <main class="container" id="main">
-  <div style="padding: 40px; text-align: center;">Ładowanie...</div>
+  <!-- LIST VIEW (filtry + grid) -->
+  <div id="listView">
+    <h2>Filtruj</h2>
+    <div class="filters">
+      <div class="field">
+        <label for="cat">Kategoria</label>
+        <select id="cat"><option value="">—</option></select>
+      </div>
+      <div class="field">
+        <label for="year">Rok</label>
+        <input type="number" id="year" placeholder="np. 2023">
+      </div>
+      <div class="field">
+        <label for="minLength">Min. długość (min)</label>
+        <input type="number" id="minLength" placeholder="np. 60">
+      </div>
+      <div class="field">
+        <label for="sort">Sortowanie</label>
+        <select id="sort">
+          <option value="newest">Najnowsze</option>
+          <option value="oldest">Najstarsze</option>
+          <option value="az">A–Z</option>
+          <option value="za">Z–A</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="search">Szukaj tytułu</label>
+        <input type="text" id="search" placeholder="np. The Boys">
+      </div>
+      <div class="actions" style="display:flex; align-items:flex-end;">
+        <button class="btn" onclick="UI.apply()">Szukaj</button>
+        <button class="btn secondary" onclick="UI.clearFilters()">Wyczyść</button>
+      </div>
+    </div>
+
+    <div class="grid" id="list"></div>
+  </div>
+
+  <!-- DETAIL VIEW (seria -> sezony -> odcinki -> player) -->
+  <div id="detailView" style="display:none;">
+    <a class="back" href="#" onclick="goHome();return false;">← Powrót do listy</a>
+    <div class="series-header">
+      <img id="seriesThumb" class="series-thumb" src="" alt="thumb">
+      <div class="series-meta">
+        <div id="seriesTitle" class="series-title"></div>
+        <div id="seriesDesc" class="series-desc"></div>
+        <div id="seasonsContainer" class="seasons"></div>
+      </div>
+    </div>
+
+    <div id="episodesContainer" class="episodes"></div>
+
+    <div id="playerWrap" class="player-wrap">
+      <iframe id="playerFrame" class="player" allowfullscreen></iframe>
+      <div id="playerInfo" class="player-info"></div>
+    </div>
+  </div>
 </main>
 
 <footer>© <script>document.write(new Date().getFullYear())</script> StreamingHub</footer>
@@ -271,126 +174,110 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 /* ---------- Helpery ---------- */
 function slugify(str) {
   return String(str || "").toLowerCase()
-    .replace(/[ąćęłńóśźż]/g, c => ({ "ą":"a","ć":"c","ę":"e","ł":"l","ń":"n","ó":"o","ś":"s","ź":"z","ż":"z" }[c]||c))
-    .replace(/[^a-z0-9\-]+/g,"-")
-    .replace(/\-+/g,"-")
-    .replace(/^\-|\-$/g,"");
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
 }
 function safeThumb(url) {
-  if (!url) return "https://via.placeholder.com/400x600?text=Brak+Okładki";
+  if (!url) return "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect width='100%25' height='100%25' fill='%23101114'/%3E%3Ctext x='50%25' y='50%25' fill='%23a1a1a1' font-size='18' text-anchor='middle' dominant-baseline='middle'%3EBrak+miniatury%3C/text%3E%3C/svg%3E";
   return url;
 }
-function escapeHtml(str){ return (str||"").replace(/[&<>"']/g, s=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[s])); }
 
-/* ---------- Stan Globalny ---------- */
-let SERIES_LIST = [];       
-let SLUG_MAP = {};          
-let CURRENT_SERIES = null;   
-let CURRENT_EPISODES = [];   
+/* ---------- Global state ---------- */
+let SERIES_LIST = [];        // wszystkie serie pobrane z DB
+let SLUG_MAP = {};          // slug -> series.id
+let CURRENT_SERIES = null;   // obiekt bieżącej serii
+let CURRENT_EPISODES = [];   // wszystkie odcinki bieżącej serii (pobierane z DB)
 
-/* ---------- Autoryzacja & Start Aplikacji ---------- */
+/* ---------- Autoryzacja & start ---------- */
 (async function initAuthAndApp() {
+  // Sprawdź sesję
   const { data: { session } } = await db.auth.getSession();
   const authBtns = document.getElementById("authBtns");
-
-  // Ustawienie przycisków w zależności od sesji
   if (!session || !session.user) {
-    authBtns.innerHTML = `<a href="index.html" class="btn">Zaloguj</a>`;
+    // brak sesji -> przekieruj na index
+    alert("Musisz być zalogowany, aby oglądać seriale!");
+    location.href = "index.html";
+    return;
   } else {
     authBtns.innerHTML = `<button class="btn secondary" onclick="logout()">Wyloguj</button>`;
   }
-  
-  // Zawsze inicjalizujemy UI, aby lista była dostępna dla wszystkich
+
+  // Inicjalizacja UI i routingu
   await UI.init();
   window.addEventListener("hashchange", handleHashChange, false);
-  handleHashChange(); 
+  handleHashChange(); // od razu obsłuż hash (jeśli ktoś wkleił link)
 })();
 
 async function logout() {
   await db.auth.signOut();
-  location.href = "index.html"; 
+  location.href = "index.html";
 }
 
-/* ---------- Pobieranie Danych ---------- */
+/* ---------- Pobieranie danych z DB ---------- */
 async function getCategories() {
   const { data, error } = await db.from("categories").select("*").order("name");
+  if (error) { console.error(error); return []; }
   return data || [];
 }
 
 async function getSeries(filters = {}) {
   let q = db.from("series").select("*");
+  // filtry jak wcześniej
   if (filters.category_id) q = q.eq("category_id", filters.category_id);
+  if (filters.year) q = q.eq("year", filters.year);
+  if (filters.minLength) q = q.gte("duration", filters.minLength);
   if (filters.search) q = q.ilike("title", `%${filters.search}%`);
-  
-  q = q.order("created_at", { ascending: false });
-
+  if (filters.sort === "oldest") q = q.order("year", { ascending: true });
+  else if (filters.sort === "az") q = q.order("title", { ascending: true });
+  else if (filters.sort === "za") q = q.order("title", { ascending: false });
+  else q = q.order("created_at", { ascending: false });
   const { data, error } = await q;
+  if (error) { console.error(error); return []; }
   return data || [];
 }
 
+// pobierz wszystkie odcinki dla series_id (użyjemy do grupowania po sezonach)
 async function getAllEpisodesForSeries(series_id) {
   const { data, error } = await db.from("episodes").select("*").eq("series_id", series_id);
+  if (error) { console.error(error); return []; }
   return data || [];
 }
 
-/* ---------- UI Logika ---------- */
+/* ---------- UI & routing ---------- */
 const UI = {
   async init() {
+    // wczytaj kategorie oraz listę serii i zrenderuj widok listy
     const cats = await getCategories();
     const series = await getSeries();
     SERIES_LIST = series;
-    
+    // wypełnij select kategorii
+    const sel = document.getElementById("cat");
+    sel.innerHTML = `<option value="">—</option>` + (cats.map(c => `<option value="${c.id}">${c.name}</option>`).join(""));
+    // prepare slug map & render list
     SLUG_MAP = {};
     series.forEach(s => {
-      SLUG_MAP[slugify(s.title || `${s.id}`)] = s.id;
+      const slug = slugify(s.title || `${s.id}`);
+      SLUG_MAP[slug] = s.id;
     });
-
-    const main = document.getElementById("main");
-    
-    main.innerHTML = `
-      <section class="section mt-8">
-        <h2>Seriale</h2>
-        <div class="card p mb-4" style="margin-bottom: 20px;">
-          <form class="form" onsubmit="event.preventDefault(); UI.apply()">
-             <div class="row">
-                <div>
-                   <label class="small">Kategoria</label>
-                   <select id="cat">
-                      <option value="">Wszystkie</option>
-                      ${cats.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("")}
-                   </select>
-                </div>
-                <div>
-                   <label class="small">Szukaj</label>
-                   <input type="text" id="search" placeholder="Tytuł serialu...">
-                </div>
-             </div>
-             <div class="flex mt-2" style="justify-content: flex-end; margin-top: 10px;">
-                <button class="btn">Filtruj</button>
-             </div>
-          </form>
-        </div>
-        
-        <div class="grid" id="seriesGrid"></div>
-      </section>
-      
-      <div id="detailView" class="hidden"></div>
-    `;
-
     renderSeriesGrid(series);
-
-    document.getElementById("globalSearch").addEventListener("input", (e) => {
-        const searchInput = document.getElementById("search");
-        if(searchInput) {
-            searchInput.value = e.target.value;
-            UI.apply();
-        }
+    // global search enter
+    document.getElementById("globalSearch").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        document.getElementById("search").value = e.target.value;
+        UI.apply();
+      }
     });
   },
 
   async apply() {
     const filters = {
       category_id: document.getElementById("cat").value || null,
+      year: document.getElementById("year").value || null,
+      minLength: document.getElementById("minLength").value || null,
+      sort: document.getElementById("sort").value || "newest",
       search: document.getElementById("search").value?.trim() || null
     };
     const s = await getSeries(filters);
@@ -398,221 +285,301 @@ const UI = {
     SLUG_MAP = {};
     s.forEach(item => SLUG_MAP[slugify(item.title || `${item.id}`)] = item.id);
     renderSeriesGrid(s);
+  },
+
+  clearFilters() {
+    ["cat","year","minLength","search","sort"].forEach(id => document.getElementById(id).value = id === "sort" ? "newest" : "");
+    this.apply();
   }
 };
 
-/* ---------- Renderowanie Listy (Grid) ---------- */
+/* ---------- Render list (grid) ---------- */
 function renderSeriesGrid(series) {
-  const grid = document.getElementById("seriesGrid");
-  const detailView = document.getElementById("detailView");
-  
-  if(!grid) return;
-
-  grid.parentElement.classList.remove("hidden");
-  detailView.classList.add("hidden");
-  detailView.innerHTML = ""; 
-
+  const list = document.getElementById("list");
   if (!series.length) {
-    grid.innerHTML = `<div class="small" style="grid-column: 1/-1; text-align:center; padding: 20px;">Brak wyników</div>`;
+    list.innerHTML = `<div class="no-results">Brak wyników</div>`;
     return;
   }
-
-  grid.innerHTML = series.map(s => {
+  list.innerHTML = series.map(s => {
     const thumb = safeThumb(s.thumb);
+    const year = s.year || (s.created_at ? new Date(s.created_at).getFullYear() : '');
+    const titleEsc = (s.title || "").replace(/"/g,'&quot;');
     const slug = slugify(s.title || `${s.id}`);
-    
+    // karta: klik ustawia hash na #<slug>
     return `
-      <div class="card">
-        <a href="#${slug}">
-            <img src="${thumb}" alt="${escapeHtml(s.title)}">
-        </a>
-        <div class="card p">
-          <div class="flex" style="justify-content:space-between;">
-             <strong><a href="#${slug}">${escapeHtml(s.title)}</a></strong>
-          </div>
-          <div class="small mt-2">${s.year || "?"} • Serial</div>
+      <div class="card" data-id="${s.id}" data-slug="${slug}" onclick="openSeriesBySlug('${slug}')">
+        <img src="${thumb}" alt="${titleEsc}">
+        <div class="p">
+          <div class="title">${titleEsc}</div>
+          <div class="meta">${year}</div>
         </div>
       </div>
     `;
   }).join("");
 }
 
-/* ---------- Routing (Hash) ---------- */
+/* ---------- Hash routing ---------- */
 function handleHashChange() {
   const raw = location.hash.replace(/^#/, '');
-  
   if (!raw) {
-    const gridSection = document.querySelector("section.section");
-    if(gridSection) gridSection.classList.remove("hidden");
-    const detailView = document.getElementById("detailView");
-    if(detailView) detailView.classList.add("hidden");
+    showListView();
     return;
   }
 
+  // expected patterns:
+  // slug
+  // slug/season-<n>
+  // slug/season-<n>/ep-<id>
   const parts = raw.split('/');
   const slug = parts[0];
   const seriesId = SLUG_MAP[slug] || null;
-
   if (!seriesId) {
+    // jeśli slug nie znaleziony w pamięci, spróbuj pobrać listę serii (może była filtrowana) i odświeżyć
     (async () => {
-       const all = await getSeries();
-       all.forEach(s => SLUG_MAP[slugify(s.title)] = s.id);
-       const idFound = SLUG_MAP[slug];
-       if(idFound) openSeries(idFound, parts.slice(1));
+      const series = await getSeries();
+      SERIES_LIST = series;
+      SLUG_MAP = {};
+      series.forEach(s => SLUG_MAP[slugify(s.title || `${s.id}`)] = s.id);
+      const idAgain = SLUG_MAP[slug];
+      if (!idAgain) { showListView(); return; }
+      openSeries(idAgain, parts.slice(1));
     })();
     return;
   }
-
   openSeries(seriesId, parts.slice(1));
 }
 
-/* ---------- Widok Szczegółów (Odtwarzacz) ---------- */
+/* ---------- Widoki: show/hide ---------- */
+function showListView() {
+  document.getElementById("listView").style.display = "block";
+  document.getElementById("detailView").style.display = "none";
+  // clear player and detail state
+  CURRENT_SERIES = null;
+  CURRENT_EPISODES = [];
+  document.getElementById("playerWrap").style.display = "none";
+}
+
+async function openSeriesBySlug(slug) {
+  location.hash = slug;
+  // handleHashChange will pick it up
+}
+
+/* ---------- Otwieranie serii + obsługa pod-scopes ---------- */
 async function openSeries(seriesId, tailParts=[]) {
-  // SPRAWDZENIE SESJI: Tylko zalogowani mogą zobaczyć detale
-  const { data: { session } } = await db.auth.getSession();
-  if (!session) {
-      alert("Sekcja seriali jest dostępna wyłącznie dla zarejestrowanych użytkowników. Zaloguj się!");
-      location.hash = ""; 
-      return;
+  // tailParts: [] | ['season-1'] | ['season-1','ep-23']
+  // wczytaj series
+  const { data: series, error } = await db.from("series").select("*").eq("id", seriesId).single();
+  if (error || !series) { console.error(error); showListView(); return; }
+  CURRENT_SERIES = series;
+
+  // get all episodes for series (we'll group seasons from them)
+  CURRENT_EPISODES = await getAllEpisodesForSeries(seriesId);
+
+  // show detail view
+  document.getElementById("listView").style.display = "none";
+  document.getElementById("detailView").style.display = "block";
+
+  // fill header
+  document.getElementById("seriesThumb").src = safeThumb(series.thumb);
+  document.getElementById("seriesTitle").textContent = series.title || 'Bez tytułu';
+  document.getElementById("seriesDesc").textContent = series.description || '';
+
+  // build seasons from episodes dynamically (since nie masz table seasons)
+  const seasons = buildSeasonsFromEpisodes(CURRENT_EPISODES, series);
+  renderSeasons(seasons);
+
+  // if hash includes season and maybe ep -> handle it
+  if (tailParts.length === 0) {
+    // nothing selected: clear episodes and player
+    document.getElementById("episodesContainer").innerHTML = "<div class='no-results'>Wybierz sezon, aby zobaczyć odcinki</div>";
+    document.getElementById("playerWrap").style.display = "none";
+    return;
   }
 
-  const gridSection = document.querySelector("section.section");
-  const detailView = document.getElementById("detailView");
-
-  if(gridSection) gridSection.classList.add("hidden");
-  detailView.classList.remove("hidden");
-
-  if (!CURRENT_SERIES || CURRENT_SERIES.id !== seriesId) {
-     const { data: series } = await db.from("series").select("*").eq("id", seriesId).single();
-     CURRENT_SERIES = series;
-     CURRENT_EPISODES = await getAllEpisodesForSeries(seriesId);
-     
-     const seasons = buildSeasonsFromEpisodes(CURRENT_EPISODES);
-     
-     detailView.innerHTML = `
-        <button class="btn secondary mb-4" onclick="location.hash='';">← Powrót do listy</button>
-        
-        <div class="series-header">
-           <img class="series-thumb" src="${safeThumb(series.thumb)}">
-           <div>
-              <h1>${escapeHtml(series.title)}</h1>
-              <p class="small" style="color:#ccc; margin-bottom: 12px;">${escapeHtml(series.description || "Brak opisu.")}</p>
-              
-              <h3 class="small" style="text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Sezony:</h3>
-              <div class="seasons-list" id="seasonsList">
-                 ${seasons.length === 0 ? '<div class="small">Brak dostępnych sezonów.</div>' : ''}
-                 ${seasons.map(s => `
-                    <div class="season-chip" onclick="UI.selectSeason(${s.seasonNumber})">
-                       Sezon ${s.seasonNumber}
-                    </div>
-                 `).join('')}
-              </div>
-           </div>
-        </div>
-
-        <div id="playerArea" class="hidden">
-            <div class="video-container">
-               <iframe id="playerFrame" allowfullscreen></iframe>
-            </div>
-            <h3 id="playerTitle"></h3>
-        </div>
-
-        <h3 class="mt-4">Odcinki</h3>
-        <div id="episodesList">
-           <div class="alert">Wybierz sezon powyżej, aby zobaczyć listę odcinków.</div>
-        </div>
-     `;
-     
-     UI.currentSeasons = seasons; 
-  }
-
+  // parse season part
   const [seasonPart, epPart] = tailParts;
-  
-  if(!seasonPart && UI.currentSeasons && UI.currentSeasons.length > 0) {
-      UI.selectSeason(UI.currentSeasons[0].seasonNumber);
-  } else if (seasonPart) {
-      const sNum = parseInt(seasonPart.replace('season-', ''));
-      UI.selectSeason(sNum);
-      
-      if(epPart) {
-          const epId = parseInt(epPart.replace('ep-', ''));
-          const ep = CURRENT_EPISODES.find(e => e.id === epId);
-          if(ep) playEpisode(ep);
+  const seasonMatch = seasonPart && seasonPart.match(/^season-(\d+)$/);
+  if (seasonMatch) {
+    const seasonNumber = Number(seasonMatch[1]);
+    // render episodes of that season
+    renderEpisodesForSeason(seasonNumber);
+    // if epPart present, parse and play it
+    if (epPart) {
+      const epMatch = epPart.match(/^ep-(\d+)$/);
+      if (epMatch) {
+        const epId = Number(epMatch[1]);
+        const ep = CURRENT_EPISODES.find(e => Number(e.id) === epId);
+        if (ep) playEpisode(ep);
       }
+    } else {
+      // no ep selected -> hide player
+      document.getElementById("playerWrap").style.display = "none";
+    }
+  } else {
+    // not a season pattern -> just show seasons list
+    document.getElementById("episodesContainer").innerHTML = "<div class='no-results'>Wybierz sezon...</div>";
+    document.getElementById("playerWrap").style.display = "none";
   }
 }
 
-/* ---------- Helpery Logiki Serialowej ---------- */
-function buildSeasonsFromEpisodes(episodes) {
-  const getSeason = (ep) => (ep.season ?? ep.season_number ?? 1);
-  const map = {};
+/* ---------- Helper: build seasons array from episodes ---------- */
+function buildSeasonsFromEpisodes(episodes, series) {
+  // detect season field name dynamically
+  const getSeason = (ep) => (ep.season ?? ep.season_number ?? ep.season_no ?? ep.seasonId ?? ep.seasonId);
+  const getThumb = (ep) => (ep.thumb || ep.episode_thumb || ep.image || null);
+  const seasonMap = {};
   episodes.forEach(ep => {
-     const n = getSeason(ep);
-     if(!map[n]) map[n] = { seasonNumber: n, count: 0 };
-     map[n].count++;
+    const sNum = Number(getSeason(ep) ?? 1);
+    if (!seasonMap[sNum]) seasonMap[sNum] = { seasonNumber: sNum, episodes: [], thumb: null };
+    seasonMap[sNum].episodes.push(ep);
+    if (!seasonMap[sNum].thumb) seasonMap[sNum].thumb = getThumb(ep) || null;
   });
-  return Object.values(map).sort((a,b) => a.seasonNumber - b.seasonNumber);
-}
-
-UI.selectSeason = function(seasonNumber) {
-    document.querySelectorAll('.season-chip').forEach(c => {
-        if(c.textContent.trim() === `Sezon ${seasonNumber}`) c.classList.add('active');
-        else c.classList.remove('active');
+  const seasons = Object.values(seasonMap).sort((a,b) => a.seasonNumber - b.seasonNumber)
+    .map(s => {
+      return {
+        seasonNumber: s.seasonNumber,
+        count: s.episodes.length,
+        thumb: s.thumb || series.thumb || null,
+        title: `Sezon ${s.seasonNumber}`
+      };
     });
-
-    const getSeason = (ep) => (ep.season ?? ep.season_number ?? 1);
-    const eps = CURRENT_EPISODES.filter(e => getSeason(e) == seasonNumber)
-        .sort((a,b) => (a.episode_number || a.id) - (b.episode_number || b.id));
-    
-    const list = document.getElementById("episodesList");
-    if(eps.length === 0) {
-        list.innerHTML = '<div class="alert">Brak odcinków w tym sezonie.</div>';
-        return;
-    }
-
-    const slug = slugify(CURRENT_SERIES.title);
-
-    list.innerHTML = eps.map(ep => `
-        <div class="episode-item" onclick="location.hash='${slug}/season-${seasonNumber}/ep-${ep.id}'">
-            <div style="font-weight:bold;">${ep.episode_number ? ep.episode_number + '.' : ''} ${escapeHtml(ep.title || "Odcinek " + ep.id)}</div>
-            <div class="small" style="margin-top:4px;">${escapeHtml(ep.description || "")}</div>
-        </div>
-    `).join('');
-};
-
-function playEpisode(ep) {
-    const playerArea = document.getElementById("playerArea");
-    const frame = document.getElementById("playerFrame");
-    const title = document.getElementById("playerTitle");
-    
-    const url = ep.iframe_url || ep.iframe || ep.url;
-    
-    if(!url) {
-        alert("Brak źródła wideo dla tego odcinka.");
-        return;
-    }
-
-    playerArea.classList.remove("hidden");
-    frame.src = url;
-    title.innerText = `Oglądasz: ${ep.title || "Odcinek"}`;
-    playerArea.scrollIntoView({ behavior: "smooth" });
-    saveEpisodeHistory(ep.series_id, ep.id);
+  return seasons;
 }
 
+/* ---------- Render seasons ---------- */
+function renderSeasons(seasons) {
+  const cont = document.getElementById("seasonsContainer");
+  cont.innerHTML = "";
+  if (!seasons || seasons.length === 0) {
+    cont.innerHTML = "<div class='no-results'>Brak sezonów (brak odcinków w DB)</div>";
+    return;
+  }
+  seasons.forEach(s => {
+    const div = document.createElement("div");
+    div.className = "season-card";
+    div.innerHTML = `
+      <img class="season-thumb" src="${safeThumb(s.thumb)}" alt="s${s.seasonNumber}">
+      <div class="season-info">${s.title} <div style="font-weight:400;color:var(--muted);font-size:0.85rem;">${s.count} odc.</div></div>
+    `;
+    div.onclick = () => {
+      // update hash to include season
+      const slug = slugify(CURRENT_SERIES.title || `${CURRENT_SERIES.id}`);
+      location.hash = `${slug}/season-${s.seasonNumber}`;
+    };
+    cont.appendChild(div);
+  });
+}
+
+/* ---------- Render episodes for season ---------- */
+function renderEpisodesForSeason(seasonNumber) {
+  // find episodes with seasonNumber (detect season property similarly)
+  const getSeasonVal = (ep) => (ep.season ?? ep.season_number ?? ep.season_no ?? ep.seasonId ?? ep.seasonId);
+  const getEpNumber = (ep) => (ep.episode_number ?? ep.episode ?? ep.number ?? ep.ep_number ?? ep.id);
+  const eps = CURRENT_EPISODES.filter(e => Number(getSeasonVal(e) || 0) === Number(seasonNumber));
+  // sort by episode number (fallback to id)
+  eps.sort((a,b) => (Number(getEpNumber(a) || a.id) - Number(getEpNumber(b) || b.id)));
+  const cont = document.getElementById("episodesContainer");
+  if (!eps.length) {
+    cont.innerHTML = "<div class='no-results'>Brak odcinków w tym sezonie</div>";
+    return;
+  }
+  cont.innerHTML = "";
+  eps.forEach(ep => {
+    const epNumber = getEpNumber(ep);
+    const div = document.createElement("div");
+    div.className = "episode";
+    div.innerHTML = `
+      <div class="episode-title">Odcinek ${epNumber}: ${ep.title || 'Bez tytułu'}</div>
+      <div class="episode-desc">${ep.description || ''}</div>
+    `;
+    div.onclick = () => {
+      // update hash to include ep id
+      const slug = slugify(CURRENT_SERIES.title || `${CURRENT_SERIES.id}`);
+      location.hash = `${slug}/season-${seasonNumber}/ep-${ep.id}`;
+      // playEpisode will be triggered by hashchange -> but call directly to be snappy
+      playEpisode(ep);
+    };
+    cont.appendChild(div);
+  });
+}
+
+/* ---------- Play episode ---------- */
+function playEpisode(ep) {
+  // ep should contain iframe_url (or url / link)
+  const urlCandidates = ep.iframe_url ?? ep.iframe ?? ep.url ?? ep.link ?? ep.video_url ?? ep.video;
+  const playerFrame = document.getElementById("playerFrame");
+  const playerWrap = document.getElementById("playerWrap");
+  const playerInfo = document.getElementById("playerInfo");
+
+  if (!urlCandidates) {
+    alert("Ten odcinek nie ma przypisanego linku do odtworzenia (iframe_url).");
+    return;
+  }
+
+  playerFrame.src = urlCandidates;
+  playerInfo.innerHTML = `<strong>${ep.title || ''}</strong><br>${ep.description || ''}<br><small style="color:var(--muted)">Sezon: ${ep.season ?? ep.season_number ?? ep.season_no ?? '1'} • Odcinek: ${ep.episode_number ?? ep.episode ?? ''}</small>`;
+  playerWrap.style.display = "block";
+  saveEpisodeHistory(ep.series_id, ep.id);
+  // scroll to player
+  setTimeout(()=> window.scrollTo({ top: playerWrap.offsetTop - 60, behavior: 'smooth' }), 80);
+}
+
+/* ---------- Utility: go home ---------- */
+function goHome() {
+  location.hash = '';
+  showListView();
+}
+
+/* ---------- Init helpers: open series from card click, deep link ---------- */
+// openSeries is used by handleHashChange
+
+//<!-- Zapis historii oglądania odcinka -->
 async function saveEpisodeHistory(seriesId, episodeId) {
+  try {
+    console.log(":floppy_disk: saveEpisodeHistory →", { seriesId, episodeId }); // DIAG
+
     const { data: { session } } = await db.auth.getSession();
-    if (!session) return;
+    if (!session || !session.user) {
+      console.warn(":x: Użytkownik niezalogowany — historia nie zapisana");
+      return;
+    }
     const userId = session.user.id;
 
-    const { data: existing } = await db.from("watch_history")
-      .select("id").eq("user_id", userId).eq("episode_id", episodeId).maybeSingle();
+    // sprawdź czy istnieje już wpis
+    const { data: existing, error: existingErr } = await db
+      .from("watch_history")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("episode_id", episodeId)
+      .maybeSingle();
+
+    if (existingErr) {
+      console.error("❌ existingErr:", existingErr);
+      return;
+    }
 
     if (existing) {
-       await db.from("watch_history").update({ watched_at: new Date().toISOString() }).eq("id", existing.id);
+      console.log("🔁 aktualizacja historii:", existing.id);
+      const { error: upErr } = await db
+        .from("watch_history")
+        .update({ watched_at: new Date().toISOString() })
+        .eq("id", existing.id);
+      if (upErr) console.error("❌ update error:", upErr);
     } else {
-       await db.from("watch_history").insert([{ user_id: userId, episode_id: episodeId }]);
+      console.log("🆕 dodaję nowy wpis historii");
+      const { error: insErr } = await db
+        .from("watch_history")
+        .insert([{ user_id: userId, episode_id: episodeId }]);
+      if (insErr) console.error("❌ insert error:", insErr);
     }
+
+  } catch (err) {
+    console.error("❌ saveEpisodeHistory błąd:", err);
+  }
 }
 </script>
+
+
 </body>
 </html>
+
