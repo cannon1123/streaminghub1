@@ -1058,50 +1058,40 @@ async rate(movieId, score){
   },
 
   async addMovie(form){
-    const payload = {
-      title: form.title.value.trim(),
-      description: form.description.value.trim(),
-      thumb: form.thumb.value.trim(),
-      iframe: form.iframe.value.trim(),
-      category_id: form.category_id.value ? Number(form.category_id.value) : null,
-      year: form.year.value ? Number(form.year.value) : null,
-      duration: form.duration.value ? Number(form.duration.value) : null,
-      points_required: form.points_required.value ? Number(form.points_required.value) : 0,
-      created_at: new Date().toISOString()
-    };
-    const { error } = await addMovie(payload);
-    if(error){ alert("❌ " + error.message); return; }
-    toast("Film dodany ✔️");
-    UI.show('admin');
-  },
+  const title = form.title.value.trim();
 
-  slug: form.title.value
-  .toLowerCase()
-  .replace(/[ąćęłńóśźż]/g, c => ({
-    ą:"a",ć:"c",ę:"e",ł:"l",ń:"n",ó:"o",ś:"s",ź:"z",ż:"z"
-  }[c]))
-  .replace(/[^a-z0-9]+/g,"-")
-  .replace(/(^-|-$)/g,"")
+  const slug = title
+    .toLowerCase()
+    .replace(/[ąćęłńóśźż]/g, c => ({
+      ą:"a", ć:"c", ę:"e", ł:"l",
+      ń:"n", ó:"o", ś:"s", ź:"z", ż:"z"
+    }[c]))
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 
-  async deleteMovie(id){
-    const { error } = await deleteMovie(id);
-    if(error){ alert("❌ " + error.message); return; }
-    UI.show('admin');
-  },
+  const payload = {
+    title,
+    slug,
+    description: form.description.value.trim(),
+    thumb: form.thumb.value.trim(),
+    iframe: form.iframe.value.trim(),
+    category_id: form.category_id.value ? Number(form.category_id.value) : null,
+    year: form.year.value ? Number(form.year.value) : null,
+    duration: form.duration.value ? Number(form.duration.value) : null,
+    points_required: form.points_required.value ? Number(form.points_required.value) : 0,
+    created_at: new Date().toISOString()
+  };
 
-  async addCategory(name){
-    name = (name||"").trim(); if(!name) return;
-    const { error } = await addCategory(name);
-    if(error) alert("❌ " + error.message);
-    UI.show('admin');
-  },
-
-  async delCategory(id){
-    const { error } = await delCategory(id);
-    if(error) alert("❌ " + error.message);
-    UI.show('admin');
+  const { error } = await addMovie(payload);
+  if(error){
+    alert("❌ " + error.message);
+    return;
   }
-};
+
+  toast("Film dodany ✔️");
+  UI.show("admin");
+}
+
 
 // Start
 UI.updateHeader();
