@@ -632,6 +632,33 @@ async function leaderboard(days){
   return top.map((t,i)=>({ rank:i+1, user:t.username, gained:t.gained }));
 }
 
+  const Router = {
+  async go(slug){
+    history.pushState({}, "", "/filmy/" + slug);
+    await this.resolve();
+  },
+
+  async resolve(){
+    const path = location.pathname;
+    if(path.startsWith("/filmy/")){
+      const slug = path.split("/filmy/")[1];
+      const { data } = await db
+        .from("movies")
+        .select("*")
+        .eq("slug", slug)
+        .single();
+
+      if(data){
+        UI.show("movie", { id: data.id });
+        document.title = `${data.title} – StreamingHub`;
+      }
+    }
+  }
+};
+
+window.addEventListener("popstate", () => Router.resolve());
+window.addEventListener("DOMContentLoaded", () => Router.resolve());
+
 /* =========================
    UI
    ========================= */
@@ -1047,6 +1074,14 @@ async rate(movieId, score){
     toast("Film dodany ✔️");
     UI.show('admin');
   },
+
+  slug: form.title.value
+  .toLowerCase()
+  .replace(/[ąćęłńóśźż]/g, c => ({
+    ą:"a",ć:"c",ę:"e",ł:"l",ń:"n",ó:"o",ś:"s",ź:"z",ż:"z"
+  }[c]))
+  .replace(/[^a-z0-9]+/g,"-")
+  .replace(/(^-|-$)/g,"")
 
   async deleteMovie(id){
     const { error } = await deleteMovie(id);
