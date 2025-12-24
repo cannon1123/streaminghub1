@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -439,7 +440,7 @@ async function getMovies(filters={}){
   return data||[];
 }
 async function getMovie(id){
-  const { data, error } = await db.from("movies").select("*").eq("id", id).single();
+  const { data, error } = await db.from("movies_secure").select("*").eq("id", id).single();
   if(error) throw error; return data;
 }
 async function addMovie(payload){ return db.from("movies").insert(payload); }
@@ -896,10 +897,10 @@ const UI = {
       .replace(/^\-|\-$/g,"");
     const slug = clean(m.title);
     return `<div class="card">
-      <a href="#${slug}" onclick="UI.show('movie',{id:${m.id}})"><img src="${m.thumb}" alt="${escapeHtml(m.title)}"></a>
+      <a href="/filmy/${slug}" onclick="event.preventDefault(); Router.go('${slug}')"><img src="${m.thumb}" alt="${escapeHtml(m.title)}"></a>
       <div class="card p">
         <div class="flex" style="justify-content:space-between;">
-          <strong><a href="#${slug}" onclick="UI.show('movie',{id:${m.id}})">${escapeHtml(m.title)}</a></strong>
+          <strong><a href="/filmy/${slug}" onclick="event.preventDefault(); Router.go('${slug}')">${escapeHtml(m.title)}</a></strong>
           <span class="badge">★ ${avg?avg.toFixed(1):"-"}</span>
         </div>
         <div class="small mt-2">czas: ${m.duration||"?"} min • rok: ${m.year||"?"}</div>
@@ -1244,11 +1245,7 @@ const AIAssistant = {
     }
 };
 
-// Uruchomienie asystenta po załadowaniu
 AIAssistant.init();
-
-// Pamiętaj, aby dodać wywołanie AIAssistant.init(); do window.onload lub na końcu,
-// co już zrobiłem w powyższym bloku.
 </script>
 </body>
 </html>
