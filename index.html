@@ -198,6 +198,129 @@ footer {
   footer { font-size: 12px; }
 }
 
+/* --- STYLES FOR AI ASSISTANT WIDGET --- */
+#ai-chat-button {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--brand); /* Używamy Twojego koloru #4f7cff */
+    color: white;
+    font-size: 20px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    z-index: 1001; /* Wyżej niż header */
+    transition: transform 0.2s;
+}
+
+#ai-chat-button:hover {
+    transform: scale(1.05);
+}
+
+#ai-chat-window {
+    position: fixed;
+    bottom: 90px;
+    right: 30px;
+    width: 330px;
+    height: 480px;
+    background: var(--card); /* Używamy Twojego koloru #151922 */
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+#ai-chat-window.hidden {
+    display: none;
+}
+
+#chat-header-ai {
+    padding: 12px;
+    background: var(--brand);
+    color: var(--text);
+    font-weight: bold;
+    border-top-left-radius: 13px;
+    border-top-right-radius: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#chat-header-ai button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+#chat-body-ai {
+    flex-grow: 1;
+    padding: 10px;
+    overflow-y: auto;
+    background-color: var(--bg);
+    border-bottom: 1px solid var(--border);
+    /* Stylizacja scrollbara */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+#chat-body-ai::-webkit-scrollbar { width: 8px; }
+#chat-body-ai::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 4px; }
+
+.message-ai {
+    padding: 8px 12px;
+    margin: 6px 0;
+    border-radius: 10px;
+    max-width: 85%;
+    line-height: 1.5;
+}
+
+.user-message-ai {
+    background-color: #2a3446; /* Trochę ciemniejszy niż muted */
+    color: var(--text);
+    margin-left: auto;
+}
+
+.ai-message-ai {
+    background-color: var(--brand);
+    color: white;
+    margin-right: auto;
+    border-bottom-left-radius: 2px;
+}
+
+#chat-input-container-ai {
+    padding: 10px;
+    display: flex;
+    gap: 8px;
+    background: var(--card);
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+}
+
+#user-input-ai {
+    flex-grow: 1;
+    padding: 10px;
+    background: #0e1218;
+    border: 1px solid var(--border);
+    color: #fff;
+    border-radius: 10px;
+    font-size: 15px;
+}
+
+#send-button-ai {
+    background: var(--brand);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 15px;
+}
 </style>
 </head>
 <body>
@@ -209,20 +332,34 @@ footer {
       <input type="search" name="q" placeholder="Szukaj filmów…" />
     </form>
     
-    <nav class="menu flex">
-      <a href="#" onclick="UI.show('home')">Filmy</a>
-      <a href="/seriale/">seriale</a>
-      <a href="/top/">TOP</a>
-<a href="/moja-biblioteka/">Moja biblioteka</a>
-<form onsubmit="event.preventDefault(); Auth.logout(); window.location='login.html';">
-  <button class="btn secondary">Wyloguj</button>
+<nav class="menu flex">
+  <a href="#" onclick="UI.show('home')">Filmy</a>
+  <a href="/seriale/">Seriale</a>
+  <a href="/top/">TOP</a>
+  <a href="/moja-biblioteka/">Moja biblioteka</a>
+  
+  <div id="auth-controls" class="flex">
+    </div>
+</nav>
 </form>
 
-    </nav>
 
-  </div>
 </header>
+<button id="ai-chat-button" aria-label="Otwórz czat z asystentem AI">🤖</button>
 
+<div id="ai-chat-window" class="hidden">
+    <div id="chat-header-ai">
+        Asystent Filmowy AI
+        <button id="close-button-ai">✖</button>
+    </div>
+    <div id="chat-body-ai">
+        <div class="message-ai ai-message-ai">Cześć! Jestem Twoim Asystentem Filmowym. Powiedz mi, na co masz ochotę, a znajdę idealny film! !!!BOT JEST OFFLINE DO WYPUSZCZENIA PEŁNEJ WERSJI!!!</div>
+    </div>
+    <div id="chat-input-container-ai">
+        <input type="text" id="user-input-ai" placeholder="Wpisz swoje preferencje...">
+        <button id="send-button-ai" disabled>Wyślij</button>
+    </div>
+</div>
 <main class="container" id="app"></main>
 
 <footer>© <script>document.write(new Date().getFullYear())</script> StreamingHub • free video</footer>
@@ -302,7 +439,7 @@ async function getMovies(filters={}){
   return data||[];
 }
 async function getMovie(id){
-  const { data, error } = await db.from("movies").select("*").eq("id", id).single();
+  const { data, error } = await db.from("movies_secure").select("*").eq("id", id).single();
   if(error) throw error; return data;
 }
 async function addMovie(payload){ return db.from("movies").insert(payload); }
@@ -499,12 +636,24 @@ async function leaderboard(days){
    ========================= */
 const UI = {
   el: ()=>document.getElementById("app"),
+ 
   async updateHeader(){
-    const u = await Auth.currentProfile();
-    document.getElementById("adminLink")?.classList?.toggle("hidden", !(u&&u.is_admin));
-    document.getElementById("logoutForm")?.classList?.toggle("hidden", !u);
-    document.getElementById("authLinks")?.classList?.toggle("hidden", !!u);
-  },
+  const me = await Auth.currentUser(); // Sprawdzamy sesję
+  const authControls = document.getElementById("auth-controls");
+  if(!authControls) return;
+
+  if(me) {
+    // Jeśli zalogowany: pokaż Wyloguj
+    authControls.innerHTML = `
+      <button class="btn secondary" onclick="Auth.logout()">Wyloguj</button>
+    `;
+  } else {
+    // Jeśli wylogowany: pokaż Zaloguj
+    authControls.innerHTML = `
+      <button class="btn" onclick="window.location='/login/'">Zaloguj</button>
+    `;
+  }
+},
   async show(view, params={}){
     const app = UI.el();
     const me = await Auth.currentProfile();
@@ -963,6 +1112,139 @@ async function handleHash(){
 }
 window.addEventListener("hashchange", handleHash);
 window.addEventListener("DOMContentLoaded", handleHash);
+
+/* =========================
+   AI ASSISTANT (FRONT-END)
+   ========================= */
+const AIAssistant = {
+    chatBody: document.getElementById('chat-body-ai'),
+    userInput: document.getElementById('user-input-ai'),
+    sendButton: document.getElementById('send-button-ai'),
+    
+    init(){
+        document.getElementById('ai-chat-button').addEventListener('click', this.toggleChat.bind(this));
+        document.getElementById('close-button-ai').addEventListener('click', this.toggleChat.bind(this));
+        this.sendButton.addEventListener('click', this.handleSend.bind(this));
+        this.userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') this.handleSend(); });
+        this.userInput.addEventListener('input', () => { this.sendButton.disabled = this.userInput.value.trim() === ''; });
+    },
+
+    toggleChat(){
+        const windowEl = document.getElementById('ai-chat-window');
+        const buttonEl = document.getElementById('ai-chat-button');
+        const isHidden = windowEl.classList.toggle('hidden');
+        buttonEl.classList.toggle('hidden', !isHidden);
+        
+        if (!isHidden) {
+            // Jeśli otwieramy, przewiń na dół i załaduj dane filmów (tylko raz po otwarciu)
+            this.scrollToBottom();
+            this.sendButton.disabled = this.userInput.value.trim() === '';
+            // Logika ładowania danych filmów, która jest kluczowa dla AI
+            this.loadMovieData();
+        }
+    },
+
+    scrollToBottom(){
+        this.chatBody.scrollTop = this.chatBody.scrollHeight;
+    },
+
+    displayMessage(text, sender = 'ai'){
+        const msgDiv = document.createElement('div');
+        msgDiv.textContent = text;
+        msgDiv.classList.add('message-ai', sender === 'user' ? 'user-message-ai' : 'ai-message-ai');
+        this.chatBody.appendChild(msgDiv);
+        this.scrollToBottom();
+    },
+
+    // 1. KROK: Zbieranie danych dla AI
+    async loadMovieData(){
+        try {
+            // Używamy istniejącej w Twoim kodzie funkcji do pobrania wszystkich filmów
+            const movies = await getMovies({}); 
+            
+            // Formatowanie danych, aby były zwięzłe i użyteczne dla modelu AI
+            // Pamiętaj: nie wysyłaj wszystkich 1000 filmów do API Gemini za każdym razem!
+            // To jest tylko demo, w rzeczywistości powinieneś użyć filtrów/wyszukiwania na serwerze.
+            const movieInfo = movies.map(m => {
+                // Ta funkcja jest kluczowa: musisz obliczyć ratingi. 
+                // W tym demo nie mamy synchronicznej funkcji do avgRating, więc dodajmy 'Dummy Rating'
+                const avgRating = (m.id % 2 === 0) ? "7.5" : "8.2"; // TODO: Zastąpić prawdziwą logiką na backendzie!
+                
+                return {
+                    id: m.id,
+                    title: m.title,
+                    description: m.description ? m.description.slice(0, 100) + '...' : 'Brak opisu', // Skracamy opis
+                    year: m.year,
+                    duration: m.duration,
+                    points: m.points_required,
+                    rating_dummy: avgRating // W prawdziwym projekcie musisz tu mieć rzeczywistą średnią
+                };
+            }).slice(0, 50); // Ograniczamy do 50, aby nie przeładować modelu
+
+            // Zapisujemy dane filmów do późniejszego użycia
+            this.movieListForAI = movieInfo;
+            console.log("Dane filmów gotowe dla AI:", movieInfo); 
+        } catch(e) {
+            console.error("Błąd ładowania danych filmów dla AI:", e);
+            this.displayMessage("Wystąpił błąd przy ładowaniu informacji o filmach. Spróbuj później.", 'ai');
+        }
+    },
+
+    // 2. KROK: Obsługa wysłania zapytania
+    async handleSend(){
+        const userText = this.userInput.value.trim();
+        if (!userText) return;
+
+        this.displayMessage(userText, 'user');
+        this.userInput.value = '';
+        this.sendButton.disabled = true;
+
+        // Tymczasowa wiadomość o oczekiwaniu
+        this.displayMessage("Szukam idealnego filmu... Proszę czekać.", 'ai');
+
+        // --- 3. KROK: MIEJSCE NA INTEGRACJĘ Z GEMINI API (Backend) ---
+        // W REALNYM PROJEKCIE: 
+        // 1. Wysłanie userText i this.movieListForAI do Twojego Backendu.
+        // 2. Backend używa Gemini do wygenerowania rekomendacji.
+        // 3. Backend odsyła sformatowaną odpowiedź.
+
+        // Poniżej jest tylko symulacja odpowiedzi, ponieważ integracja z Gemini wymaga serwera.
+        const simulatedResponse = await this.simulateGeminiResponse(userText);
+        
+        // Usunięcie wiadomości oczekiwania i wyświetlenie odpowiedzi
+        this.chatBody.lastChild.remove(); 
+        this.displayMessage(simulatedResponse, 'ai');
+        this.sendButton.disabled = false;
+    },
+
+    async simulateGeminiResponse(userText){
+        await delay(1500); // Symulacja czasu odpowiedzi
+        
+        const lowText = userText.toLowerCase();
+        
+        if (lowText.includes("akcja") || lowText.includes("szybki") || lowText.includes("wybuchy")) {
+            // Symulacja, że AI wybrało film z listy
+            const rec = this.movieListForAI[Math.floor(Math.random() * this.movieListForAI.length)];
+            if (!rec) return "Przepraszam, nie znalazłem żadnych filmów w bazie, które spełniałyby Twoje kryteria.";
+            
+            // Linkowanie do filmu
+            const movieSlug = rec.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+            const link = `<a href="#${movieSlug}" onclick="UI.show('movie',{id:${rec.id}}); document.getElementById('ai-chat-window').classList.add('hidden');"><b>${rec.title}</b></a>`;
+
+            return `Na podstawie Twoich preferencji (szybka akcja) polecam film ${link}. 
+                    Rok: ${rec.year}, Długość: ${rec.duration} min. Opis: ${rec.description}. 
+                    Co sądzisz o tytule, czy szukamy czegoś innego?`;
+        }
+
+        if (lowText.includes("horror") || lowText.includes("straszne")) {
+             return "Rozumiem! Straszne filmy to świetny wybór! Niestety, moja baza danych obecnie nie zawiera wystarczająco dużo szczegółowych danych o gatunkach, ale mogę poszukać najnowszych, jeśli chcesz. Coś nowszego, czy może klasyka?";
+        }
+        
+        return `Przepraszam, jestem jeszcze prostym asystentem. Nie mam jeszcze pełnej mocy AI. Jeśli szukasz filmu, spróbuj użyć słów kluczowych jak "akcja", "długi" lub "stary".`;
+    }
+};
+
+AIAssistant.init();
 </script>
 </body>
 </html>
