@@ -1,0 +1,67 @@
+<script>
+const data = [
+  {
+    code:"movies_10",
+    name:"Początkujący widz",
+    description:"10 filmów",
+    icon:"🎞",
+    category:"movies",
+    is_hidden:false,
+    unlocked:true,
+    progress:10
+  },
+  {
+    code:"movies_25",
+    name:"Regularny widz",
+    description:"25 filmów",
+    icon:"🍿",
+    category:"movies",
+    is_hidden:false,
+    unlocked:false,
+    progress:10
+  },
+  {
+    code:"series_10",
+    name:"Serialowy fan",
+    description:"10 seriali",
+    icon:"📺",
+    category:"series",
+    is_hidden:false,
+    unlocked:false,
+    progress:3
+  },
+  {
+    code:"secret_night",
+    name:"Nocny widz",
+    description:"Oglądaj po północy",
+    icon:"🌙",
+    category:"exploration",
+    is_hidden:true,
+    unlocked:false,
+    progress:0
+  }
+];
+
+data.forEach(a=>{
+  const grid=document.getElementById(a.category);
+  if(!grid) return;
+
+  const hidden=a.is_hidden && !a.unlocked;
+  const req=parseInt(a.code.split('_').pop())||10;
+  const percent=Math.min(100,Math.floor((a.progress||0)/req*100));
+
+  grid.innerHTML+=`
+  <div class="badge ${!a.unlocked?'locked':''}">
+    <div class="icon">${hidden?'❓':a.icon}</div>
+    <div class="info">
+      <div class="name">${hidden?'Tajne osiągnięcie':a.name}</div>
+      ${
+        hidden
+        ? `<div class="secret">Nieodkryte</div>`
+        : `<div class="desc">${a.description}</div>
+           ${!a.unlocked?`<div class="progress"><span style="width:${percent}%"></span></div>`:''}`
+      }
+    </div>
+  </div>`;
+});
+</script>
