@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Osiągnięcia • StreamingHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+:root{
+  --bg:#0b0d10;
+  --card:#151922;
+  --border:#232a37;
+  --text:#e3e7ee;
+  --muted:#a8bfe2;
+  --brand:#4f7cff;
+  --locked:#2a2f3a;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto;
+}
+.container{max-width:1100px;margin:auto;padding:16px}
+header{position:sticky;top:0;background:rgba(11,13,16,.85);backdrop-filter:blur(6px)}
+.nav{display:flex;gap:12px;align-items:center}
+.brand{font-weight:800;color:#fff;text-decoration:none}
+.menu{margin-left:auto;display:flex;gap:12px}
+.menu a{color:var(--muted);text-decoration:none}
+.logout{background:#2a3446;padding:8px 12px;border-radius:10px;color:#fff;text-decoration:none;font-weight:600}
+h1{margin:20px 0}
+.section{margin-top:35px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.badge{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:16px;
+  display:flex;
+  gap:12px;
+}
+.badge.locked{background:var(--locked);opacity:.75}
+.icon{
+  width:48px;height:48px;border-radius:12px;
+  background:#1e2433;
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;
+}
+.info{flex:1}
+.name{font-weight:700}
+.desc{font-size:13px;color:var(--muted)}
+.meta{font-size:12px;color:#8fb3ff;margin-top:4px}
+.progress{
+  height:6px;background:#1c2230;border-radius:6px;
+  overflow:hidden;margin-top:8px
+}
+.progress span{display:block;height:100%;background:var(--brand)}
+.secret{font-size:12px;color:#e5a50a}
+footer{text-align:center;color:var(--muted);padding:30px 0;font-size:13px}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="nav container">
+    <a class="brand" href="/filmy/">🎬 StreamingHub</a>
+    <nav class="menu">
+      <a href="/filmy/">Filmy</a>
+      <a href="/seriale/">Seriale</a>
+      <a href="/top/">TOP</a>
+      <a href="/moja-biblioteka/">Moja biblioteka</a>
+      <a class="logout" href="/login/">Wyloguj</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+<h1>🏆 Osiągnięcia</h1>
+
+<!-- FILMY -->
+<section class="section">
+<h2>🎬 Filmy</h2>
+<div class="grid">
+
+<div class="badge">
+  <div class="icon">🎞</div>
+  <div class="info">
+    <div class="name">Początkujący widz</div>
+    <div class="desc">10 filmów</div>
+    <div class="progress"><span style="width:80%"></span></div>
+  </div>
+</div>
+
+<div class="badge">
+  <div class="icon">🍿</div>
+  <div class="info">
+    <div class="name">Regularny widz</div>
+    <div class="desc">25 filmów</div>
+    <div class="progress"><span style="width:40%"></span></div>
+  </div>
+</div>
+
+<div class="badge locked">
+  <div class="icon">🎬</div>
+  <div class="info">
+    <div class="name">Kinoman</div>
+    <div class="secret">50 filmów</div>
+  </div>
+</div>
+
+<div class="badge locked">
+  <div class="icon">🏃‍♂️</div>
+  <div class="info">
+    <div class="name">Maratończyk</div>
+    <div class="secret">100 filmów</div>
+  </div>
+</div>
+
+<div class="badge locked">
+  <div class="icon">👑</div>
+  <div class="info">
+    <div class="name">Legenda seansów</div>
+    <div class="secret">200 filmów</div>
+  </div>
+</div>
+
+</div>
+</section>
+
+<!-- SERIALE -->
+<section class="section">
+<h2>📺 Seriale</h2>
+<div class="grid">
+
+<div class="badge">
+  <div class="icon">📺</div>
+  <div class="info">
+    <div class="name">Pierwszy serial</div>
+    <div class="desc">5 seriali</div>
+    <div class="progress"><span style="width:60%"></span></div>
+  </div>
+</div>
+
+<div class="badge">
+  <div class="icon">🎭</div>
+  <div class="info">
+    <div class="name">Serialowy fan</div>
+    <div class="desc">10 seriali</div>
+    <div class="progress"><span style="width:30%"></span></div>
+  </div>
+</div>
+
+<div class="badge locked">
+  <div class="icon">🛋</div>
+  <div class="info">
+    <div class="name">Binge-watcher</div>
+    <div class="secret">25 seriali</div>
+  </div>
+</div>
+
+<div class="badge locked">
+  <div class="icon">👑</div>
+  <div class="info">
+    <div class="name">Bóg binge-watchingu</div>
+    <div class="secret">200 seriali</div>
+  </div>
+</div>
+
+</div>
+</section>
+
+<!-- LOGOWANIA -->
+<section class="section">
+<h2>🔥 Serie logowań</h2>
+<div class="grid">
+
+<div class="badge">
+  <div class="icon">🔥</div>
+  <div class="info">
+    <div class="name">5 dni serii</div>
+    <div class="desc">Zaloguj się 5 dni z rzędu</div>
+    <div class="progress"><span style="width:80%"></span></div>
+  </div>
+</div>
+
+<div class="badge locked">
+  <div class="icon">🔥</div>
+  <div class="info">
+    <div class="name">25 dni</div>
+    <div class="secret">Tajne osiągnięcie</div>
+  </div>
+</div>
+
+<div class="badge locked">
+  <div class="icon">🏆</div>
+  <div class="info">
+    <div class="name">200 dni</div>
+    <div class="secret">Tajne osiągnięcie</div>
+  </div>
+</div>
+
+</div>
+</section>
+
+<!-- SPOŁECZNOŚĆ -->
+<section class="section">
+<h2>🧑‍🤝‍🧑 Społeczność</h2>
+<div class="grid">
+
+<div class="badge">
+  <div class="icon">💬</div>
+  <div class="info">
+    <div class="name">Pierwszy komentarz</div>
+    <div class="desc">Dodaj komentarz</div>
+  </div>
+</div>
+
+<div class="badge locked">
+  <div class="icon">🤝</div>
+  <div class="info">
+    <div class="name">Towarzyski</div>
+    <div class="secret">10 znajomych</div>
+  </div>
+</div>
+
+<div class="badge locked">
+  <div class="icon">🌍</div>
+  <div class="info">
+    <div class="name">Dusza community</div>
+    <div class="secret">50 znajomych</div>
+  </div>
+</div>
+
+</div>
+</section>
+
+<!-- EVENTY -->
+<section class="section">
+<h2>🎉 Eventy</h2>
+<div class="grid">
+
+<div class="badge">
+  <div class="icon">🎯</div>
+  <div class="info">
+    <div class="name">Pierwszy event</div>
+    <div class="desc">Weź udział w evencie</div>
+  </div>
+</div>
+
+<div class="badge locked">
+  <div class="icon">🏆</div>
+  <div class="info">
+    <div class="name">Zwycięzca</div>
+    <div class="secret">Tajne osiągnięcie</div>
+  </div>
+</div>
+
+<div class="badge locked">
+  <div class="icon">👑</div>
+  <div class="info">
+    <div class="name">Mistrz eventów</div>
+    <div class="secret">10 wygranych</div>
+  </div>
+</div>
+
+</div>
+</section>
+
+<!-- TAJNE -->
+<section class="section">
+<h2>❓ Tajne</h2>
+<div class="grid">
+
+<div class="badge locked">
+  <div class="icon">🌙</div>
+  <div class="info">
+    <div class="name">Nocny widz</div>
+    <div class="secret">Tajne osiągnięcie</div>
+  </div>
+</div>
+
+<div class="badge locked">
+  <div class="icon">💎</div>
+  <div class="info">
+    <div class="name">Kompletysta</div>
+    <div class="secret">Odblokuj wszystkie</div>
+  </div>
+</div>
+
+</div>
+</section>
+
+</main>
+
+<footer>
+© <script>document.write(new Date().getFullYear())</script> StreamingHub
+</footer>
+
+</body>
+</html>
