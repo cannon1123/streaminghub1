@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Osiągnięcia • StreamingHub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+:root{
+--bg:#0b0d10;--card:#151922;--border:#232a37;--text:#e3e7ee;
+--muted:#a8bfe2;--brand:#4f7cff;--locked:#2a2f3a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui}
+.container{max-width:1100px;margin:auto;padding:16px}
+.section{margin-top:35px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.badge{background:var(--card);border:1px solid var(--border);
+border-radius:14px;padding:16px;display:flex;gap:12px}
+.badge.locked{background:var(--locked);opacity:.75}
+.icon{width:48px;height:48px;border-radius:12px;
+background:#1e2433;display:flex;align-items:center;justify-content:center;font-size:24px}
+.name{font-weight:700}
+.desc{font-size:13px;color:var(--muted)}
+.progress{height:6px;background:#1c2230;border-radius:6px;overflow:hidden;margin-top:8px}
+.progress span{display:block;height:100%;background:var(--brand)}
+.secret{font-size:12px;color:#e5a50a}
+</style>
+</head>
+
+<body>
+<div class="container">
+<h1>🏆 Osiągnięcia</h1>
+
+<section id="movies" class="section"><h2>🎬 Filmy</h2><div class="grid"></div></section>
+<section id="series" class="section"><h2>📺 Seriale</h2><div class="grid"></div></section>
+<section id="episodes" class="section"><h2>🎞 Odcinki</h2><div class="grid"></div></section>
+<section id="login" class="section"><h2>🔥 Logowania</h2><div class="grid"></div></section>
+<section id="comments" class="section"><h2>💬 Komentarze</h2><div class="grid"></div></section>
+<section id="friends" class="section"><h2>🧑‍🤝‍🧑 Znajomi</h2><div class="grid"></div></section>
+<section id="events" class="section"><h2>🎉 Eventy</h2><div class="grid"></div></section>
+<section id="wishlist" class="section"><h2>⭐ Wishlist</h2><div class="grid"></div></section>
+<section id="rooms" class="section"><h2>🎥 Pokoje</h2><div class="grid"></div></section>
+<section id="exploration" class="section"><h2>❓ Tajne</h2><div class="grid"></div></section>
+</div>
+
+<script>
+fetch('/api/achievements') // endpoint zwracający SQL SELECT
+.then(r=>r.json())
+.then(data=>{
+data.forEach(a=>{
+const sec=document.querySelector(`#${a.category} .grid`);
+if(!sec)return;
+
+const locked=!a.unlocked;
+const hidden=a.is_hidden && !a.unlocked;
+const req=parseInt(a.code.split('_').pop())||100;
+const prog=Math.min(100,Math.floor((a.progress||0)/req*100));
+
+sec.innerHTML+=`
+<div class="badge ${locked?'locked':''}">
+<div class="icon">${hidden?'❓':a.icon}</div>
+<div>
+<div class="name">${hidden?'Tajne osiągnięcie':a.name}</div>
+${hidden?'<div class="secret">Nieodkryte</div>':`
+<div class="desc">${a.description}</div>
+${locked?`<div class="progress"><span style="width:${prog}%"></span></div>`:''}
+`}
+</div>
+</div>`;
+});
+});
+</script>
+</body>
+</html>
