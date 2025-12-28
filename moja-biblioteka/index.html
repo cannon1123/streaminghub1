@@ -380,17 +380,23 @@ function prepareReward() {
 async function finishAdSuccess() {
   document.getElementById("adModalContainer").innerHTML = ""; 
   try {
-    const { data: prof } = await db.from("profiles").select("points").eq("id", currentUser.id).single();
-    const newPoints = (prof?.points || 0) + POINTS_REWARD;
-    await db.from("profiles").update({ 
-      points: newPoints,
-      last_ad_watched: new Date().toISOString()
-    }).eq("id", currentUser.id);
+    // ZAMIANA: Zamiast update(), wywołujemy bezpieczną funkcję RPC
+    const { error } = await db.rpc('claim_ad_reward');
+
+    if (error) {
+      console.error(error);
+      alert("❌ Błąd przy zapisie punktów.");
+      return;
+    }
 
     alert(`✅ Dodano +${POINTS_REWARD} pkt!`);
+    
+    // Odśwież widok
     await loadPoints();
     await checkCooldownState();
+    
   } catch (err) {
+    console.error(err);
     alert("Błąd połączenia.");
   }
 }
