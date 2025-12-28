@@ -378,26 +378,29 @@ function prepareReward() {
 }
 
 async function finishAdSuccess() {
-  document.getElementById("adModalContainer").innerHTML = ""; 
+  const adModalContainer = document.getElementById("adModalContainer");
+  if(adModalContainer) adModalContainer.innerHTML = ""; 
+  
   try {
-    // ZAMIANA: Zamiast update(), wywołujemy bezpieczną funkcję RPC
+    console.log("Próba zapisu punktów przez RPC...");
+    
     const { error } = await db.rpc('claim_ad_reward');
 
     if (error) {
-      console.error(error);
-      alert("❌ Błąd przy zapisie punktów.");
+      console.error("Szczegóły błędu Supabase:", error);
+      alert(`❌ Błąd: ${error.message || "Brak uprawnień do zapisu punktów"}`);
       return;
     }
 
-    alert(`✅ Dodano +${POINTS_REWARD} pkt!`);
+    alert("✅ Punkty zostały dodane!");
     
-    // Odśwież widok
-    await loadPoints();
-    await checkCooldownState();
+    // Ważne: Odśwież dane na stronie
+    if (typeof loadPoints === "function") await loadPoints();
+    if (typeof checkCooldownState === "function") await checkCooldownState();
     
   } catch (err) {
-    console.error(err);
-    alert("Błąd połączenia.");
+    console.error("Błąd krytyczny:", err);
+    alert("Wystąpił nieoczekiwany błąd połączenia.");
   }
 }
 
