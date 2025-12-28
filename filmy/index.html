@@ -718,7 +718,7 @@ const UI = {
 
         <div class="mt-4">
           ${me ? (canWatch ? `<a class="btn" href="#" onclick="UI.show('watch',{id:${m.id}})">Oglądaj</a>` :
-            `<button class="btn" onclick="UI.unlock(${m.id})">Odblokuj za punkty</button> <span class="small">Masz: <span id="myPoints">…</span> pkt</span>`) :
+            `<button class="btn" onclick="UI.unlock(${m.id})">Odblokuj za punkty (dostępne w bibliotece)</button> <span class="small">Masz: <span id="myPoints">…</span> pkt</span>`) :
             `<a class="btn" href="#" onclick="UI.show('login')">Zaloguj, aby oglądać</a>`}
         </div>
 
