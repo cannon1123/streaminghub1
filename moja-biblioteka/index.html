@@ -378,23 +378,29 @@ function prepareReward() {
 }
 
 async function finishAdSuccess() {
+  // 1. Zamknij modal z reklamą
   document.getElementById("adModalContainer").innerHTML = ""; 
-  try {
-    const { data: prof } = await db.from("profiles").select("points").eq("id", currentUser.id).single();
-    const newPoints = (prof?.points || 0) + POINTS_REWARD;
-    await db.from("profiles").update({ 
-      points: newPoints,
-      last_ad_watched: new Date().toISOString()
-    }).eq("id", currentUser.id);
 
-    alert(`✅ Dodano +${POINTS_REWARD} pkt!`);
-    await loadPoints();
-    await checkCooldownState();
+  try {
+    // 2. Wywołaj funkcję RPC w bazie danych (to ona bezpiecznie doda punkty i zaktualizuje czas)
+    // Funkcja 'reward_for_ad' została utworzona w skrypcie SQL w poprzednim kroku.
+    const { error } = await db.rpc("reward_for_ad");
+
+    if (error) {
+      console.error("Błąd RPC:", error);
+      alert("❌ Wystąpił błąd przy nadawaniu punktów. Spróbuj ponownie później.");
+    } else {
+      // 3. Sukces - poinformuj użytkownika i odśwież widok
+      alert(`✅ Dodano +${POINTS_REWARD} pkt!`);
+      await loadPoints();       // Odśwież licznik punktów na stronie
+      await checkCooldownState(); // Odśwież stan przycisku (zablokuj na 3 min)
+    }
+
   } catch (err) {
-    alert("Błąd połączenia.");
+    console.error("Błąd krytyczny:", err);
+    alert("Błąd połączenia z bazą danych.");
   }
 }
-
 async function checkCooldownState() {
   const btn = document.getElementById("watchAdBtn");
   const msg = document.getElementById("cooldownMsg");
