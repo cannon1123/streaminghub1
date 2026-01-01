@@ -222,7 +222,7 @@
   <h1>Moja biblioteka</h1>
 
   <section id="pointsBox" class="card">
-    <h2>🎯 Twoje punkty!! chwilowa przerwa techniczna masz sprawe? napisz na dc zzzxiw !!: <span id="points">...</span></h2>
+    <h2>🎯 Twoje punkty: <span id="points">...</span></h2>
     <div id="adContainer">
         <button id="watchAdBtn" class="btn">🎬 Obejrzyj reklamę (+50 pkt)</button>
         <p id="cooldownMsg" class="muted-block" style="color: #e5a50a; display:none;"></p>
@@ -378,29 +378,20 @@ function prepareReward() {
 }
 
 async function finishAdSuccess() {
-  const adModalContainer = document.getElementById("adModalContainer");
-  if(adModalContainer) adModalContainer.innerHTML = ""; 
-  
+  document.getElementById("adModalContainer").innerHTML = ""; 
   try {
-    console.log("Próba zapisu punktów przez RPC...");
-    
-    const { error } = await db.rpc('claim_ad_reward');
+    const { data: prof } = await db.from("profiles").select("points").eq("id", currentUser.id).single();
+    const newPoints = (prof?.points || 0) + POINTS_REWARD;
+    await db.from("profiles").update({ 
+      points: newPoints,
+      last_ad_watched: new Date().toISOString()
+    }).eq("id", currentUser.id);
 
-    if (error) {
-      console.error("Szczegóły błędu Supabase:", error);
-      alert(`❌ Błąd: ${error.message || "Brak uprawnień do zapisu punktów"}`);
-      return;
-    }
-
-    alert("✅ Punkty zostały dodane!");
-    
-    // Ważne: Odśwież dane na stronie
-    if (typeof loadPoints === "function") await loadPoints();
-    if (typeof checkCooldownState === "function") await checkCooldownState();
-    
+    alert(`✅ Dodano +${POINTS_REWARD} pkt!`);
+    await loadPoints();
+    await checkCooldownState();
   } catch (err) {
-    console.error("Błąd krytyczny:", err);
-    alert("Wystąpił nieoczekiwany błąd połączenia.");
+    alert("Błąd połączenia.");
   }
 }
 
